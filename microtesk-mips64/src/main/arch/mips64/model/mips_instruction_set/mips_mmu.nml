@@ -1,0 +1,563 @@
+/*
+ * MicroTESK MIPS Edition
+ *
+ * Copyright (c) 2015-2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS_MMU_INCLUDED
+#define MIPS_MMU_INCLUDED
+
+//==================================================================================================
+// MMU Instructions
+//==================================================================================================
+var temp_address[DWORD]
+var temp_byte_offset[card(3)]
+var temp_bit_offset[card(6)]
+
+let MEM_DWORD = 8
+let MEM_WORD  = 4
+let MEM_HWORD = 2
+let MEM_BYTE  = 1
+
+var temp_address_2_0[card(3)]
+
+/*
+  Data Load function.
+  */
+var load_temp64[DWORD]
+var temp_address_load[DWORD]
+var load_address_error[WORD]
+op mips64_load (load_op: card(4), signed_op: BYTE, rt: R, load_offset: SHORT, load_base: R)
+  action = {
+    temp_address_load = load_base + sign_extend(DWORD, load_offset);
+
+    load_temp64 = MEM[temp_address_load >> 3];
+    temp_byte_offset = temp_address_load<2..0> ^ sign_extend(card(3), coerce(card(1), BigEndianCPU));
+
+    load_address_error = coerce(WORD, temp_byte_offset<2..0>) % coerce(WORD, load_op);
+    if load_address_error > coerce(WORD, 0) then
+      C0_EPC = CIA;
+      exception("AddressError: mips64_load");
+      trace("type = 0x%x", load_op);
+    endif;
+
+    temp = coerce(WORD, 8) * coerce(WORD, temp_byte_offset<2..0>);
+    temp64_0 = load_temp64 >> temp;
+
+    if signed_op == coerce(BYTE, SIGNED) then
+      if load_op == coerce(card(4), MEM_DWORD) then
+        //DWORD
+        rt = load_temp64;
+      elif load_op == coerce(card(4), MEM_WORD) then
+        //WORD
+        rt = sign_extend(DWORD, temp64_0<31..0>);
+      elif load_op == coerce(card(4), MEM_HWORD) then
+        //HWORD
+        rt = sign_extend(DWORD, temp64_0<15..0>);
+      elif load_op == coerce(card(4), MEM_BYTE) then
+        //BYTE
+        rt = sign_extend(DWORD, temp64_0<7..0>);
+      else
+        exception("mips64_load signed: error");
+      endif;
+    else
+      if load_op == coerce(card(4), MEM_DWORD) then
+        //DWORD
+        rt = load_temp64;
+      elif load_op == coerce(card(4), MEM_WORD) then
+        //WORD
+        rt = zero_extend(DWORD, temp64_0<31..0>);
+      elif load_op == coerce(card(4), MEM_HWORD) then
+        //HWORD
+        rt = zero_extend(DWORD, temp64_0<15..0>);
+      elif load_op == coerce(card(4), MEM_BYTE) then
+        //BYTE
+        rt = zero_extend(DWORD, temp64_0<7..0>);
+      else
+        exception("mips64_load unsigned: error");
+      endif;
+    endif;
+  }
+
+/*
+  Data Store function.
+  */
+var store_address_error[WORD]
+op mips64_store (store_op: card(4), rt: R, offset: SHORT, base: R)
+  action = {
+    temp_address = base + sign_extend(DWORD, offset);
+
+    temp64 = MEM[temp_address >> 3];
+    temp_byte_offset = temp_address<2..0> ^ sign_extend(card(3), coerce(card(1), BigEndianCPU));
+
+    store_address_error = coerce(WORD, temp_byte_offset<2..0>) % coerce(WORD, store_op);
+    if store_address_error > coerce(WORD, 0) then
+      C0_EPC = CIA;
+      exception("AddressError: mips64_store");
+      trace("type = 0x%x", store_op);
+    endif;
+
+    temp = coerce(WORD, 8) * coerce(WORD, temp_byte_offset<2..0>);
+    temp64_1 = sign_extend(DWORD, coerce(card(1), 1));
+    temp64_1 = temp64_1 >> (coerce(WORD, 64) - coerce(WORD, 8)*coerce(WORD, store_op));
+    temp64_1 = temp64_1 << temp;
+    temp64_0 = (rt<63..0>) << temp;
+    temp64_0 = temp64_0 & temp64_1;
+    temp64_1 = ~temp64_1;
+    temp64_1 = temp64_1 & temp64;
+
+    temp64_2 = temp64_0 | temp64_1;
+    MEM[temp_address >> 3] = temp64_2;
+  }
+
+//==================================================================================================
+// Data Transfer Instructions
+//==================================================================================================
+
+/*
+Data Transfer
+    LB +
+    LBE
+    LBU
+    LD +
+    LDL
+    LDR
+    LH +
+    LHU
+    LL
+    LLD
+    LW +
+    LWL
+    LWR
+    LWU
+    PREF
+    SB +
+    SC
+    SCD
+    SD +
+    SDL
+    SDR
+    SH +
+    SW +
+    SWL
+    SWR
+    SYNC
+    SYNCI
+*/
+
+/*
+  LB: Load Byte (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LB     | base  | rt    | offset |
+            | 100000 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LB rt, offset(base)
+
+  Description: GPR[rt] <- memory[GPR[base] + offset]
+
+  The contents of the 8-bit byte at the memory location specified by the effective
+  address are fetched, sign-extended, and placed in GPR rt. The 16-bit signed offset
+  is added to the contents of GPR base to form the effective address.
+
+  Operation:
+  vAddr <- sign_extend(offset) + GPR[base]
+  (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+  pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor ReverseEndian3)
+  memdoubleword <- LoadMemory (CCA, BYTE, pAddr, vAddr, DATA)
+  byte <- vAddr2..0 xor BigEndianCPU3
+  GPR[rt] <- sign_extend(memdoubleword7+8*byte..8*byte)
+*/
+op lb (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lb %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100000%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_BYTE, SIGNED, rt, offset, base).action;
+  }
+
+/*
+  LBU: Load Byte Unsigned (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LBU    | base  | rt    | offset |
+            | 100100 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LBU rt, offset(base)
+
+  Description: GPR[rt] <- memory[GPR[base] + offset]
+  The contents of the 8-bit byte at the memory location specified by the effective address are
+  fetched, zero-extended, and placed in GPR rt. The 16-bit signed offset is added to the contents of
+  GPR base to form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+    pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor ReverseEndian3)
+    memdoubleword <- LoadMemory (CCA, BYTE, pAddr, vAddr, DATA)
+    byte <- vAddr2..0 xor BigEndianCPU3
+    GPR[rt] <- zero_extend(memdoubleword7+8*byte..8*byte)
+  */
+op lbu (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lbu %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100100%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_BYTE, UNSIGNED, rt, offset, base).action;
+  }
+
+/*
+  SB: Store Byte (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | SB     | base  | rt    | offset |
+            | 101000 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: SB rt, offset(base)
+
+  Description: memory[GPR[base] + offset] -> GPR[rt]
+
+  The least-significant 8-bit byte of GPR rt is stored in memory at the location specified by
+  the effective address. The 16-bit signed offset is added to the contents of GPR base to form
+  the effective address.
+
+  Operation:
+  vAddr <- sign_extend(offset) + GPR[base]
+  (pAddr, CCA) <- AddressTranslation (vAddr, DATA, STORE)
+  pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor ReverseEndian3)
+  bytesel <- vAddr2..0 xor BigEndianCPU3
+  datadoubleword <- GPR[rt]63–8*bytesel..0 || 08*bytesel
+  StoreMemory (CCA, BYTE, datadoubleword, pAddr, vAddr, DATA)
+*/
+op sb (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sb %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101000%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_store(MEM_BYTE, rt, offset, base).action;
+  }
+
+/*
+  LD: Load Doubleword (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15   0 |
+            | LD      | base  | rt    | offset |
+            | 110111  |       |       |        |
+            | 6       | 5     | 5     | 16     |
+
+  Format: LD rt, offset(base)
+
+  Description: rt <- memory[base+offset]
+  
+  The contents of the 64-bit doubleword at the memory location specified by the aligned
+  effective address are fetched and placed in GPR rt. The 16-bit signed offset is added
+  to the contents of GPR base to form the effective address.
+
+  Restrictions:
+
+  Pre-Release 6: The effective address must be naturally-aligned. If any of the 3 least-significant
+  bits of the address is non-zero, an Address Error exception occurs.
+
+  Release 6 allows hardware to provide address misalignment support in lieu of requiring natural
+  alignment.
+
+  Note: The pseudocode is not completely adapted for Release 6 misalignment support as the handling
+  is implementation dependent.
+
+  Operation:
+  vAddr         <- sign_extend(offset) + GPR[base]
+  if vAddr2..0 != 03 then
+    SignalException(AddressError)
+  endif
+  (pAddr, CCA)  <- AddressTranslation (vAddr, DATA, LOAD)
+  memdoubleword <- LoadMemory (CCA, DOUBLEWORD, pAddr, vAddr, DATA)
+  GPR[rt]       <- memdoubleword
+*/
+op ld (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("ld %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("110111%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_DWORD, SIGNED, rt, offset, base).action;
+  }
+
+/*
+  SD: Store Doubleword (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15   0 |
+            | SD      | base  | rt    | offset |
+            | 111111  |       |       |        |
+            | 6       | 5     | 5     | 16     |
+
+  Description: memory[base+offset] <- rt
+
+  The 64-bit doubleword in GPR rt is stored in memory at the location specified by the aligned
+  effective address. The 16-bit signed offset is added to the contents of GPR base to form the
+  effective address.
+
+  Restrictions:
+
+  Pre-release 6: The effective address must be naturally-aligned. If any of the 3 least-significant
+  bits of the effective address is non-zero, an Address Error exception occurs.
+
+  Release 6 allows hardware to provide address misalignment support in lieu of requiring
+  natural alignment.
+  
+  Note: The pseudocode is not completely adapted for Release 6 misalignment support as
+  the handling is implementation dependent.
+
+  Operation:
+  vAddr <- sign_extend(offset) + GPR[base]
+  if vAddr2..0 != 03 then
+    SignalException(AddressError)
+  endif
+  (pAddr, CCA) <- AddressTranslation (vAddr, DATA, STORE)
+  datadoubleword <- GPR[rt]
+  StoreMemory (CCA, DOUBLEWORD, datadoubleword, pAddr, vAddr, DATA)
+*/
+op sd (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sd %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("111111%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_store(MEM_DWORD, rt, offset, base).action;
+  }
+
+/*
+  LH: Load Halfword (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LH     | base  | rt    | offset |
+            | 100001 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LH rt, offset(base)
+
+  Description: GPR[rt] <- memory[GPR[base] + offset]
+  The contents of the 16-bit halfword at the memory location specified by the aligned effective
+  address are fetched, sign-extended, and placed in GPR rt. The 16-bit signed offset is added to the
+  contents of GPR base to form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+    pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian2 || 0))
+    memdoubleword <- LoadMemory (CCA, HALFWORD, pAddr, vAddr, DATA)
+    byte <- vAddr2..0 xor (BigEndianCPU2 || 0)
+    GPR[rt] <- sign_extend(memdoubleword15+8*byte..8*byte)
+  */
+op lh (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lh %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100001%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_HWORD, SIGNED, rt, offset, base).action;
+  }
+
+/*
+  LHU: Load Halfword Unsigned (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LHU    | base  | rt    | offset |
+            | 100101 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LHU rt, offset(base)
+
+  Description: GPR[rt] <- memory[GPR[base] + offset]
+  The contents of the 16-bit halfword at the memory location specified by the aligned effective
+  address are fetched, zero-extended, and placed in GPR rt. The 16-bit signed offset is added to the
+  contents of GPR base to form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+    pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian2 || 0))
+    memdoubleword <- LoadMemory (CCA, HALFWORD, pAddr, vAddr, DATA)
+    byte <- vAddr2..0 xor (BigEndianCPU2 || 0)
+    GPR[rt] <- zero_extend(memdoubleword15+8*byte..8*byte)
+  */
+op lhu (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lhu %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100101%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_HWORD, UNSIGNED, rt, offset, base).action;
+  }
+
+/*
+  SH: Store Halfword (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | SH     | base  | rt    | offset |
+            | 101001 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: SH rt, offset(base)
+
+  Description: memory[GPR[base] + offset] <- GPR[rt]
+  The least-significant 16-bit halfword of register rt is stored in memory at the location specified
+  by the aligned effective address. The 16-bit signed offset is added to the contents of GPR base to
+  form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, STORE)
+    pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian2 || 0))
+    bytesel <- vAddr2..0 xor (BigEndianCPU2 || 0)
+    datadoubleword <- GPR[rt]63-8*bytesel..0 || 08*bytesel
+    StoreMemory (CCA, HALFWORD, datadoubleword, pAddr, vAddr, DATA)
+  */
+op sh (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sh %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101001%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_store(MEM_HWORD, rt, offset, base).action;
+  }
+
+/*
+  LW: Load Word (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LW     | base  | rt    | offset |
+            | 100011 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LW rt, offset(base)
+
+  Description: rt <- memory[base+offset]
+
+  The contents of the 32-bit word at the memory location specified by the aligned effective
+  address are fetched, sign-extended to the GPR register length if necessary, and placed in
+  GPR rt. The 16-bit signed offset is added to the contents of GPR base to form the effective
+  address.
+
+  Restrictions:
+
+  Pre-Release 6: The effective address must be naturally-aligned. If either of
+  the 2 least-significant bits of the address is non-zero, an Address Error exception occurs.
+
+  Release 6 allows hardware to provide address misalignment support in lieu of requiring
+  natural alignment.
+
+  Note: The pseudocode is not completely adapted for Release 6 misalignment support as
+  the handling is implementation dependent.
+
+  Operation:
+  vAddr <- sign_extend(offset) + GPR[base]
+  if vAddr1..0 != 02 then
+    SignalException(AddressError)
+  endif
+  (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+  pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian || 02))
+  memdoubleword <- LoadMemory (CCA, WORD, pAddr, vAddr, DATA)
+  byte   <- vAddr2..0 xor (BigEndianCPU || 02)
+  GPR[rt] <- sign_extend(memdoubleword31+8*byte..8*byte)
+*/
+op lw (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lw %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100011%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_WORD, SIGNED, rt, offset, base).action;
+  }
+
+/*
+  LWU: Load Word Unsigned (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LWU    | base  | rt    | offset |
+            | 100111 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LWU rt, offset(base)
+
+  Description: GPR[rt] <- memory[GPR[base] + offset]
+  The contents of the 32-bit word at the memory location specified by the aligned effective address
+  are fetched, zeroextended, and placed in GPR rt. The 16-bit signed offset is added to the contents
+  of GPR base to form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+    pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian || 02))
+    memdoubleword <- LoadMemory (CCA, WORD, pAddr, vAddr, DATA)
+    byte <- vAddr2..0 xor (BigEndianCPU || 02)
+    GPR[rt] <- 0_32 || memdoubleword31+8*byte..8*byte
+  */
+op lwu (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lwu %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100111%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_WORD, UNSIGNED, rt, offset, base).action;
+  }
+
+/*
+  SW: Store Word (MIPS32)
+  
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | SW     | base  | rt    | offset |
+            | 101011 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: SW rt, offset(base)
+
+  Description: memory[GPR[base] + offset] <- GPR[rt]
+
+  The least-significant 32-bit word of GPR rt is stored in memory at the location specified by the
+  aligned effective address. The 16-bit signed offset is added to the contents of GPR base to form
+  the effective address.
+
+  Restrictions:
+
+  Pre-Release 6: The effective address must be naturally-aligned. If either of
+  the 2 least-significant bits of the address is non-zero, an Address Error exception occurs.
+
+  Release 6 allows hardware to provide address misalignment support in lieu of requiring
+  natural alignment.
+
+  Note: The pseudocode is not completely adapted for Release 6 misalignment support as
+  the handling is implementation dependent.
+
+  Operation:
+  vAddr <- sign_extend(offset) + GPR[base]
+  if vAddr1..0 != 02 then
+    SignalException(AddressError)
+  endif
+  (pAddr, CCA) <- AddressTranslation (vAddr, DATA, STORE)
+  pAddr <- pAddrPSIZE-1..3 || (pAddr2..0 xor (ReverseEndian || 02))
+  bytesel <- vAddr2..0 xor (BigEndianCPU || 02)
+  datadoubleword <- GPR[rt]63-8*bytesel..0 || 08*bytesel
+  StoreMemory (CCA, WORD, datadoubleword, pAddr, vAddr, DATA)
+*/
+op sw (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sw %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101011%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_store(MEM_WORD, rt, offset, base).action;
+  }
+
+op MipsMmuOp = ld
+             | sd
+             | lw
+             | lwu
+             | sw
+             | lb
+             | sb
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

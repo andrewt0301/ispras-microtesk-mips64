@@ -1,0 +1,3380 @@
+/*
+ * MicroTESK MIPS Edition
+ *
+ * Copyright (c) 2015-2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS_ALU_INCLUDED
+#define MIPS_ALU_INCLUDED
+
+//==================================================================================================
+// ALU Instructions
+//==================================================================================================
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32 Arithmetic
+//--------------------------------------------------------------------------------------------------
+
+/*
+  signed multiply two words
+*/
+op mul_signed_words(temp_a: WORD, temp_b: WORD)
+  action = {
+    temp64_1 = sign_extend(DWORD, temp_a<31..0>);
+    temp64_2 = sign_extend(DWORD, temp_b<31..0>);
+    temp64 = cast(LONG, temp64_1) * cast(LONG, temp64_2);
+  }
+
+/*
+  unsigned multiply two words
+*/
+op mul_unsigned_words(temp_a: WORD, temp_b: WORD)
+  action = {
+    temp64_1 = zero_extend(DWORD, temp_a<31..0>);
+    temp64_2 = zero_extend(DWORD, temp_b<31..0>);
+    temp64 = temp64_1 * temp64_2;
+  }
+
+/*  Instructions:
+    ADD +
+    ADDI +
+    ADDIU +
+    ADDIUPC +
+    ADDU +
+    AUI +
+    CLO +
+    CLZ +
+    DIV +
+    DIV r, r, r +
+    MOD +
+    DIVU r, r, r +
+    MODU +
+    DIVU +
+    MADD +
+    MADDU +
+    MSUB +
+    MSUBU +
+    MUL +
+    MUL +
+    MUH +
+    MULU +
+    MUHU +
+    MULT +
+    MULTU +
+    SUB +
+    SUBU +
+    */
+
+/*
+ * Instruction: ADD (MIPS32)
+ *
+ * Purpose: Add Word
+ * Format: ADD rd, rs, rt
+ *
+ * Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+ *           | SPECIAL | rs    | rt    | rd     | 0     | ADD    |
+ *           | 000000  |       |       |        | 00000 | 100000 |
+ *           | 6       | 5     | 5     | 5      | 5     | 6      |
+ *
+ * Description: GPR[rd] <- GPR[rs] + GPR[rt]
+ *
+ * The 32-bit word value in GPR rt is added to the 32-bit value in GPR rs to
+ * produce a 32-bit result.
+ *
+ * if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+ *   UNPREDICTABLE
+ * endif
+ * temp <- (GPR[rs]<31>||GPR[rs]<31..0>) + (GPR[rt]<31>||GPR[rt]<31..0>)
+ * if temp<32> != temp<31> then
+ *  SignalException(IntegerOverflow)
+ * else
+ *   GPR[rd] <- sign_extend(temp<31..0>)
+ * endif
+ */
+op add (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("add %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100000", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp33 = rs<31>::rs<31..0> + rt<31>::rt<31..0>;
+    if temp33<32> != temp33<31> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rd = sign_extend(DWORD, temp33<31..0>);
+    endif;
+  }
+
+/*
+ * Instruction: ADDI (MIPS32)
+ *
+ * Purpose: Add Immediate Word
+ * Format: ADDI rt, rs, immediate
+ *
+ * Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+ *           | ADDI   | rs    | rt    | immediate |
+ *           | 001000 |       |       |           |
+ *           | 6      | 5     |5      | 16        |
+ *
+ * Description: GPR[rt] <- GPR[rs] + immediate
+ *
+ * The 16-bit signed immediate is added to the 32-bit value in GPR rs to produce a 32-bit result.
+ *
+ * if NotWordValue(GPR[rs]) then
+ *   UNPREDICTABLE
+  endif
+  temp <- (GPR[rs]<31>||GPR[rs]<31..0>) + sign_extend(immediate)
+  if temp<32> != temp<31> then
+    SignalException(IntegerOverflow)
+ * else
+ *   GPR[rt] <- sign_extend(temp<31..0>)
+ * endif
+ */
+op addi (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("addi %s, %s, %d", rt.syntax, rs.syntax, immediate)
+  image  = format("001000%5s%5s%16s", rt.image, rs.image, immediate)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+
+    temp33 = rs<31>::rs<31..0> + sign_extend(card(33), immediate);
+    if temp33<32> != temp33<31> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rt = sign_extend(DWORD, temp33<31..0>);
+    endif;
+  }
+
+/*
+ * Instruction: ADDIU (MIPS32)
+ *
+ * Purpose: Add Immediate Unsigned Word
+ * Format: ADDIU rt, rs, immediate
+ *
+ * Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+ *           | ADDIU  | rs    | rt    | immediate |
+ *           | 001001 |       |       |           |
+ *           | 6      | 5     | 5     | 16        |
+ *
+ * Description: GPR[rt] <- GPR[rs] + immediate
+ *
+ * The 16-bit signed immediate is added to the 32-bit value in GPR rs and
+ * the 32-bit arithmetic result is sign-extended and placed into GPR rt.
+ *
+ * if NotWordValue(GPR[rs]) then
+ *   UNPREDICTABLE
+ * endif
+ * temp <- GPR[rs] + sign_extend(immediate)
+ * GPR[rt] <- sign_extend(temp<31..0>)
+ */
+op addiu (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("addiu %s, %s, %d", rt.syntax, rs.syntax, immediate)
+  image  = format("001001%5s%5s%16s", rt.image, rs.image, immediate)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+
+    temp64 = rs + sign_extend(DWORD, immediate);
+    rt = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+ * Instruction: ADDU (MIPS32)
+ *
+ * Purpose: Add Unsigned Word 
+ * Format: ADDU rd, rs, rt
+ *
+ * Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+ *           | SPECIAL | rs    | rt    | rd     | 0     | ADDU   |
+ *           | 000000  |       |       |        | 00000 | 100001 |
+ *           | 6       | 5     | 5     | 5      | 5     | 6      |
+ *
+ * Description: GPR[rd] <- GPR[rs] + GPR[rt]
+ *
+ * The 32-bit word value in GPR rt is added to the 32-bit value in GPR rs and the 32-bit arithmetic
+ * result is signextended and placed into GPR rd.
+ * No Integer Overflow exception occurs under any circumstances.
+ *
+ * if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+ *   UNPREDICTABLE
+ * endif
+ * temp <- GPR[rs] + GPR[rt]
+ * GPR[rd] <- sign_extend(temp<31..0>)
+ */
+op addu (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("addu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100001", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp64 = rs + rt;
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+ * Instruction: ADDIUPC (MIPS32 Release 6)
+ *
+ * Purpose: Add Immediate to PC (unsigned - non-trapping)
+ * Format: ADDIUPC rs, immediate
+ *
+ * Encoding: | 31 26  | 25 21 | 20   19 | 18      0 |
+ *           | PCREL  | rs    | ADDIUPC | immediate |
+ *           | 111011 |       | 00      |           |
+ *           | 6      | 5     | 2       | 19        |
+ *
+ * Description: GPR[rs] <- ( PC + sign_extend( immediate << 2 ) )
+ *
+ * This instruction performs a PC-relative address calculation. The 19-bit immediate is shifted left
+ * by 2 bits, signextended, and added to the address of the ADDIUPC instruction. The result is placed
+ * in GPR rs. This instruction is both a 32-bit and a 64-bit instruction. The 64-bit result is
+ * sign-extended by the same rules that govern sign-extension of virtual addresses in the MIPS64
+ * Architecture, as described by the function effective_address() in the Privileged Resource
+ * Architecture.
+ *
+ * GPR[rs] <- ( PC + sign_extend( immediate << 2 ) )
+ */
+op addiupc(rs: R, immediate: card(19))
+  init = {}
+  syntax = format("addiupc %s, %x", rs.syntax, immediate)
+  image  = format("111011%5s00%19s", rs.image, immediate)
+  action = {
+    temp64 = CIA + sign_extend(DWORD, immediate << 2);
+    rs = temp64;
+  }
+
+/*
+  AUI Add Immediate to Upper Bits (MIPS32 Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | AUI    | rs    | rt    | immediate |
+            | 001111 |       |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: AUI rt, rs immediate
+
+  Operation:
+  AUI: GPR[rt] <- sign_extend.32( GPR[rs] + sign_extend(immediate << 16) )
+*/
+op aui (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("aui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001111%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    temp = sign_extend(WORD, immediate);
+    temp64 = rs + sign_extend(DWORD, temp << 16);
+    rt = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  CLO: Count Leading Ones in Word (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | 00000 | rd     | 0     | CLO    |
+            | 000000  |       |       |        | 00001 | 010001 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: CLO rd, rs
+
+  Description: GPR[rd] <- count_leading_ones GPR[rs]
+  Bits 31..0 of GPR rs are scanned from most significant to least significant bit. The number of
+  leading ones is counted and the result is written to GPR rd. If all of bits 31..0 were set in GPR
+  rs, the result written to GPR rd is 32.
+
+  Restrictions:
+  Pre-Release 6: To be compliant with the MIPS32 and MIPS64 Architecture, software must place the
+  same GPR number in both the rt and rd fields of the instruction. The operation of the instruction
+  is UNPREDICTABLE if the rt and rd fields of the instruction contain different values. Release 6’s
+  new instruction encoding does not contain an rt field. If GPR rs does not contain a sign-extended
+  32-bit value (bits 63..31 equal), then the results of the operation are UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rs]) then
+    UNPREDICTABLE
+  endif
+  temp <- 32
+  for i in 31 .. 0
+    if GPR[rs]i = 0 then
+      temp <- 31 - i
+      break
+    endif
+  endfor
+
+  GPR[rd] <- temp
+*/
+op clo_count_leading_ones(rs_value: WORD)
+  action = {
+    temp = coerce(WORD, 0b0);
+    temp = temp + coerce(WORD, rs_value<0>);
+    temp = temp + coerce(WORD, rs_value<1>);
+    temp = temp + coerce(WORD, rs_value<2>);
+    temp = temp + coerce(WORD, rs_value<3>);
+    temp = temp + coerce(WORD, rs_value<4>);
+    temp = temp + coerce(WORD, rs_value<5>);
+    temp = temp + coerce(WORD, rs_value<6>);
+    temp = temp + coerce(WORD, rs_value<7>);
+    temp = temp + coerce(WORD, rs_value<8>);
+    temp = temp + coerce(WORD, rs_value<9>);
+    temp = temp + coerce(WORD, rs_value<10>);
+    temp = temp + coerce(WORD, rs_value<11>);
+    temp = temp + coerce(WORD, rs_value<12>);
+    temp = temp + coerce(WORD, rs_value<13>);
+    temp = temp + coerce(WORD, rs_value<14>);
+    temp = temp + coerce(WORD, rs_value<15>);
+    temp = temp + coerce(WORD, rs_value<16>);
+    temp = temp + coerce(WORD, rs_value<17>);
+    temp = temp + coerce(WORD, rs_value<18>);
+    temp = temp + coerce(WORD, rs_value<19>);
+    temp = temp + coerce(WORD, rs_value<20>);
+    temp = temp + coerce(WORD, rs_value<21>);
+    temp = temp + coerce(WORD, rs_value<22>);
+    temp = temp + coerce(WORD, rs_value<23>);
+    temp = temp + coerce(WORD, rs_value<24>);
+    temp = temp + coerce(WORD, rs_value<25>);
+    temp = temp + coerce(WORD, rs_value<26>);
+    temp = temp + coerce(WORD, rs_value<27>);
+    temp = temp + coerce(WORD, rs_value<28>);
+    temp = temp + coerce(WORD, rs_value<29>);
+    temp = temp + coerce(WORD, rs_value<30>);
+    temp = temp + coerce(WORD, rs_value<31>);
+  }
+
+op clo (rd: R, rs: R)
+  init = {}
+  syntax = format("clo %s, %s", rd.syntax, rs.syntax)
+  image  = format("000000%5s00000%5s00001010001", rs.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+
+    clo_count_leading_ones(coerce(WORD, rs<31..0>)).action; // return temp
+    rd = zero_extend(DWORD, temp);
+  }
+
+/*
+  CLZ: Count Leading Zeros in Word (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | 00000 | rd     | 0     | CLZ    |
+            | 000000  |       |       |        | 00001 | 010000 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: CLZ rd, rs
+
+  Description: GPR[rd] <- count_leading_zeros GPR[rs]
+  Bits 31..0 of GPR rs are scanned from most significant to least significant bit. The number of
+  leading zeros is counted and the result is written to GPR rd. If no bits were set in GPR rs, the
+  result written to GPR rdis 32.
+
+  Restrictions:
+  Pre-Release 6: To be compliant with the MIPS32 and MIPS64 Architecture, software must place the
+  same GPR number in both the rt and rd fields of the instruction. The operation of the instruction
+  is UNPREDICTABLE if the rt and rd fields of the instruction contain different values. Release 6’s
+  new instruction encoding does not contain an rt field.
+  If GPR rs does not contain a sign-extended 32-bit value (bits 63..31 equal), then the results of
+  the operation are UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rs]) then
+    UNPREDICTABLE
+  endif
+
+  temp <- 32
+  for i in 31 .. 0
+    if GPR[rs]i = 1 then
+      temp <- 31 - i
+      break
+    endif
+  endfor
+  GPR[rd] <- temp
+*/
+op clz (rd: R, rs: R)
+  init = {}
+  syntax = format("clz %s, %s", rd.syntax, rs.syntax)
+  image  = format("000000%5s00000%5s00001010000", rs.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+
+    clo_count_leading_ones(coerce(WORD, rs<31..0>)).action; // return temp
+    rd = zero_extend(DWORD, (coerce(WORD, 32) - temp));
+  }
+
+/*
+  DIV MOD DIVU MODU: Divide Integers (with result to GPR) (MIPS32 Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | DIV   | SOP32  |
+            | 000000  |       |       |        | 00010 | 011010 |
+            | SPECIAL | rs    | rt    | rd     | MOD   | SOP32  |
+            | 000000  |       |       |        | 00011 | 011010 |
+            | SPECIAL | rs    | rt    | rd     | DIVU  | SOP33  |
+            | 000000  |       |       |        | 00010 | 011011 |
+            | SPECIAL | rs    | rt    | rd     | MODU  | SOP33  |
+            | 000000  |       |       |        | 00011 | 011011 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DIV MOD DIVU MODU DDIV DMOD DDIVU DMODU
+    DIV rd,rs,rt
+    MOD rd,rs,rt
+    DIVU rd,rs,rt
+    MODU rd,rs,rt
+
+  DIV: Divide Words Signed
+  MOD: Modulo Words Signed
+  DIVU: Divide Words Unsigned
+  MODU: Modulo Words Unsigned
+
+
+  Description:
+  DIV: GPR[rd] <- sign_extend.32( divide.signed( GPR[rs], GPR[rt] )
+  MOD: GPR[rd] <- sign_extend.32( modulo.signed( GPR[rs], GPR[rt] )
+  DIVU: GPR[rd] <- sign_extend.32( divide.unsigned( GPR[rs], GPR[rt] )
+  MODU: GPR[rd] <- sign_extend.32( modulo.unsigned( GPR[rs], GPR[rt] )
+
+  Operation
+  DDIV, DMOD, DDIVU, DMODU:
+  if not Are64bitOperationsEnabled then SignalException(ReservedInstruction) endif
+  if NotWordValue(GPR[rs]) then UNPREDICTABLE endif
+  if NotWordValue(GPR[rt]) then UNPREDICTABLE endif
+  / recommended implementation: ignore bits 32-63 for DIV, MOD, DIVU, MODU /
+
+  DIV, MOD:
+    s1 <-signed_word(GPR[rs])
+    s2 <-signed_word(GPR[rt])
+  DIVU, MODU:
+    s1 <-unsigned_word(GPR[rs])
+    s2 <-unsigned_word(GPR[rt])
+
+  DIV, DIVU:
+    quotient <-s1 div s2
+  MOD, MODU:
+    remainder <-s1 mod s2
+
+  DIV: GPR[rd] <- sign_extend.32( quotient )
+  MOD: GPR[rd] <- sign_extend.32( remainder )
+  DIVU: GPR[rd] <- sign_extend.32( quotient )
+  MODU: GPR[rd] <- sign_extend.32( remainder )
+  */
+op div_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("div %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00010011010", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp1 = cast(INT, rs<31..0>);
+    temp2 = cast(INT, rt<31..0>);
+    
+    temp = temp1 / temp2;
+    rd = sign_extend(DWORD, temp);
+  }
+
+op mod_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("mod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00011011010", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp1 = cast(INT, rs<31..0>);
+    temp2 = cast(INT, rt<31..0>);
+    
+    temp = temp1 % temp2;
+    rd = sign_extend(DWORD, temp);
+  }
+
+op divu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("divu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00010011011", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp1 = cast(WORD, rs<31..0>);
+    temp2 = cast(WORD, rt<31..0>);
+    
+    temp = temp1 / temp2;
+    rd = sign_extend(DWORD, temp);
+  }
+
+op modu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("modu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00011011011", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp1 = cast(WORD, rs<31..0>);
+    temp2 = cast(WORD, rt<31..0>);
+    
+    temp = temp1 % temp2;
+    rd = sign_extend(DWORD, temp);
+  }
+
+/*
+  DIV Divide Word
+  
+  Encoding: | 31  26 | 25 21 | 20 16 | 15         6 | 5 0
+            | SPECIAL| rs    | rt    | immediate    | DIV
+            | 000000 |       |       | 00 0000 0000 | 011010
+            | 6      | 5     | 5     | 10           | 6
+
+  Format: DIV rs, rt
+
+  Description: (HI, LO) <- GPR[rs] / GPR[rt]
+  The 32-bit word value in GPR rs is divided by the 32-bit value in GPR rt, treating both operands
+  as signed values. The 32-bit quotient is sign-extended and placed into special register LO and
+  the 32-bit remainder is sign-extended and placed into special register HI.
+  No arithmetic exception occurs under any circumstances.
+
+  Restrictions:
+  If either GPR rt or GPR rs does not contain sign-extended 32-bit values (bits 63..31 equal), then
+  the result of the operation is UNPREDICTABLE.
+  If the divisor in GPR rt is zero, the arithmetic result value is UNPREDICTABLE.
+
+  Operation:
+  if (NotWordValue(GPR[rs]) or NotWordValue(GPR[rt])) then
+    UNPREDICTABLE
+  endif
+
+  q <- GPR[rs]31..0 div GPR[rt]31..0
+  LO <- sign_extend(q31..0)
+  r <- GPR[rs]31..0 mod GPR[rt]31..0
+  HI <- sign_extend(r31..0)
+  */
+op div (rs: R, rt: R)
+  init = {}
+  syntax = format("div %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011010", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> ||
+       rt == coerce(DWORD, 0) then
+      unpredicted;
+    endif;
+
+    temp = cast(WORD, (coerce(INT, rs<31..0>)) / (coerce(INT, rt<31..0>)));
+    LO = sign_extend(DWORD, temp);
+    temp = cast(WORD, (coerce(INT, rs<31..0>)) % (coerce(INT, rt<31..0>)));
+    HI = sign_extend(DWORD, temp);
+  }
+
+/*
+  DIVU Divide Unsigned Word (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15         6 | 5 0
+            | SPECIAL| rs    | rt    | immediate    | DIVU
+            | 000000 |       |       | 00 0000 0000 | 011011
+            | 6      | 5     | 5     | 10           | 6
+
+  Format: DIVU rs, rt
+
+  Description: (HI, LO) <- GPR[rs] / GPR[rt]
+  The 32-bit word value in GPR rs is divided by the 32-bit value in GPR rt, treating both operands
+  as unsigned values.
+  The 32-bit quotient is sign-extended and placed into special register LO and the 32-bit remainder
+  is sign-extended and placed into special register HI.
+  No arithmetic exception occurs under any circumstances.
+
+  Restrictions:
+  If either GPR rt or GPR rs does not contain sign-extended 32-bit values (bits 63..31 equal), then
+  the result of the operation is UNPREDICTABLE.
+  If the divisor in GPR rt is zero, the arithmetic result value is UNPREDICTABLE.
+
+  Operation:
+  if (NotWordValue(GPR[rs]) or NotWordValue(GPR[rt])) then
+    UNPREDICTABLE
+  endif
+  q <- (0 || GPR[rs]31..0) div (0 || GPR[rt]31..0)
+  r <- (0 || GPR[rs]31..0) mod (0 || GPR[rt]31..0)
+  LO <- sign_extend(q31..0)
+  HI <- sign_extend(r31..0)
+  */
+op divu (rs: R, rt: R)
+  init = {}
+  syntax = format("divu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011011", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> ||
+       rt == coerce(DWORD, 0) then
+      unpredicted;
+    endif;
+
+    temp = coerce(WORD, (rs<31..0>) / (rt<31..0>));
+    LO = sign_extend(DWORD, temp);
+    temp = coerce(WORD, (rs<31..0>) % (rt<31..0>));
+    HI = sign_extend(DWORD, temp);
+  }
+
+/*
+  MADD: Multiply and Add Word to Hi, Lo (MIPS32, removed in Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15  11 | 10  6 | 5    0 |
+            | SPECIAL2 | rs    | rt    | 0      | 0     | MADD   |
+            | 011100   |       |       | 00000  | 00000 | 000000 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format: MADD rs, rt
+
+  Description: (HI,LO) <- (HI,LO) + (GPR[rs] x GPR[rt])
+
+  The 32-bit word value in GPR rs is multiplied by the 32-bit word value in GPR rt, treating both
+  operands as signed values, to produce a 64-bit result. The product is added to the 64-bit
+  concatenated values of HI31..0 and LO31..0. The most significant 32 bits of the result are
+  sign-extended and written into HI and the least significant 32 bits are signextended and written
+  into LO. No arithmetic exception occurs under any circumstances.
+
+  Restrictions:
+  If GPRs rs or rt do not contain sign-extended 32-bit values (bits 63..31 equal), then the results
+  of the operation are UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  temp <- (HI31..0 || LO31..0) + (GPR[rs]31..0 x GPR[rt]31..0)
+  HI <- sign_extend(temp63..32)
+  LO <- sign_extend(temp31..0)
+  */
+op madd (rs: R, rt: R)
+  init = {}
+  syntax = format("madd %s, %s", rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s0000000000000000", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    temp64 = coerce(LONG, HI<31..0>::LO<31..0>) + coerce(LONG, temp64);
+
+    HI = sign_extend(DWORD, temp64<63..32>);
+    LO = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  MADDU: Multiply and Add Unsigned Word to Hi,Lo (MIPS32, removed in Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15  11 | 10  6 | 5    0 |
+            | SPECIAL2 | rs    | rt    | 0      | 0     | MADDU  |
+            | 011100   |       |       | 00000  | 00000 | 000001 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format: MADDU rs, rt MIPS32
+
+  Description: (HI,LO) <- (HI,LO) + (GPR[rs] x GPR[rt])
+
+  The 32-bit word value in GPR rs is multiplied by the 32-bit word value in GPR rt, treating both
+  operands as unsigned values, to produce a 64-bit result. The product is added to the 64-bit
+  concatenated values of HI31..0 and LO31..0. The most significant 32 bits of the result are
+  sign-extended and written into HI and the least significant 32 bits are signextended and written
+  into LO. No arithmetic exception occurs under any circumstances.
+
+  Restrictions:
+  If GPRs rs or rt do not contain sign-extended 32-bit values (bits 63..31 equal), then the results
+  of the operation are UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  temp <- (HI31..0 || LO31..0) + ((032 || GPR[rs]31..0) x (032 || GPR[rt]31..0))
+  HI <- sign_extend(temp63..32)
+  LO <- sign_extend(temp31..0)
+
+  Programming Notes:
+  Where the size of the operands are known, software should place the shorter operand in GPR rt.
+  This may reduce the latency of the instruction on those processors which implement data-dependent
+  instruction latencies.
+  */
+op maddu (rs: R, rt: R)
+  init = {}
+  syntax = format("maddu %s, %s", rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s0000000000000001", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    temp64 = coerce(DWORD, HI<31..0>::LO<31..0>) + coerce(DWORD, temp64);
+
+    HI = sign_extend(DWORD, temp64<63..32>);
+    LO = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  MSUB: Multiply and Subtract Word to Hi, Lo (MIPS32, removed in Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15  11 | 10  6 | 5    0 |
+            | SPECIAL2 | rs    | rt    | 0      | 0     | MSUB   |
+            | 011100   |       |       | 00000  | 00000 | 000100 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format: MSUB rs, rt
+
+  Operation:
+  if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  temp <- (HI31..0 || LO31..0) - (GPR[rs]31..0 x GPR[rt]31..0)
+  HI <- sign_extend(temp63..32)
+  LO <- sign_extend(temp31..0)
+  */
+op msub (rs: R, rt: R)
+  init = {}
+  syntax = format("msub %s, %s", rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s0000000000000100", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    temp64 = coerce(LONG, HI<31..0>::LO<31..0>) - coerce(LONG, temp64);
+
+    HI = sign_extend(DWORD, temp64<63..32>);
+    LO = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  MSUBU: Multiply and Subtract Word to Hi,Lo (MIPS32, removed in Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15  11 | 10  6 | 5    0 |
+            | SPECIAL2 | rs    | rt    | 0      | 0     | MSUBU  |
+            | 011100   |       |       | 00000  | 00000 | 000101 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format: MSUBU rs, rt
+
+  Operation:
+  if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  temp <- (HI31..0 || LO31..0) - ((032 || GPR[rs]31..0) x (032 || GPR[rt]31..0))
+  HI <- sign_extend(temp63..32)
+  LO <- sign_extend(temp31..0)
+  */
+op msubu (rs: R, rt: R)
+  init = {}
+  syntax = format("msubu %s, %s", rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s0000000000000101", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    temp64 = coerce(DWORD, HI<31..0>::LO<31..0>) - coerce(DWORD, temp64);
+
+    HI = sign_extend(DWORD, temp64<63..32>);
+    LO = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  MUL: Multiply Word to GPR (MIPS32, removed in Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL2 | rs    | rt    | rd     | 0     | MUL    |
+            | 011100   |       |       |        | 00000 | 000010 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format: MUL rd, rs, rt
+
+  Operation:
+  if (NotWordValue(GPR[rs]) or NotWordValue(GPR[rt])) then
+    UNPREDICTABLE
+  endif
+
+  temp <- GPR[rs] x GPR[rt]
+  GPR[rd] <- sign_extend(temp31..0)
+  HI <- UNPREDICTABLE
+  LO <- UNPREDICTABLE
+  */
+op mul (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00000000010", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    // TODO:   HI <- UNPREDICTABLE, LO <- UNPREDICTABLE
+    // rd = sign_extend(DWORD, temp64<31..0>);
+
+    LO = sign_extend(DWORD, temp64<31..0>);
+    HI = sign_extend(DWORD, temp64<63..32>);
+  }
+
+/*
+  MUL MUH MULU MUHU: Multiply Integers (with result to GPR) (MIPS32 Release 6)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL  | rs    | rt    | rd     | MUL   | SOP30  |
+            | 000000   |       |       |        | 00010 | 011000 |
+            | SPECIAL  | rs    | rt    | rd     | MUH   | SOP30  |
+            | 000000   |       |       |        | 00011 | 011000 |
+            | SPECIAL  | rs    | rt    | rd     | MULU  | SOP31  |
+            | 000000   |       |       |        | 00010 | 011001 |
+            | SPECIAL  | rs    | rt    | rd     | MUHU  | SOP31  |
+            | 000000   |       |       |        | 00011 | 011001 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format:
+    MUL rd,rs,rt
+    MUH rd,rs,rt
+    MULU rd,rs,rt
+    MUHU rd,rs,rt
+
+  Operation:
+    MUH: if NotWordValue(GPR[rs]) then UNPREDICTABLE endif
+    MUH: if NotWordValue(GPR[rt]) then UNPREDICTABLE endifj
+    MUHU: if NotWordValue(GPR[rs]) then UNPREDICTABLE endif
+    MUHU: if NotWordValue(GPR[rt]) then UNPREDICTABLE endif
+
+    MUL, MUH:
+      s1 <- signed_word(GPR[rs])
+      s2 <- signed_word(GPR[rt])
+
+    MULU, MUHU:
+      s1 <- unsigned_word(GPR[rs])
+      s2 <- unsigned_word(GPR[rt])
+
+    product <- s1 x s2 // product is twice the width of sources
+
+    MUL: GPR[rd] <- sign_extend.32( lo_word( product ) )
+    MUH: GPR[rd] <- sign_extend.32( hi_word( product ) )
+    MULU: GPR[rd] <- sign_extend.32( lo_word( product ) )
+    MUHU: GPR[rd] <- sign_extend.32( hi_word( product ) )
+  */
+op mul_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00010011000", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+op muh_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("muh %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00011011000", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    rd = sign_extend(DWORD, temp64<63..32>);
+  }
+
+op mulu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("mulu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00010011001", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+op muhu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("muhu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00011011001", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    rd = sign_extend(DWORD, temp64<63..32>);
+  }
+
+/*
+  MULT: Multiply Word (MIPS32, removed in Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15         6 | 5    0 |
+            | SPECIAL | rs    | rt    | 0            | MULT   |
+            | 000000  |       |       | 00 0000 0000 | 011000 |
+            | 6       | 5     | 5     | 10           | 6      |
+
+  Format: MULT rs, rt
+
+  Operation:
+  if (NotWordValue(GPR[rs]) or NotWordValue(GPR[rt])) then
+    UNPREDICTABLE
+  endif
+
+  prod <- GPR[rs]31..0 x GPR[rt]31..0
+  LO <- sign_extend(prod31..0)
+  HI <- sign_extend(prod63..32)
+  */
+op mult (rs: R, rt: R)
+  init = {}
+  syntax = format("mult %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011000", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    LO = sign_extend(DWORD, temp64<31..0>);
+    HI = sign_extend(DWORD, temp64<63..32>);
+  }
+
+/*
+  MULTU: Multiply Unsigned Word (MIPS32, removed in Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15         6 | 5    0 |
+            | SPECIAL | rs    | rt    | 0            | MULTU  |
+            | 000000  |       |       | 00 0000 0000 | 011001 |
+            | 6       | 5     | 5     | 10           | 6      |
+
+  Format: MULTU rs, rt MIPS32
+
+  Operation:
+  if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  prod <- (0 || GPR[rs]31..0) x (0 || GPR[rt]31..0)
+  LO <- sign_extend(prod31..0)
+  HI <- sign_extend(prod63..32)
+  */
+op multu (rs: R, rt: R)
+  init = {}
+  syntax = format("multu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011001", rs.image, rt.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
+
+    LO = sign_extend(DWORD, temp64<31..0>);
+    HI = sign_extend(DWORD, temp64<63..32>);
+  }
+
+/*
+ * Instruction: SUB (MIPS32)
+ *
+ * Purpose: Subtract Word
+ * Format:  SUB rd, rs, rt
+ *
+ * Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+ *           | SPECIAL | rs    | rt    | rd     | 0     | SUB    |
+ *           | 000000  |       |       |        | 00000 | 100010 |
+ *           | 6       | 5     | 5     | 5      | 5     | 6      |
+ *
+ * Description:  GPR[rd] <- GPR[rs] - GPR[rt]
+ *
+ * The 32-bit word value in GPR rt is subtracted from the 32-bit value in GPR rs to
+ * produce a 32-bit result.
+ *
+ * if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+ *   UNPREDICTABLE
+ * endif
+ * temp <- (GPR[rs]<31>||GPR[rs]<31..0>) - (GPR[rt]<31>||GPR[rt]<31..0>)
+ * if temp32 != temp31 then
+ *   SignalException(IntegerOverflow)
+ * else
+ *   GPR[rd] <- sign_extend(temp<31..0>)
+ * endif
+ */
+op sub (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("sub %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100010", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp33 = rs<31>::rs<31..0> - rt<31>::rt<31..0>;
+    if temp33<32> != temp33<31> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rd = sign_extend(DWORD, temp33<31..0>);
+    endif;
+  }
+
+/*
+ * Instruction: SUBU (MIPS32)
+ *
+ * Purpose: Subtract Unsigned Word
+ * Format: SUBU rd, rs, rt
+ *
+ * Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+ *           | SPECIAL | rs    | rt    | rd     | 0     | SUBU   |
+ *           | 000000  |       |       |        | 00000 | 100011 |
+ *           | 6       | 5     | 5     | 5      | 5     | 6      |
+ *
+ * Description:  GPR[rd] <- GPR[rs] - GPR[rt]
+ *
+ * The 32-bit word value in GPR rt is subtracted from the 32-bit value in GPR rs
+ * and the 32-bit arithmetic result is sign-extended and placed into GPR rd.
+ *
+ * if NotWordValue(GPR[rs]) or NotWordValue(GPR[rt]) then
+ *   UNPREDICTABLE
+ * endif
+ * temp <- GPR[rs] - GPR[rt]
+ * GPR[rd] <- sign_extend(temp)
+ */
+op subu (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("subu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100011", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp = rs<31..0> - rt<31..0>;
+    rd = sign_extend(DWORD, temp);
+  }
+
+op Mips32ArithmeticRR = clo
+                      | clz
+                      | div
+                      | divu
+                      | madd
+                      | maddu
+                      | multu
+                      | mult
+                      | msub
+                      | msubu
+
+op Mips32ArithmeticRRR = add
+                       | addu
+                       | div_reg
+                       | mod_reg
+                       | divu_reg
+                       | modu_reg
+                       | sub
+                       | subu
+                       | mul
+                       | mul_reg
+                       | muh_reg
+                       | muhu_reg
+                       | mulu_reg
+
+op Mips32ArithmeticRRI = addi
+                       | addiu
+                       | aui
+
+op Mips32ArithmeticOp = Mips32ArithmeticRRR
+                      | Mips32ArithmeticRR
+                      | Mips32ArithmeticRRI
+                      | addiupc
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32 Condition Testing
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    SLT +
+    SLTI +
+    SLTIU +
+    SLTU +
+    MOVN +
+    MOVZ +
+    */
+
+/*
+ * Instruction: SLT Set on Less Than (MIPS32)
+ *
+ * Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+ *           | SPECIAL | rs    | rt    | rd    | 0     | SLT    |
+ *           | 000000  |       |       |       | 00000 | 101010 |
+ *           | 6       | 5     | 5     | 5     | 5     | 6      |
+ *
+ * Format: SLT rd, rs, rt
+ *
+ * Description: GPR[rd] <- (GPR[rs] < GPR[rt])
+ *
+ * Compare the contents of GPR rs and GPR rt as signed integers; record the Boolean result of
+ * the comparison in  GPR rd. If GPR rs is less than GPR rt, the result is 1 (true); otherwise,
+ * it is 0 (false).
+ *
+ * if GPR[rs] < GPR[rt] then 
+ *   GPR[rd] <- 0(GPRLEN-1) || 1
+ * else
+ *   GPR[rd] <- 0(GPRLEN)
+ * endif
+ */
+op slt (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("slt %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101010", rs.image, rt.image, rd.image)
+  action = {
+    if cast(LONG, rs) < cast(LONG, rt) then
+      rd = 0b1;
+    else
+      rd = 0b0;
+    endif;
+  }
+
+/*
+  SLTI Set on Less Than Immediate (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | SLTI   | rs    | rt    | immediate |
+            | 001010 |       |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: SLTI rt, rs, immediate
+
+  Description: GPR[rt] <- (GPR[rs] < sign_extend(immediate))
+
+  Compare the contents of GPR rs and the 16-bit signed immediate as signed integers; record the
+  Boolean result of the comparison in GPR rt. If GPR rs is less than immediate, the result is 1
+  (true); otherwise, it is 0 (false). The arithmetic comparison does not cause an Integer Overflow
+  exception.
+
+  Operation:
+  if GPR[rs] < sign_extend(immediate) then
+    GPR[rt] <- 0(GPRLEN-1)|| 1
+  else
+    GPR[rt] <- 0(GPRLEN)
+  endif
+  */
+op slti (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("slti %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001010%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    if cast(LONG, rs) < cast(LONG, sign_extend(DWORD, immediate)) then
+      rt = 0b1;
+    else
+      rt = 0b0;
+    endif;
+  }
+
+/*
+  SLTIU Set on Less Than Immediate Unsigned (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | SLTIU  | rs    | rt    | immediate |
+            | 001011 |       |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: SLTIU rt, rs, immediate
+
+  Description: GPR[rt] <- (GPR[rs] < sign_extend(immediate))
+
+  Compare the contents of GPR rs and the sign-extended 16-bit immediate as unsigned integers;
+  record the Boolean result of the comparison in GPR rt. If GPR rs is less than immediate, the
+  result is 1 (true); otherwise, it is 0 (false). Because the 16-bit immediate is sign-extended
+  before comparison, the instruction can represent the smallest or largest unsigned numbers. The
+  representable values are at the minimum [0, 32767] or maximum [max_unsigned-32767, max_unsigned]
+  end of the unsigned range. The arithmetic comparison does not cause an Integer Overflow exception.
+
+  Operation:
+  if (0 || GPR[rs]) < (0 || sign_extend(immediate)) then
+    GPR[rt] <- 0(GPRLEN-1)|| 1
+  else
+    GPR[rt] <- 0(GPRLEN)
+  endif
+  */
+op sltiu (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("sltiu %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001011%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    if rs < sign_extend(DWORD, immediate) then
+      rt = 0b1;
+    else
+      rt = 0b0;
+    endif;
+  }
+
+/*
+  Instruction: SLTU Set on Less Than Unsigned (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0     | SLTU   |
+            | 000000  |       |       |       | 00000 | 101011 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: SLTU rd, rs, rt
+
+  Description: GPR[rd] <- (GPR[rs] < GPR[rt])
+
+  Compare the contents of GPR rs and GPR rt as unsigned integers; record the Boolean result of the
+  comparison in GPR rd. If GPR rs is less than GPR rt, the result is 1 (true); otherwise, it is 0
+  (false). The arithmetic comparison does not cause an Integer Overflow exception.
+
+  Operation:
+  if (0 || GPR[rs]) < (0 || GPR[rt]) then
+    GPR[rt] <- 0(GPRLEN-1)|| 1
+  else
+    GPR[rt] <- 0(GPRLEN)
+  endif
+  */
+op sltu (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("sltu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101011", rs.image, rt.image, rd.image)
+  action = {
+    if rs < rt then
+      rd = 0b1;
+    else
+      rd = 0b0;
+    endif;
+  }
+
+/*
+  MOVN Move Conditional on Not Zero (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0     | MOVN   |
+            | 000000  |       |       |       | 00000 | 001011 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: MOVN rd, rs, rt
+
+  Description: if GPR[rt] =/= 0 then GPR[rd] <- GPR[rs]
+  If the value in GPR rt is not equal to zero, then the contents of GPR rs are placed into GPR rd.
+
+  Operation:
+    if GPR[rt] =/= 0 then
+      GPR[rd] <- GPR[rs]
+    endif  */
+op movn (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("movn %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000001011", rs.image, rt.image, rd.image)
+  action = {
+    if rt != zero_extend(DWORD, 0) then
+      rd = rs;
+    endif;
+  }
+
+/*
+  MOVZ Move Conditional on Zero (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0     | MOVZ   |
+            | 000000  |       |       |       | 00000 | 001010 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: MOVZ rd, rs, rt
+
+  Description: if GPR[rt] = 0 then GPR[rd] <- GPR[rs]
+  If the value in GPR rt is equal to zero, then the contents of GPR rs are placed into GPR rd.
+
+  Operation:
+    if GPR[rt] = 0 then
+      GPR[rd] <- GPR[rs]
+    endif  */
+op movz (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("movz %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000001010", rs.image, rt.image, rd.image)
+  action = {
+    if rt == zero_extend(DWORD, 0) then
+      rd = rs;
+    endif;
+  }
+
+op Mips32ConditionTestingRRR = slt
+                             | sltu
+                             | movn
+                             | movz
+
+op Mips32ConditionTestingRRI = slti
+                             | sltiu
+
+op Mips32ConditionTestingOp = Mips32ConditionTestingRRR
+                            | Mips32ConditionTestingRRI
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32 Logical
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    AND +
+    ANDI +
+    NOR +
+    OR +
+    ORI +
+    XOR +
+    XORI +
+    */
+
+/*
+ * Instruction: AND (MIPS32)
+ *
+ * Purpose: and
+ * Format: AND rd, rs, rt
+ *
+ * Encoding: | 31   26 | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+ *           | SPECIAL | rs    | rt    | rd    | 0     | AND     |
+ *           | 000000  |       |       |       | 00000 | 100100  |
+ *           | 6       | 5     | 5     | 5     | 5     | 6       |
+ *
+ * Description: GPR[rd] <- GPR[rs] and GPR[rt]
+ *
+ * The contents of GPR rs are combined with the contents of GPR rt in a bitwise
+ * logical AND operation. The result is placed into GPR rd.
+ */
+op and (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("and %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100100", rs.image, rt.image, rd.image)
+  action = {
+    rd = rs & rt;
+  }
+
+/*
+ * Instruction: ANDI - and immediate (MIPS32)
+ *
+ * Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+ *           | ANDI   | rs    | rt    | immediate |
+ *           | 001100 |       |       |           |
+ *           | 6      | 5     | 5     | 16        |
+ *
+ * Format: ANDI rt, rs, immediate
+ *
+ * Description: GPR[rt] <- GPR[rs] and zero_extend(immediate)
+ *
+ * The 16-bit immediate is zero-extended to the left and combined with the contents
+ * of GPR rs in a bitwise logical AND operation. The result is placed into GPR rt.
+ */
+op andi (rt: R, rs: R, immediate: HWORD)
+  init = {}
+  syntax = format("andi %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001100%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    rt = rs & zero_extend(DWORD, immediate);
+  }
+
+/* NOR - Not Or (MIPS32)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL rs    rt    rd    0     NOR
+  000000                    00000 100111
+
+  Format: NOR rd, rs, rt MIPS32
+
+  Description: GPR[rd] <- GPR[rs] nor GPR[rt]
+  The contents of GPR rs are combined with the contents of GPR rt in a bitwise logical NOR
+  operation. The result is placed into GPR rd.
+
+  Operation:
+  GPR[rd] <- GPR[rs] nor GPR[rt]
+*/
+op nor (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("nor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100111", rs.image, rt.image, rd.image)
+  action = {
+    rd = ~(rs | rt);
+  }
+
+/*
+  OR Or (MIPS32)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL rs    rt    rd    0     OR
+  000000                    00000 100101
+
+  Format: OR rd, rs, rt
+
+  Description: GPR[rd] <- GPR[rs] or GPR[rt]
+
+  The contents of GPR rs are combined with the contents of GPR rt in a bitwise logical OR operation.
+  The result is placed into GPR rd.
+  */
+op or (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("or %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100101", rs.image, rt.image, rd.image)
+  action = {
+    rd = rs | rt;
+  }
+
+/*
+  ORI Or Immediate (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | ORI    | rs    | rt    | immediate |
+            | 001101 |       |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: ORI rt, rs, immediate
+
+  Description: GPR[rt] <- GPR[rs] or immediate
+
+  The 16-bit immediate is zero-extended to the left and combined with the contents of GPR rs in
+  a bitwise logical OR operation. The result is placed into GPR rt.
+  */
+op ori (rt: R, rs: R, immediate: HWORD)
+  init = {}
+  syntax = format("ori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001101%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    rt = rs | zero_extend(DWORD, immediate);
+  }
+
+/*
+  XOR IExclusive OR (MIPS32)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL rs    rt    rd    0     XOR
+  000000                    00000 100110
+
+  Format: XOR rd, rs, rt
+
+  Description: GPR[rd] <- GPR[rs] XOR GPR[rt]
+
+  Combine the contents of GPR rs and GPR rt in a bitwise logical Exclusive OR operation and place
+  the result into GPR rd.
+ */
+op xor (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("xor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000100110", rs.image, rt.image, rd.image)
+  action = {
+    rd = rs ^ rt;
+  }
+
+/*
+  XORI Exclusive OR Immediate (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | XORI   | rs    | rt    | immediate |
+            | 001110 |       |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: XORI rt, rs, immediate
+
+  Description: GPR[rt] <- GPR[rs] XOR immediate
+
+  Combine the contents of GPR rs and the 16-bit zero-extended immediate in a bitwise logical
+  Exclusive OR operation and place the result into GPR rt.
+ */
+op xori (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("xori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("001110%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    rt = rs ^ zero_extend(DWORD, immediate);
+  }
+
+op Mips32LogicalRRR = and
+                    | nor
+                    | or
+                    | xor
+
+op Mips32LogicalRRI = andi
+                    | ori
+                    | xori
+
+op Mips32LogicalOp = Mips32LogicalRRR
+                   | Mips32LogicalRRI
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32 Shift
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    ROTR +
+    ROTRV +
+    SLL +
+    SLLV +
+    SRA +
+    SRAV +
+    SRL +
+    SRLV +
+*/
+
+/*
+  function reverse_bits_in_byte(inbyte)
+    outbyte7 <- inbyte0
+    outbyte6 <- inbyte1
+    outbyte5 <- inbyte2
+    outbyte4 <- inbyte3
+    outbyte3 <- inbyte4
+    outbyte2 <- inbyte5
+    outbyte1 <- inbyte6
+    outbyte0 <- inbyte7
+    return outbyte
+  end function
+*/
+  var temp_reverse [BYTE] // output value for reverse_bits_in_byte
+
+  op reverse_bits_in_byte(input_byte_value: BYTE)
+  action = {
+    temp_reverse<0> = input_byte_value<7>;
+    temp_reverse<1> = input_byte_value<6>;
+    temp_reverse<2> = input_byte_value<5>;
+    temp_reverse<3> = input_byte_value<4>;
+    temp_reverse<4> = input_byte_value<3>;
+    temp_reverse<5> = input_byte_value<2>;
+    temp_reverse<6> = input_byte_value<1>;
+    temp_reverse<7> = input_byte_value<0>;
+  }
+
+/*
+  BITSWAP Swaps (reverses) bits in each byte (MIPS32 Release 6)
+
+  Encoding: | 31 26    | 25 21 | 20 16 | 15 11 | 10     6 | 5 0     |
+            | SPECIAL3 | 00000 | rt    | rd    | BITSWAP  | BSHFL   |
+            | 011111   |       |       |       | 00000    | 100000  |
+            | 6        | 5     | 5     | 5     | 5        | 6       |
+
+  Format: BITSWAP rd,rt
+
+  Description: GPR[rd].byte(i) <- reverse_bits_in_byte(GPR[rt].byte(i)), for all bytes i
+  Each byte in input GPR rt is moved to the same byte position in output GPR rd, with bits in each
+  byte reversed. BITSWAP is a 32-bit instruction. BITSWAP operates on all 4 bytes of a 32-bit GPR
+  on a 32-bit CPU. On a 64-bit CPU, BITSWAP operates on the low 4 bytes, sign extending to 64-bits.
+
+  Operation:
+    BITSWAP:
+    for i in 0 to 3 do / for all bytes in 32-bit GPR width /
+      tmp.byte(i) <- reverse_bits_in_byte( GPR[rt].byte(i) )
+    endfor
+    GPR[rd] <- sign_extend.32( tmp )
+*/
+op bitswap (rd: R, rt: R)
+  init = {}
+  syntax = format("bitswap %s, %s", rd.syntax, rt.syntax)
+  image  = format("01111100000%5s%5s00000100000", rt.image, rd.image)
+  action = {
+    reverse_bits_in_byte(rt<31..24>).action;
+    temp<31..24> = temp_reverse;
+    reverse_bits_in_byte(rt<23..16>).action;
+    temp<23..16> = temp_reverse;
+    reverse_bits_in_byte(rt<15..8>).action;
+    temp<15..8>  = temp_reverse;
+    reverse_bits_in_byte(rt<7..0>).action;
+    temp<7..0>   = temp_reverse;
+
+    rd = sign_extend(DWORD, temp);
+  }
+
+/*
+  Instruction: ROTR Rotate Word Right (SmartMIPS Crypto, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | sa    | SRL    |
+            | 000000  |       | 1  |       |       |       | 000010 |
+            | 6       | 4     | 1  | 5     | 5     | 5     | 6      |
+
+  Format: ROTR rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] x(right) sa
+  The contents of the low-order 32-bit word of GPR rt are rotated right; the word result is
+  sign-extended and placed in GPR rd. The bit-rotate amount is specified by sa.
+
+  Restrictions:
+  If GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal), then the result of
+  the operation is UNPREDICTABLE.
+
+  Operation:
+    if NotWordValue(GPR[rt]) or ((ArchitectureRevision() < 2) and (Config3SM = 0)) then
+      UNPREDICTABLE
+    endif
+    s <- sa
+    temp <- GPR[rt]s-1..0 || GPR[rt]31..s
+    GPR[rd] <- sign_extend(temp)
+ */
+op rotr (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("rotr %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000001%5s%5s%5s000010", rt.image, rd.image, sa)
+  action = {
+    if (sign_extend(WORD, rt<31>) != rt<63..32>) || ((C0_CONFIG3_SM == coerce(BIT, 0b0))
+     && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2))) then
+      unpredicted;
+    endif;
+
+    temp = rt<31..0> >>> zero_extend(WORD, sa);
+    rd = sign_extend(DWORD, temp);
+  }
+
+/*
+  Instruction: ROTRV Rotate Word Right Variable (SmartMIPS Crypto, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  7| 6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0    | R | SRLV   |
+            | 000000  |       |       |       | 0000 | 1 | 000110 |
+            | 6       | 5     | 5     | 5     | 4    | 1 | 6      |
+
+  Format: ROTRV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] x(right) GPR[rs]
+
+  The contents of the low-order 32-bit word of GPR rt are rotated right; the word result is
+  sign-extended and placed in GPR rd. The bit-rotate amount is specified by the low-order 5 bits of
+  GPR rs.
+
+  Restrictions:
+  If GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal), then the result of
+  the operation is UNPREDICTABLE.
+
+  Operation:
+  Operation:
+    if NotWordValue(GPR[rt]) or ((ArchitectureRevision() < 2) and (Config3SM = 0)) then
+      UNPREDICTABLE
+    endif
+    s <-  GPR[rs]4..0
+    temp <- GPR[rt]s-1..0 || GPR[rt]31..s
+    GPR[rd] <- sign_extend(temp)
+  */
+op rotrv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("rotrv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00001000110", rs.image, rt.image, rd.image)
+  action = {
+    if (sign_extend(WORD, rt<31>) != rt<63..32>) || ((C0_CONFIG3_SM == coerce(BIT, 0b0))
+     && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2))) then
+      unpredicted;
+    endif;
+
+    temp = rt<31..0> >>> zero_extend(WORD, rs<4..0>);
+    rd = sign_extend(DWORD, temp);
+  }
+
+/*
+  SLL Shift Word Left Logical (MIPS32)
+
+  31   26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0
+  SPECIAL | 0     | rt    | rd    | sa   | SLL
+  000000  | 00000 |       |       |      | 000000
+
+  Format: SLL rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] << sa
+
+  The contents of the low-order 32-bit word of GPR rt are shifted left, inserting zeros into the
+  emptied bits. The word result is sign-extended and placed in GPR rd. The bit-shift amount is
+  specified by sa. 
+
+  Operation:
+  s <- sa
+  temp <- GPR[rt](31-s)..0 || 0s
+  GPR[rd] <- sign_extend(temp)
+
+  Programming Notes:
+  The SLL input operand does not have to be a properly sign-extended word value to produce a valid
+  sign-extended 32-bit result. The result word is always sign-extended into a 64-bit destination
+  register; this instruction with a zero shift amount truncates a 64-bit value to 32 bits and
+  sign-extends it. SLL r0, r0, 0, expressed as NOP, is the assembly idiom used to denote no
+  operation. SLL r0, r0, 1, expressed as SSNOP, is the assembly idiom used to denote no operation
+  that causes an issue break on superscalar processors.
+*/
+op sll (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("sll %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s000000", rt.image, rd.image, sa)
+  action = {
+    temp = zero_extend(WORD, sa);
+    temp0 = coerce(WORD, rt << temp);
+    rd = sign_extend(DWORD, temp0);
+  }
+
+/*
+  SLLV Shift Word Left Logical Variable (MIPS32)
+
+  31   26 | 25 21 | 20 16 | 15 11 | 10  6 | 5    0
+  SPECIAL | rs    | rt    | rd    | 0     | SLLV
+  000000  |       |       |       | 00000 | 000100
+
+  Format: SLLV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] << GPR[rs]
+
+  The contents of the low-order 32-bit word of GPR rt are shifted left, inserting zeros into the
+  emptied bits. The resulting word is sign-extended and placed in GPR rd. The bit-shift amount is
+  specified by the low-order 5 bits of GPR rs.
+
+  Operation:
+  s <- GPR[rs]4..0
+  temp <- GPR[rt](31-s)..0 || 0s
+  GPR[rd] <- sign_extend(temp)
+*/
+op sllv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("sllv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000000100", rs.image, rt.image, rd.image)
+  action = {
+    temp = zero_extend(WORD, rs<4..0>);
+    temp0 = coerce(WORD, rt << temp);
+    rd = sign_extend(DWORD, temp0);
+  }
+
+/*
+  Instruction: SRA - Shift Word Right Arithmetic (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 00000 | rt    | rd    | sa    | SRA    |
+            | 000000  |       |       |       |       | 000011 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: SRA rd, rt, sa MIPS32
+
+  Description: GPR[rd] <- GPR[rt] >> sa (arithmetic)
+
+  The contents of the low-order 32-bit word of GPR rt are shifted right, duplicating the sign-bit
+  (bit 31) in the emptied bits; the word result is sign-extended and placed in GPR rd. The bit-shift
+  amount is specified by sa.
+
+  Restrictions:
+  On 64-bit processors, if GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal),
+  then the result of the operation is UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  s <- sa
+  temp <- GPR[rt]31)s || GPR[rt]31..s
+  GPR[rd] <- sign_extend(temp)
+  */
+op sra (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("sra %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s000011", rt.image, rd.image, sa)
+  action = {
+    if (sign_extend(WORD, rt<31>) != rt<63..32>) then
+      unpredicted;
+    endif;
+
+    temp64 = rt >> zero_extend(WORD, sa);
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  Instruction: SRAV - Shift Word Right Arithmetic Variable (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd    | 0     | SRAV   |
+            | 000000  |       |       |       | 00000 | 000111 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: SRAV rd, rt, rs MIPS32
+
+  Description: GPR[rd] <- GPR[rt] >> GPR[rs] (arithmetic)
+  The contents of the low-order 32-bit word of GPR rt are shifted right, duplicating the sign-bit
+  (bit 31) in the emptied bits; the word result is sign-extended and placed in GPR rd. The bit-shift
+  amount is specified by the low-order 5 bits of GPR rs.
+
+  Restrictions:
+  On 64-bit processors, if GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal),
+  then the result of the operation is UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  s <- GPR[rs]4..0
+  temp <- (GPR[rt]31)s || GPR[rt]31..s
+  GPR[rd] <- sign_extend(temp)
+  */
+op srav (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("srav %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000000111", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp64 = rt >> zero_extend(WORD, rs<4..0>);
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  Instruction: SRL - Shift Word Right Logical (MIPS32)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | sa    | SRL    |
+            | 000000  |       | 0  |       |       |       | 000010 |
+            | 6       | 4     | 1  | 5     | 5     | 5     | 6      |
+
+  Format: SRL rd, rt, sa MIPS32
+
+  Description: GPR[rd] < GPR[rt] >> sa (logical)
+
+  The contents of the low-order 32-bit word of GPR rt are shifted right, inserting zeros into the
+  emptied bits. The word result is sign-extended and placed in GPR rd. The bit-shift amount is
+  specified by sa.
+
+  Restrictions:
+  On 64-bit processors, if GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal),
+  then the result of the operation is UNPREDICTABLE.
+
+  Operation:
+  if NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  s <- sa
+  temp <- 0s || GPR[rt]31..s
+  GPR[rd] <- sign_extend(temp)
+ */
+op srl (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("srl %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s000010", rt.image, rd.image, sa)
+  action = {
+    if sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp64 = coerce(DWORD, rt<31..0>) >> zero_extend(WORD, sa);
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+/*
+  Instruction: SRLV - Shift Word Right Logical Variable (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  7| 6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0    | R | SRLV   |
+            | 000000  |       |       |       | 0000 | 0 | 000110 |
+            | 6       | 5     | 5     | 5     | 4    | 1 | 6      |
+
+  Format: SRLV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] >> GPR[rs] (logical)
+
+  The contents of the low-order 32-bit word of GPR rt are shifted right, inserting zeros into the
+  emptied bits; the word result is sign-extended and placed in GPR rd. The bit-shift amount is
+  specified by the low-order 5 bits of GPR rs.
+
+  Restrictions:
+  On 64-bit processors, if GPR rt does not contain a sign-extended 32-bit value (bits 63..31 equal),
+  then the result of the operation is UNPREDICTABLE.
+  Operation:
+  if NotWordValue(GPR[rt]) then
+    UNPREDICTABLE
+  endif
+
+  s <- GPR[rs]4..0
+  temp <- 0s || GPR[rt]31..s
+  GPR[rd] <- sign_extend(temp)
+  */
+op srlv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("srlv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000000110", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp64 = coerce(DWORD, rt<31..0>) >> zero_extend(WORD, rs<4..0>);
+    rd = sign_extend(DWORD, temp64<31..0>);
+  }
+
+op Mips32ShiftRRI = rotr
+                  | sll
+                  | sra
+                  | srl
+
+op Mips32ShiftRRR = rotrv
+                  | sllv
+                  | srav
+                  | srlv
+
+op Mips32ShiftOp = Mips32ShiftRRI
+                 | Mips32ShiftRRR
+                 | bitswap
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 64 Arithmetic
+//--------------------------------------------------------------------------------------------------
+
+/*
+  signed multiply two dwords
+*/
+op mul_signed_dwords(temp_a: DWORD, temp_b: DWORD)
+  action = {
+    temp128_1 = sign_extend(QWORD, temp_a);
+    temp128_2 = sign_extend(QWORD, temp_b);
+    temp128 = cast(int(128), temp128_1) * cast(int(128), temp128_2);
+  }
+
+/*
+  unsigned multiply two dwords
+*/
+op mul_unsigned_dwords(temp_a: WORD, temp_b: WORD)
+  action = {
+    temp128_1 = zero_extend(QWORD, temp_a);
+    temp128_2 = zero_extend(QWORD, temp_b);
+    temp128 = temp128_1 * temp128_2;
+  }
+
+/*  Instructions:
+    DAUI +
+    DAHI +
+    DATI +
+    DADD +
+    DADDI +
+    DADDIU +
+    DADDU +
+    DDIV +
+    DDIVU +
+    DDIV rd,rs,rt +
+    DMOD +
+    DDIVU rd,rs,rt +
+    DMODU +
+    DMUL rd,rs,rt +
+    DMUH +
+    DMULU rd,rs,rt +
+    DMUHU +
+    DMULT +
+    DMULTU +
+    DSUB +
+    DSUBU +
+    */
+
+/*
+  DAUI Add Immediate to Upper Bits (MIPS64 Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | DAUI   | rs    | rt    | immediate |
+            | 011101 | rs=/=0|       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: DAUI rt, rs immediate
+
+  Operation:
+  DAUI: GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
+*/
+op daui (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("daui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
+  image  = format("011101%5s%5s%16s", rs.image, rt.image, immediate)
+  action = {
+    if rs.i == 0 then 
+      undefined; // DAUI: rs cannot be r0, the zero register.
+    else
+      temp = sign_extend(WORD, immediate);
+      temp64 = rs + sign_extend(DWORD, temp << 16);
+      rt = sign_extend(DWORD, temp64<31..0>);
+    endif;
+  }
+
+/*
+  DAHI Add Immediate to Upper Bits (MIPS64 Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | DAHI  | immediate |
+            | 000001 |       | 00110 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: DAHI rs, rs immediate
+
+  Operation:
+  DAHI: GPR[rs] <- GPR[rs] + sign_extend(immediate << 32)
+*/
+op dahi (rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("dahi %s, %s, 0x%x", rs.syntax, rs.syntax, immediate)
+  image  = format("000001%5s00110%16s", rs.image, immediate)
+  action = {
+    temp64 = sign_extend(DWORD, immediate);
+    temp64 = rs + (temp64 << 32);
+    rs = sign_extend(DWORD, temp64);
+  }
+
+/*
+  DATI: Add Immediate to Upper Bits (MIPS64 Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | DATI  | immediate |
+            | 000001 |       | 11110 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: DATI rs, rs immediate
+
+  Operation:
+  DATI: GPR[rs] <- GPR[rs] + sign_extend(immediate << 48)
+*/
+op dati (rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("dati %s, %s, 0x%x", rs.syntax, rs.syntax, immediate)
+  image  = format("000001%5s11110%16s", rs.image, immediate)
+  action = {
+    temp64 = sign_extend(DWORD, immediate);
+    temp64 = rs + (temp64 << 48);
+    rs = sign_extend(DWORD, temp64);
+  }
+
+/*
+  DADD: Doubleword Add (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | 0     | DADD   |
+            | 000000  |       |       |        | 00000 | 101100 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DADD rd, rs, rt
+
+  Description: GPR[rd] <- GPR[rs] + GPR[rt]
+
+  Operation:
+    temp <- (GPR[rs]63||GPR[rs]) + (GPR[rt]63||GPR[rt])
+    if (temp64 ≠ temp63) then
+      SignalException(IntegerOverflow)
+    else
+      GPR[rd] <- temp63..0
+    endif
+  */
+op dadd (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dadd %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101100", rs.image, rt.image, rd.image)
+  action = {
+    temp65 = rs<63>::rs<63..0> + rt<63>::rt<63..0>;
+    if temp65<64> != temp65<63> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rd = temp65<63..0>;
+    endif;
+  }
+
+/*
+  DADDI: Doubleword Add Immediate (MIPS64, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | DADDI  | rs    | rt    | immediate |
+            | 011000 |       |       |           |
+            | 6      | 5     |5      | 16        |
+
+  Format: DADDI rt, rs, immediate
+
+  Description: GPR[rt] <- GPR[rs] + immediate
+
+  Operation:
+    temp <- (GPR[rs]63||GPR[rs]) + sign_extend(immediate)
+    if (temp64 =/= temp63) then
+      SignalException(IntegerOverflow)
+    else
+      GPR[rt] <- temp63..0
+    endif
+  */
+op daddi (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("daddi %s, %s, %d", rt.syntax, rs.syntax, immediate)
+  image  = format("011000%5s%5s%16s", rt.image, rs.image, immediate)
+  action = {
+    temp65 = rs<63>::rs<63..0> + sign_extend(card(65), immediate);
+    if temp65<64> != temp65<63> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rt = temp65<63..0>;
+    endif;
+  }
+
+/*
+  DADDIU: Doubleword Add Immediate Unsigned (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | DADDIU | rs    | rt    | immediate |
+            | 011001 |       |       |           |
+            | 6      | 5     |5      | 16        |
+
+  Format: DADDIU rt, rs, immediate
+
+  Description: GPR[rt] <- GPR[rs] + sign_extend(immediate)
+
+  Operation:
+    GPR[rt] <- GPR[rs] + sign_extend(immediate)
+  */
+op daddiu (rt: R, rs: R, immediate: SHORT)
+  init = {}
+  syntax = format("daddiu %s, %s, %d", rt.syntax, rs.syntax, immediate)
+  image  = format("011001%5s%5s%16s", rt.image, rs.image, immediate)
+  action = {
+    temp64 = rs<63..0> + sign_extend(DWORD, immediate);
+
+    rt = temp64;
+  }
+
+/*
+  DADDU: Doubleword Add Unsigned (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | 0     | DADDU  |
+            | 000000  |       |       |        | 00000 | 101101 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DADDU rd, rs, rt MIPS64
+
+  Description: GPR[rd] <- GPR[rs] + GPR[rt]
+
+  Operation:
+    GPR[rd] <- GPR[rs] + GPR[rt]
+  */
+op daddu (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("daddu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101101", rs.image, rt.image, rd.image)
+  action = {
+    rd = rs + rt;
+  }
+
+/*
+  DDIV: Doubleword Divide (MIPS64, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15         6 | 5 0
+            | SPECIAL| rs    | rt    | immediate    | DDIV
+            | 000000 |       |       | 00 0000 0000 | 011110
+            | 6      | 5     | 5     | 10           | 6
+
+  Format: DDIV rs, rt
+
+  Description: (LO, HI) <- GPR[rs] / GPR[rt]
+  The 64-bit doubleword in GPR rs is divided by the 64-bit doubleword in GPR rt, treating both
+  operands as signed values. The 64-bit quotient is placed into special register LO and the 64-bit
+  remainder is placed into special register HI.
+
+  Operation:
+    LO <- GPR[rs] div GPR[rt]
+    HI <- GPR[rs] mod GPR[rt]
+  */
+op ddiv (rs: R, rt: R)
+  init = {}
+  syntax = format("ddiv %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011110", rs.image, rt.image)
+  action = {
+    LO = coerce(LONG, rs) / coerce(LONG, rt);
+    HI = coerce(LONG, rs) % coerce(LONG, rt);
+  }
+
+/*
+  DDIVU: Doubleword Divide Unsigned (MIPS64, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15         6 | 5 0
+            | SPECIAL| rs    | rt    | immediate    | DDIVU
+            | 000000 |       |       | 00 0000 0000 | 011111
+            | 6      | 5     | 5     | 10           | 6
+
+  Format: DDIVU rs, rt
+
+  Description: (LO, HI) <- GPR[rs] / GPR[rt]
+  The 64-bit doubleword in GPR rs is divided by the 64-bit doubleword in GPR rt, treating both
+  operands as unsigned values. The 64-bit quotient is placed into special register LO and the 64-bit
+  remainder is placed into special register HI.
+
+  Operation:
+    q <- (0 || GPR[rs]) div (0 || GPR[rt])
+    r <- (0 || GPR[rs]) mod (0 || GPR[rt])
+    LO <- q63..0
+    HI <- r63..0
+  */
+op ddivu (rs: R, rt: R)
+  init = {}
+  syntax = format("ddivu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011111", rs.image, rt.image)
+  action = {
+    LO = coerce(DWORD, rs) / coerce(DWORD, rt);
+    HI = coerce(DWORD, rs) % coerce(DWORD, rt);
+  }
+
+/*
+  DDIV DMOD DDIVU DMODU: Divide Integers (with result to GPR) (MIPS64 Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | DDIV  | SOP36  |
+            | 000000  |       |       |        | 00010 | 011110 |
+            | SPECIAL | rs    | rt    | rd     | DMOD  | SOP36  |
+            | 000000  |       |       |        | 00011 | 011110 |
+            | SPECIAL | rs    | rt    | rd     | DDIVU | SOP37  |
+            | 000000  |       |       |        | 00010 | 011111 |
+            | SPECIAL | rs    | rt    | rd     | DMODU | SOP37  |
+            | 000000  |       |       |        | 00011 | 011111 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DDIV DMOD DDIVU DMODU
+    DDIV rd,rs,rt
+    DMOD rd,rs,rt
+    DDIVU rd,rs,rt
+    DMODU rd,rs,rt
+
+  DDIV: Divide Doublewords Signed
+  DMOD: Modulo Doublewords Signed
+  DDIVU: Divide Doublewords Unsigned
+  DMODU: Modulo Doublewords Unsigned
+
+  Description:
+  DDIV: GPR[rd] <- divide.signed( GPR[rs], GPR[rt] )
+  DMOD: GPR[rd] <- modulo.signed( GPR[rs], GPR[rt] )
+  DDIVU: GPR[rd] <- divide.unsigned( GPR[rs], GPR[rt] )
+  DMODU: GPR[rd] <- modulo.unsigned( GPR[rs], GPR[rt] )
+
+  Operation
+  DDIV, DMOD, DDIVU, DMODU:
+  if not Are64bitOperationsEnabled then SignalException(ReservedInstruction) endif
+  if NotWordValue(GPR[rs]) then UNPREDICTABLE endif
+  if NotWordValue(GPR[rt]) then UNPREDICTABLE endif
+  / recommended implementation: ignore bits 32-63 for DIV, MOD, DIVU, MODU /
+
+  DDIV, DMOD:
+    s1 <-signed_doubleword(GPR[rs])
+    s2 <-signed_doubleword(GPR[rt])
+  DDIVU, DMODU:
+    s1 <-unsigned_doubleword(GPR[rs])
+    s2 <-unsigned_doubleword(GPR[rt])
+
+  DDIV, DDIVU:
+    quotient <-s1 div s2
+  DMOD, DMODU:
+    remainder <-s1 mod s2
+
+  DDIV: GPR[rd] <- quotient
+  DMOD: GPR[rd] <- remainder
+  DDIVU: GPR[rd] <- quotient
+  DMODU: GPR[rd] <- remainder
+ */
+op ddiv_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("ddiv %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00010011110", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
+      trace ("SignalException(ReservedInstruction)");
+    endif;
+
+    temp64_1 = cast(LONG, rs);
+    temp64_2 = cast(LONG, rt);
+    
+    temp64 = temp64_1 / temp64_2;
+    rd = temp64;
+  }
+
+op dmod_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00011011110", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
+      trace ("SignalException(ReservedInstruction)");
+    endif;
+
+    temp64_1 = cast(LONG, rs);
+    temp64_2 = cast(LONG, rt);
+    
+    temp64 = temp64_1 % temp64_2;
+    rd = temp64;
+  }
+
+op ddivu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("ddivu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00010011111", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
+      trace ("SignalException(ReservedInstruction)");
+    endif;
+
+    temp64_1 = cast(DWORD, rs);
+    temp64_2 = cast(DWORD, rt);
+    
+    temp64 = temp64_1 / temp64_2;
+    rd = temp64;
+  }
+
+op dmodu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmodu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00011011111", rs.image, rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
+      trace ("SignalException(ReservedInstruction)");
+    endif;
+
+    temp64_1 = cast(DWORD, rs);
+    temp64_2 = cast(DWORD, rt);
+    
+    temp64 = temp64_1 % temp64_2;
+    rd = temp64;
+  }
+
+/*
+  DMUL DMUH DMULU DMUHU: Multiply Integers (with result to GPR) (MIPS64 Release 6)
+
+  TODO:
+  Encoding: | 31    26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL  | rs    | rt    | rd     | DMUL  | SOP34  |
+            | 000000   |       |       |        | 00010 | 011100 |
+            | SPECIAL  | rs    | rt    | rd     | DMUH  | SOP34  |
+            | 000000   |       |       |        | 00011 | 011100 |
+            | SPECIAL  | rs    | rt    | rd     | DMULU | SOP35  |
+            | 000000   |       |       |        | 00010 | 011101 |
+            | SPECIAL  | rs    | rt    | rd     | DMUHU | SOP35  |
+            | 000000   |       |       |        | 00011 | 011101 |
+            | 6        | 5     | 5     | 5      | 5     | 6      |
+
+  Format:
+    DMUL rd,rs,rt
+    DMUH rd,rs,rt
+    DMULU rd,rs,rt
+    DMUHU rd,rs,rt
+
+  Operation:
+
+    DMUL, DMUH:
+      s1 <- signed_doubleword(GPR[rs])
+      s2 <- signed_doubleword(GPR[rt])
+
+    DMULU, DMUHU:
+      s1 <- unsigned_doubleword(GPR[rs])
+      s2 <- unsigned_doubleword(GPR[rt])
+
+    product <- s1 x s2 // product is twice the width of sources
+
+    DMUL: GPR[rd] <- lo_doubleword( product )
+    DMUH: GPR[rd] <- hi_doubleword( product )
+    DMULU: GPR[rd] <- lo_doubleword( product )
+    DMUHU: GPR[rd] <- hi_doubleword( product )
+  */
+op dmul_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00010011100", rs.image, rt.image, rd.image)
+  action = {
+    mul_signed_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    rd = temp128<63..0>;
+  }
+
+op dmuh_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmuh %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00011011100", rs.image, rt.image, rd.image)
+  action = {
+    mul_signed_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    rd = temp128<127..64>;
+  }
+
+op dmulu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmulu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00010011101", rs.image, rt.image, rd.image)
+  action = {
+    mul_unsigned_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    rd = temp128<63..0>;
+  }
+
+op dmuhu_reg (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dmuhu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("011100%5s%5s%5s00011011101", rs.image, rt.image, rd.image)
+  action = {
+    mul_unsigned_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    rd = temp128<127..64>;
+  }
+
+/*
+  DMULT: Doubleword Multiply (MIPS64, removed in Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15         6 | 5    0 |
+            | SPECIAL | rs    | rt    | 0            | DMULT  |
+            | 000000  |       |       | 00 0000 0000 | 011100 |
+            | 6       | 5     | 5     | 10           | 6      |
+
+  Format: DMULT rs, rt
+
+  Description: (LO, HI) <- GPR[rs] x GPR[rt]
+  The 64-bit doubleword value in GPR rt is multiplied by the 64-bit value in GPR rs, treating both
+  operands as signed values, to produce a 128-bit result. The low-order 64-bit doubleword of the
+  result is placed into special register LO, and the high-order 64-bit doubleword is placed into
+  special register HI. No arithmetic exception occurs under any circumstances.
+
+  Operation:
+    prod <- GPR[rs] x GPR[rt]
+    LO <- prod63..0
+    HI <- prod127..64
+  */
+op dmult (rs: R, rt: R)
+  init = {}
+  syntax = format("dmult %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011100", rs.image, rt.image)
+  action = {
+    mul_signed_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    LO = temp128<63..0>;
+    HI = temp128<127..64>;
+  }
+
+/*
+  DMULTU: Doubleword Multiply Unsigned (MIPS64, removed in Release 6)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15         6 | 5    0 |
+            | SPECIAL | rs    | rt    | 0            | DMULTU |
+            | 000000  |       |       | 00 0000 0000 | 011101 |
+            | 6       | 5     | 5     | 10           | 6      |
+
+  Format: DMULTU rs, rt
+
+  Description: (LO, HI) <- GPR[rs] x GPR[rt]
+  The 64-bit doubleword value in GPR rt is multiplied by the 64-bit value in GPR rs, treating both
+  operands as unsigned values, to produce a 128-bit result. The low-order 64-bit doubleword of the
+  result is placed into special register LO, and the high-order 64-bit doubleword is placed into
+  special register HI. No arithmetic exception occurs under any circumstances.
+
+  Operation:
+    prod <- (0||GPR[rs]) x (0||GPR[rt])
+    LO <- prod63..0
+    HI <- prod127..64
+  */
+op dmultu (rs: R, rt: R)
+  init = {}
+  syntax = format("dmultu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000011101", rs.image, rt.image)
+  action = {
+    mul_unsigned_dwords(rs<63..0>, rt<63..0>).action; // Returns temp128
+
+    LO = temp128<63..0>;
+    HI = temp128<127..64>;
+  }
+
+/*
+  DSUB: Doubleword Subtract (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | 0     | DSUB    |
+            | 000000  |       |       |        | 00000 | 101110 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DSUB rd, rs, rt
+
+  Description: GPR[rd] <- GPR[rs] - GPR[rt]
+  The 64-bit doubleword value in GPR rt is subtracted from the 64-bit value in GPR rs to produce
+  a 64-bit result. If the subtraction results in 64-bit 2’s complement arithmetic overflow, then the
+  destination register is not modified and an Integer Overflow exception occurs. If it does not
+  overflow, the 64-bit result is placed into GPR rd.
+
+  Operation:
+    temp <- (GPR[rs]63||GPR[rs]) – (GPR[rt]63||GPR[rt])
+    if (temp64 ≠ temp63) then
+      SignalException(IntegerOverflow)
+    else
+      GPR[rd] <- temp63..0
+    endif
+  */
+op dsub (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dsub %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101110", rs.image, rt.image, rd.image)
+  action = {
+    temp65 = rs<63>::rs<63..0> - rt<63>::rt<63..0>;
+    if temp65<64> != temp65<63> then
+      C0_EPC = CIA;
+      exception("IntegerOverflow");
+    else
+      rd = temp65<63..0>;
+    endif;
+  }
+
+/*
+  DSUBU: Doubleword Subtract Unsigned (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 11  | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd     | 0     | DSUBU  |
+            | 000000  |       |       |        | 00000 | 101111 |
+            | 6       | 5     | 5     | 5      | 5     | 6      |
+
+  Format: DSUBU rd, rs, rt MIPS64
+
+  Description: GPR[rd] <- GPR[rs] - GPR[rt]
+  The 64-bit doubleword value in GPR rt is subtracted from the 64-bit value in GPR rs and the 64-bit
+  arithmetic result is placed into GPR rd.
+
+  Operation: 64-bit processors
+    GPR[rd] <- GPR[rs] – GPR[rt]
+ */
+op dsubu (rd: R, rs: R, rt: R)
+  init = {}
+  syntax = format("dsubu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s%5s00000101111", rs.image, rt.image, rd.image)
+  action = {
+    rd = rs<63..0> - rt<63..0>;
+  }
+
+op Mips64ArithmeticRRR = dadd
+                       | daddu
+                       | ddiv_reg
+                       | dmod_reg
+                       | ddivu_reg
+                       | dmodu_reg
+                       | dmul_reg
+                       | dmuh_reg
+                       | dmulu_reg
+                       | dmuhu_reg
+                       | dsub
+                       | dsubu
+
+op Mips64ArithmeticRRI = daddi
+                       | daddiu
+                       | daui
+
+op Mips64ArithmeticRR = ddiv
+                      | ddivu
+                      | dmult
+                      | dmultu
+
+op Mips64ArithmeticRI = dahi
+                      | dati
+
+op Mips64ArithmeticOp = Mips64ArithmeticRRR
+                      | Mips64ArithmeticRRI
+                      | Mips64ArithmeticRR
+                      | Mips64ArithmeticRI
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 64 Shift
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    DBITSWAP +
+    DROTR +
+    DROTR32 +
+    DROTRV +
+    DSLL +
+    DSLL32 +
+    DSLLV +
+    DSRA +
+    DSRA32 +
+    DSRAV +
+    DSRL +
+    DSRL32 +
+    DSRLV +
+    */
+
+/*
+  DBITSWAP Swaps (reverses) bits in each byte (MIPS64 Release 6)
+
+  Encoding: | 31 26    | 25 21 | 20 16 | 15 11 | 10     6 | 5 0     |
+            | SPECIAL3 | 00000 | rt    | rd    | DBITSWAP | DBSHFL  |
+            | 011111   |       |       |       | 00000    | 100100  |
+            | 6        | 5     | 5     | 5     | 5        | 6       |
+
+  Format: DBITSWAP rd,rt
+
+  Description: GPR[rd].byte(i) <- reverse_bits_in_byte(GPR[rt].byte(i)), for all bytes i
+  Each byte in input GPR rt is moved to the same byte position in output GPR rd, with bits in each
+  byte reversed.
+  DBITSWAP operates on all 8 bytes of a 64-bit GPR on a 64-bit CPU.
+
+  Operation:
+    DBITSWAP:
+    for i in 0 to 7 do / for all bytes in 64-bit GPR width /
+      tmp.byte(i) <- reverse_bits_in_byte( GPR[rt].byte(i) )
+    endfor
+    GPR[rd] <- tmp
+*/
+op dbitswap (rd: R, rt: R)
+  init = {}
+  syntax = format("dbitswap %s, %s", rd.syntax, rt.syntax)
+  image  = format("01111100000%5s%5s00000100100", rt.image, rd.image)
+  action = {
+    reverse_bits_in_byte(rt<63..56>).action;
+    temp64<63..56> = temp_reverse;
+    reverse_bits_in_byte(rt<55..48>).action;
+    temp64<55..48> = temp_reverse;
+    reverse_bits_in_byte(rt<47..40>).action;
+    temp64<47..40> = temp_reverse;
+    reverse_bits_in_byte(rt<39..32>).action;
+    temp64<39..32> = temp_reverse;
+    reverse_bits_in_byte(rt<31..24>).action;
+    temp64<31..24> = temp_reverse;
+    reverse_bits_in_byte(rt<23..16>).action;
+    temp64<23..16> = temp_reverse;
+    reverse_bits_in_byte(rt<15..8>).action;
+    temp64<15..8>  = temp_reverse;
+    reverse_bits_in_byte(rt<7..0>).action;
+    temp64<7..0>   = temp_reverse;
+
+    rd = temp64;
+  }
+
+/*
+  DROTR: Doubleword Rotate Right (MIPS64 Release 2)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | sa    | DSRL   |
+            | 000000  |       | 1  |       |       |       | 111010 |
+            | 6       | 4     | 1  | 5     | 5     | 5     | 6      |
+
+  Format: DROTR rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] x (right) sa
+  The doubleword contents of GPR rt are rotated right; the result is placed in GPR rd. The
+  bit-rotate amount in the range 0 to 31 is specified by sa.
+
+  Operation:
+    s <- 0 || sa
+    GPR[rd] <- GPR[rt]s-1..0 || GPR[rt]63..s
+  */
+op drotr (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("drotr %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000001%5s%5s%5s111010", rt.image, rd.image, sa)
+  action = {
+    rd = rt<63..0> >>> zero_extend(WORD, sa); // >>> - rotate
+  }
+
+/*
+  DROTR32: Doubleword Rotate Right Plus 32 (MIPS64 Release 2)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10      6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | saminus32 | DSLR32 |
+            | 000000  |       | 1  |       |       |           | 111110 |
+            | 6       | 4     | 1  | 5     | 5     | 5         | 6      |
+
+  Format: DROTR32 rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] x (right) (saminus32+32)
+  The 64-bit doubleword contents of GPR rt are rotated right; the result is placed in GPR rd. The
+  bit-rotate amount in the range 32 to 63 is specified by saminus32+32.
+
+  Operation:
+    s <- 1 || sa / 32+saminus32 /
+    GPR[rd] <- GPR[rt]s-1..0 || GPR[rt]63..s
+  */
+op drotr32 (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("drotr32 %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000001%5s%5s%5s111110", rt.image, rd.image, sa)
+  action = {
+    rd = rt<63..0> >>> zero_extend(WORD, coerce(WORD, sa) + coerce(WORD, 32)); // >>> - rotate
+  }
+
+/*
+  DROTRV: Doubleword Rotate Right Variable (MIPS64 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  7| 6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0    | R | DSRLV  |
+            | 000000  |       |       |       | 0000 | 1 | 010110 |
+            | 6       | 5     | 5     | 5     | 4    | 1 | 6      |
+
+  Format: DROTRV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] x (right) GPR[rs]
+  The 64-bit doubleword contents of GPR rt are rotated right; the result is placed in GPR rd. The
+  bit-rotate amount in the range 0 to 63 is specified by the low-order 6 bits in GPR rs.
+
+  Operation:
+    s <- GPR[rs]5..0
+    GPR[rd] <- GPR[rt]s-1..0 || GPR[rt]63..s
+  */
+op drotrv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("drotrv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00001010110", rs.image, rt.image, rd.image)
+  action = {
+    rd = rt<63..0> >>> zero_extend(WORD, rs<5..0>);  // >>> - rotate
+  }
+
+/*
+  DSLL: Doubleword Shift Left Logical (MIPS64)
+
+  31   26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0
+  SPECIAL | 0     | rt    | rd    | sa   | DSLL
+  000000  | 00000 |       |       |      | 111000
+
+  Format: DSLL rd, rt, sa MIPS64
+
+  Description: GPR[rd] <- GPR[rt] << sa
+  The 64-bit doubleword contents of GPR rt are shifted left, inserting zeros into the emptied bits;
+  the result is placed in GPR rd. The bit-shift amount in the range 0 to 31 is specified by sa.
+
+  Operation:
+    s <- 0 || sa
+    GPR[rd] <- GPR[rt](63–s)..0 || 0s
+*/
+op dsll (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsll %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111000", rt.image, rd.image, sa)
+  action = {
+    temp64 = zero_extend(DWORD, sa);
+    rd = coerce(DWORD, rt << temp64);
+  }
+
+/*
+  DSLL32: Doubleword Shift Left Logical Plus 32 (MIPS64)
+
+  31   26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0
+  SPECIAL | 0     | rt    | rd    | sa   | DSLL32
+  000000  | 00000 |       |       |      | 111100
+
+  Format: DSLL32 rd, rt, sa MIPS64
+
+  Description: GPR[rd] <- GPR[rt] << (sa+32)
+  The 64-bit doubleword contents of GPR rt are shifted left, inserting zeros into the emptied bits;
+  the result is placed in GPR rd. The bit-shift amount in the range 0 to 31 is specified by sa.
+
+  Operation:
+    s <- 1 || sa / 32+sa /
+    GPR[rd] <- GPR[rt](63–s)..0 || 0s
+*/
+op dsll32 (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsll32 %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111100", rt.image, rd.image, sa)
+  action = {
+    temp64 = zero_extend(DWORD, coerce(DWORD, sa) + coerce(DWORD, 32));
+    rd = coerce(DWORD, rt << temp64);
+  }
+
+/*
+  DSLLV: Doubleword Shift Left Logical Variable (MIPS64)
+
+  31   26 | 25 21 | 20 16 | 15 11 | 10  6 | 5    0
+  SPECIAL | rs    | rt    | rd    | 0     | DSLLV
+  000000  |       |       |       | 00000 | 010100
+
+  Format: DSLLV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] << GPR[rs]
+  The 64-bit doubleword contents of GPR rt are shifted left, inserting zeros into the emptied bits;
+  the result is placed in GPR rd. The bit-shift amount in the range 0 to 63 is specified by the
+  low-order 6 bits in GPR rs.
+
+  Operation:
+    s <- GPR[rs]5..0
+    GPR[rd] <- GPR[rt](63–s)..0 || 0s
+*/
+op dsllv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("dsllv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000010100", rs.image, rt.image, rd.image)
+  action = {
+    temp = zero_extend(WORD, rs<5..0>);
+    rd = coerce(DWORD, rt << temp);
+  }
+
+/*
+  DSRA: Doubleword Shift Right Arithmetic (MIPS64)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 00000 | rt    | rd    | sa    | DSRA   |
+            | 000000  |       |       |       |       | 111011 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: DSRA rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] >> sa (arithmetic)
+  The 64-bit doubleword contents of GPR rt are shifted right, duplicating the sign bit (63) into the
+  emptied bits; the result is placed in GPR rd. The bit-shift amount in the range 0 to 31 is
+  specified by sa.
+
+  Operation:
+    s <- 0 || sa
+    GPR[rd] <- (GPR[rt]63)s || GPR[rt]63..s
+  */
+op dsra (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsra %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111011", rt.image, rd.image, sa)
+  action = {
+    rd = rt >> zero_extend(WORD, sa);
+  }
+
+/*
+  DSRA32: Doubleword Shift Right Arithmetic Plus 32 (MIPS64)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 00000 | rt    | rd    | sa    | DSRA32 |
+            | 000000  |       |       |       |       | 111111 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: DSRA32 rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] >> (sa+32) (arithmetic)
+  The doubleword contents of GPR rt are shifted right, duplicating the sign bit (63) into the
+  emptied bits; the result is placed in GPR rd. The bit-shift amount in the range 32 to 63 is
+  specified by sa+32.
+
+  Operation:
+    s <- 1 || sa // 32+sa
+    GPR[rd] <- (GPR[rt]63)s || GPR[rt]63..s
+  */
+op dsra32 (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsra32 %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111011", rt.image, rd.image, sa)
+  action = {
+    rd = rt >> (zero_extend(WORD, sa) + coerce(WORD, 32));
+  }
+
+/*
+  DSRAV: Doubleword Shift Right Arithmetic Variable (MIPS64)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | SPECIAL | rs    | rt    | rd    | 0     | DSRAV  |
+            | 000000  |       |       |       | 00000 | 010111 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: DSRAV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] >> GPR[rs] (arithmetic)
+  The doubleword contents of GPR rt are shifted right, duplicating the sign bit (63) into the
+  emptied bits; the result is placed in GPR rd. The bit-shift amount in the range 0 to 63 is
+  specified by the low-order 6 bits in GPR rs.
+
+  Operation:
+    s <- GPR[rs]5..0
+    GPR[rd] <- (GPR[rt]63)s || GPR[rt]63..s
+  */
+op dsrav (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("dsrav %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000010111", rs.image, rt.image, rd.image)
+  action = {
+    rd = rt >> zero_extend(WORD, rs<4..0>);
+  }
+
+/*
+  DSRL: Doubleword Shift Right Logical (MIPS64)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | sa    | DSRL   |
+            | 000000  |       | 0  |       |       |       | 111010 |
+            | 6       | 4     | 1  | 5     | 5     | 5     | 6      |
+
+  Format: DSRL rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] >> sa (logical)
+  The doubleword contents of GPR rt are shifted right, inserting zeros into the emptied bits; the
+  result is placed in GPR rd. The bit-shift amount in the range 0 to 31 is specified by sa.
+
+  Operation:
+    s <- 0 || sa
+    GPR[rd] <- 0s || GPR[rt]63..s
+ */
+op dsrl (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsrl %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111010", rt.image, rd.image, sa)
+  action = {
+    rd = rt >> zero_extend(WORD, sa);
+  }
+
+/*
+  DSRL32: Doubleword Shift Right Logical Plus 32 (MIPS64)
+
+  Encoding: | 31 26   | 25 20 | 21 | 20 16 | 15 11 | 10  6 | 5 0    |
+            | SPECIAL | 0000  | R  | rt    | rd    | sa    | DSRL32 |
+            | 000000  |       | 0  |       |       |       | 111110 |
+            | 6       | 4     | 1  | 5     | 5     | 5     | 6      |
+
+  Format: DSRL rd, rt, sa
+
+  Description: GPR[rd] <- GPR[rt] >> sa (logical)
+  The doubleword contents of GPR rt are shifted right, inserting zeros into the emptied bits; the
+  result is placed in GPR rd. The bit-shift amount in the range 0 to 31 is specified by sa.
+
+  Operation:
+    s <- 0 || sa
+    GPR[rd] <- 0s || GPR[rt]63..s
+ */
+op dsrl32 (rd: R, rt: R, sa: card(5))
+  init = {}
+  syntax = format("dsrl32 %s, %s, %d", rd.syntax, rt.syntax, sa)
+  image  = format("00000000000%5s%5s%5s111110", rt.image, rd.image, sa)
+  action = {
+    rd = rt >> zero_extend(WORD, sa);
+  }
+
+/*
+  DSRLV: Doubleword Shift Right Logical Variable (MIPS64)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  7| 6 | 5 0    |
+            | SPECIAL | rs    | rt    | rd    | 0    | R | DSRLV  |
+            | 000000  |       |       |       | 0000 | 0 | 010110 |
+            | 6       | 5     | 5     | 5     | 4    | 1 | 6      |
+
+  Format: DSRLV rd, rt, rs
+
+  Description: GPR[rd] <- GPR[rt] >> GPR[rs] (logical)
+  The 64-bit doubleword contents of GPR rt are shifted right, inserting zeros into the emptied bits;
+  the result is placed in GPR rd. The bit-shift amount in the range 0 to 63 is specified by the
+  low-order 6 bits in GPR rs.
+
+  Operation:
+    s <- GPR[rs]5..0
+    GPR[rd] <- 0s || GPR[rt]63..s
+  */
+op dsrlv (rd: R, rt: R, rs: R)
+  init = {}
+  syntax = format("dsrlv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
+  image  = format("000000%5s%5s%5s00000010110", rs.image, rt.image, rd.image)
+  action = {
+    rd = rt >> zero_extend(WORD, rs<4..0>);
+  }
+
+op Mips64ShiftRRI = drotr
+                  | drotr32
+                  | dsll
+                  | dsll32
+                  | dsra
+                  | dsra32
+                  | dsrl
+                  | dsrl32
+
+op Mips64ShiftRRR = drotrv
+                  | dsllv
+                  | dsrav
+                  | dsrlv
+
+op Mips64ShiftOp = Mips64ShiftRRI
+                 | Mips64ShiftRRR
+                 | dbitswap
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32/64 Inserts
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    EXT +
+    INS +
+    DINS +
+    DINSM +
+    DINSU +
+    WSBH +
+    */
+
+/*
+  EXT: Extract Bit Field (MIPS32 Release 2)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15    11 | 10  6 | 5    0 |
+            | SPECIAL3 | rs    | rt    | msb      | lsb   | EXT    |
+            | 011111   |       |       | (size-1) | (pos) | 000000 |
+            | 6        | 5     | 5     | 5        | 5     | 6      |
+
+  Format: EXT rt, rs, pos, size
+
+  Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+    The bit field starting at bit pos and extending for size bits is extracted from GPR rs and
+    stored zero-extended and right-justified in GPR rt. The assembly language arguments pos and size
+    are converted by the assembler to the instruction fields msbd (the most significant bit of the
+    destination field in GPR rt), in instruction bits 15..11, and lsb (least significant bit of the
+    source field in GPR rs), in instruction bits 10..6, as follows:
+    msbd <- size-1
+    lsb <- pos
+
+  The values of pos and size must satisfy all of the following relations:
+    0 =< pos < 32
+    0 < size =< 32
+    0 < pos+size =< 32
+
+  Operation:
+    if ((lsb + msbd) > 31) or (NotWordValue(GPR[rs])) then
+      UNPREDICTABLE
+    endif
+    temp <- sign_extend(0^(32-(msbd+1)) || GPR[rs](msbd+lsb..lsb))
+    GPR[rt] <- temp
+  */
+op ext (rt: R, rs: R, pos: card(5), size: card(5))
+  init = {}
+  syntax = format("ext %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
+  image  = format("011111%5s%5s%5s%5s000000", rs.image, rt.image, size-1, pos)
+  action = {
+    if (pos+size-1) > 31 || sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+
+    temp0 = rt<31..0>;
+    temp1 = coerce(WORD, 0xffffFFFF);
+    temp1 = temp1 >> 32 - size;
+    temp3 = rs<31..0> & temp1;
+    temp1 = temp1 << pos;
+    temp3 = temp3 << pos;
+    temp0 = temp0 & ~temp1;
+    temp0 = temp0 | temp3;
+
+    rt = sign_extend(DWORD, temp0);
+  }
+
+/*
+  INS: Insert Bit Field (MIPS32)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15        11 | 10  6 | 5    0 |
+            | SPECIAL3 | rs    | rt    | msb          | lsb   | INS    |
+            | 011111   |       |       | (pos+size-1) | (pos) | 000100 |
+            | 6        | 5     | 5     | 5            | 5     | 6      |
+
+  Format: INS rt, rs, pos, size
+
+  Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msb, lsb)
+    The right-most size bits from GPR rs are merged into the value from GPR rt starting at bit
+    position pos. The result is placed back in GPR rt. The assembly language arguments pos and size
+    are converted by the assembler to the instruction fields msb (the most significant bit of the
+    field), in instruction bits 15..11, and lsb (least significant bit of the field), in instruction
+    bits 10..6, as follows:
+    msb <- pos+size-1
+    lsb <- pos
+    
+    0 <= pos < 32
+    0 < size <= 32
+    0 < pos+size <= 32
+
+  Operation:
+    if (lsb > msb) or (NotWordValue(GPR[rs])) or (NotWordValue(GPR[rt]))) then
+      UNPREDICTABLE
+    endif
+    GPR[rt] <- sign_extend(GPR[rt]31..msb+1 || GPR[rs]msb-lsb..0 || GPR[rt]lsb-1..0)
+  */
+op ins (rt: R, rs: R, pos: card(5), size: card(5))
+  init = {}
+  syntax = format("ins %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
+  image  = format("011111%5s%5s%5s%5s000100", rs.image, rt.image, pos+size-1, pos)
+  action = {
+    if pos > (pos+size-1) ||
+       sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp0 = rt<31..0>;
+    temp1 = coerce(WORD, 0xffffFFFF);
+    temp1 = temp1 << 32 - pos - size;
+    temp1 = temp1 >> 32 - size; // (32 - pos - size) + pos
+    temp3 = rs<31..0> & temp1;
+    temp1 = temp1 << pos;
+    temp3 = temp3 << pos;
+    temp0 = temp0 & ~temp1;
+    temp0 = temp0 | temp3;
+
+    rt = sign_extend(DWORD, temp0);
+  }
+
+/*
+  DINS: Doubleword Insert Bit Field (MIPS64)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15        11 | 10  6 | 5    0 |
+            | SPECIAL3 | rs    | rt    | msb          | lsb   | DINS   |
+            | 011111   |       |       | (pos+size-1) | (pos) | 000111 |
+            | 6        | 5     | 5     | 5            | 5     | 6      |
+
+  Format: DINS rt, rs, pos, size
+
+  Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msb, lsb)
+    The right-most size bits from GPR rs are merged into the value from GPR rt starting at bit
+    position pos. The result is placed back in GPR rt. The assembly language arguments pos and size
+    are converted by the assembler to the instruction fields msb (the most significant bit of the
+    field), in instruction bits 15..11, and lsb (least significant bit of the field), in instruction
+    bits 10..6, as follows:
+    msb <- pos+size-1
+    lsb <- pos
+    
+    0 <= pos < 32
+    0 < size <= 32
+    0 < pos+size <= 32
+
+  Operation:
+    if (lsb > msb) then
+      UNPREDICTABLE
+    endif
+    GPR[rt] <- GPR[rt]63..msb+1 || GPR[rs]msb-lsb..0 || GPR[rt]lsb-1..0
+  */
+op dins (rt: R, rs: R, pos: card(5), size: card(5))
+  init = {}
+  syntax = format("dins %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
+  image  = format("011111%5s%5s%5s%5s000111", rs.image, rt.image, pos+size-1, pos)
+  action = {
+    if pos > (pos+size-1) then
+      unpredicted;
+    endif;
+
+    temp64 = rt<63..0>;
+    temp1 = coerce(WORD, 0xffffFFFF);
+    temp1 = temp1 << 32 - pos - size;
+    temp1 = temp1 >> 32 - size; // (32 - pos - size) + pos
+    temp3 = rs<31..0> & temp1;
+    temp1 = temp1 << pos;
+    temp3 = temp3 << pos;
+    temp64_1 = coerce(DWORD, 0x0);
+    temp64_1<31..0> = temp1<31..0>;
+    temp64 = temp64 & ~temp64_1;
+    temp64 = temp64 | coerce(DWORD, temp3);
+
+    rt = sign_extend(DWORD, temp64);
+  }
+
+/*
+  DINSM: Doubleword Insert Bit Field Middle (MIPS64)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15         11 | 10  6 | 5    0 |
+            | SPECIAL3 | rs    | rt    | msbminus32    | lsb   | DINSM  |
+            | 011111   |       |       | (pos+size-33) | (pos) | 000101 |
+            | 6        | 5     | 5     | 5             | 5     | 6      |
+
+  Format: DINSM rt, rs, pos, size
+
+  Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msb, lsb)
+    The right-most size bits from GPR rs are inserted into the value from GPR rt starting at bit
+    position pos. The result is placed back in GPR rt. The assembly language arguments pos and size
+    are converted by the assembler to the instruction fields msbminus32 (the most significant bit
+    of the field, minus 32), in instruction bits 15..11, and lsb (least significant bit of the
+    field), in instruction bits 10..6, as follows:
+    msbminus32 <- pos+size-1-32
+    lsb <- pos
+    msb <- msbminus32 + 32
+
+    For this instruction, the values of pos and size must satisfy all of the following relations:
+    0 <= pos < 32
+    2 <= size <= 64
+    32 < pos+size <= 64
+
+  Operation:
+    msb <- msbminus32 + 32
+    GPR[rt] <- GPR[rt]63..msb+1 || GPR[rs]msb-lsb..0 || GPR[rt]lsb-1..0
+  */
+op dinsm (rt: R, rs: R, pos: card(5), size: card(6))
+  init = {}
+  syntax = format("dinsm %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
+  image  = format("011111%5s%5s%5s%5s000101", rs.image, rt.image,
+                                              coerce(card(5),coerce(card(6), pos) + size - 33), pos)
+  action = {
+    temp64 = rt<63..0>;
+    temp64_0 = coerce(DWORD, 0xffffFFFFffffFFFF);
+    temp64_0 = temp64_0 << 64 - coerce(card(6), pos) - size;
+    temp64_0 = temp64_0 >> 64 - size;
+    temp64_3 = rs<63..0> & temp64_0;
+    temp64_0 = temp64_0 << pos;
+    temp64_3 = temp64_3 << pos;
+    temp64 = temp64 & ~temp64_0;
+    temp64 = temp64 | temp64_3;
+
+    rt = sign_extend(DWORD, temp64);
+  }
+
+/*
+  DINSU: Doubleword Insert Bit Field Upper (MIPS64)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15         11 | 10     6 | 5    0 |
+            | SPECIAL3 | rs    | rt    | msbminus32    | lsb      | DINSU  |
+            | 011111   |       |       | (pos+size-33) | (pos-32) | 000110 |
+            | 6        | 5     | 5     | 5             | 5        | 6      |
+
+  Format: DINSU rt, rs, pos, size
+
+  Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msb, lsb)
+    The right-most size bits from GPR rs are inserted into the value from GPR rt starting at bit
+    position pos. The result is placed back in GPR rt. The assembly language arguments pos and size
+    are converted by the assembler to the instruction fields msbminus32 (the most significant bit of
+    the field, minus 32), in instruction bits 15..11, and lsbminus32 (least significant bit of the
+    field, minus 32), in instruction bits 10..6, as follows:
+    msbminus32 <- pos+size-1-32
+    lsbminus32 <- pos-32
+    msb <- msbminus32 + 32
+    lsb <- lsbminus32 + 32
+
+    For this instruction, the values of pos and size must satisfy all of the following relations:
+    32 <= pos < 64
+    1 <= size <= 32
+    32 < pos+size <= 64
+
+  Operation:
+    lsb <- lsbminus32 + 32
+    msb <- msbminus32 + 32
+    if (lsb > msb) then
+      UNPREDICTABLE
+    endif
+    GPR[rt] <- GPR[rt]63..msb+1 || GPR[rs]msb-lsb..0 || GPR[rt]lsb-1..0
+  */
+op dinsu (rt: R, rs: R, pos: card(6), size: card(5))
+  init = {}
+  syntax = format("dinsu %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
+  image  = format("011111%5s%5s%5s%5s000110", rs.image, rt.image,
+                                              coerce(card(5), pos+coerce(card(6), size)-33),
+                                              coerce(card(5), pos-32))
+  action = {
+    if pos > (pos + coerce(card(6), size) - 1) then
+      unpredicted;
+    endif;
+
+    temp64 = rt<63..0>;
+    temp64_0 = coerce(DWORD, 0xffffFFFFffffFFFF);
+    temp64_0 = temp64_0 >> coerce(card(7), 64) - coerce(card(7), size);
+    temp64_3 = rs<63..0> & temp64_0;
+    temp64_0 = temp64_0 << pos;
+    temp64_3 = temp64_3 << pos;
+    temp64 = temp64 & ~temp64_0;
+    temp64 = temp64 | temp64_3;
+
+    rt = sign_extend(DWORD, temp64);
+  }
+
+/*
+  WSBH: Word Swap Bytes Within Halfwords (MIPS32 Release 2)
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | SPECIAL3 | 0     | rt    | rd    | WSBH  | EXT    |
+            | 011111   | 00000 |       |       | 00010 | 000000 |
+            | 6        | 5     | 5     | 5     | 5     | 6      |
+
+  Format: WSBH rd, rt
+
+  Description: GPR[rd] <- SwapBytesWithinHalfwords(GPR[rt])
+    Within each halfword of the lower word of GPR rt the bytes are swapped, the result is
+    sign-extended, and stored in GPR rd.
+
+  Operation:
+    if NotWordValue(GPR[rt]) then
+      UNPREDICTABLE
+    endif
+    GPR[rd] <- sign_extend(GPR[rt]23..16 || GPR[rt]31..24 || GPR[rt]7..0 || GPR[rt]15..8)
+  */
+op wsbh (rd: R, rt: R)
+  init = {}
+  syntax = format("wsbh %s, %s", rd.syntax, rt.syntax)
+  image  = format("01111100000%5s%5s00010000000", rt.image, rd.image)
+  action = {
+    if sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+
+    temp0 = rt<23..16>::rt<31..24>::rt<7..0>::rt<15..8>;
+
+    rd = sign_extend(DWORD, temp0);
+  }
+
+op Mips64InsertsOp = ext
+                   | ins
+                   | dins
+                   | dinsm
+                   | dinsu
+                   | wsbh
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32 Data Transfer
+//--------------------------------------------------------------------------------------------------
+
+op lui (rt: R, immediate: HWORD)
+  init = {}
+  syntax = format("lui %s, 0x%x", rt.syntax, immediate)
+  image  = format("00000000000000000000000000000000")
+  action = {
+    rt = coerce(LONG, (coerce(INT, immediate) << 16));
+  }
+
+//--------------------------------------------------------------------------------------------------
+
+op MipsAluOp = Mips32ArithmeticOp
+             | Mips32ConditionTestingOp
+             | Mips32LogicalOp
+             | Mips32ShiftOp
+             | Mips64ArithmeticOp
+             | Mips64ShiftOp
+             | Mips64InsertsOp
+             | lui
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

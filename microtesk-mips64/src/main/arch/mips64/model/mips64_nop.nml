@@ -1,0 +1,30 @@
+/*
+ * MicroTESK MIPS64 Edition
+ *
+ * Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS64_NOP_INCLUDED
+#define MIPS64_NOP_INCLUDED
+
+var todo_nop [QWORD] // TODO: Bug #7218
+
+#include "mips_instruction_set/mips_nop.nml"
+
+//==================================================================================================
+// NOP Instructions
+//==================================================================================================
+
+op MIPS64NopOp = nop
+               | ssnop
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

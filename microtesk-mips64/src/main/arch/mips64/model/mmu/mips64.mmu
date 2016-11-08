@@ -1,0 +1,355 @@
+/*
+ * MicroTESK MIPS64 Edition
+ *
+ * Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+//==================================================================================================
+// Address Types
+//==================================================================================================
+
+let VA_BITS = 64
+let PA_BITS = 36
+
+extern K0 = C0_CONFIG0_K0
+
+address VA(value: VA_BITS)
+
+address PA(
+  value : PA_BITS, // Physical Address Itself
+  cca   : 3        // Cache Coherency Algorithm
+)
+
+//==================================================================================================
+// Translation Lookaside Buffers
+//==================================================================================================
+
+// Non-4KB pages are unsupported.
+let EVEN_ODD_BIT = 12
+
+let JTLB_SIZE = 64
+let DTLB_SIZE = 4
+
+register buffer JTLB (va: VA)
+  // Fully associative buffer.
+  ways = JTLB_SIZE
+  sets = 1
+
+  // EntryHi<0..7>   = ASID
+  // EntryHi<8..12>  = ZERO
+  // EntryHi<13..39> = VPN2
+  // EntryHi<40..61> = FILL
+  // EntryHi<62..63> = R
+  //
+  // EntryLo<0>      = G
+  // EntryLo<1>      = V
+  // EntryLo<2>      = D
+  // EntryLo<3..5>   = C
+  // EntryLo<6..29>  = PFN
+  // EntryLo<30..31> = ZERO
+  entry  = (R: 2, FILL_: 22, VPN2: 27, ZERO_: 5, ASID: 8,  // EntryHi
+            R0_: 2, PFN0: 24, C0: 3, D0: 1, V0: 1, G0: 1,  // EntryLo0
+            R1_: 2, PFN1: 24, C1: 3, D1: 1, V1: 1, G1: 1)  // EntryLo0
+  index  = 0
+  // ASID and G fields are unsupported.
+  match  = VPN2<26..(EVEN_ODD_BIT-12)> == va.value<39..(EVEN_ODD_BIT + 1)>
+  // Non-replaceable buffer.
+  policy = NONE
+
+buffer DTLB (va: VA) viewof JTLB
+  ways   = DTLB_SIZE
+  sets   = 1
+  index  = 0
+  // See JTLB.
+  match  = VPN2<26..(EVEN_ODD_BIT-12)> == va.value<39..(EVEN_ODD_BIT + 1)>
+  // Replaceable buffer.
+  policy = FIFO
+
+//==================================================================================================
+// Segments
+//==================================================================================================
+
+segment USEG (va: VA) = (pa: PA)
+  range = (0x0000000000000000, 0x000000007FFFffff)
+
+  var tlbEntry: JTLB.entry;
+
+  var g: 1;
+  var v: 1;
+  var d: 1;
+  var c: 3;
+  var pfn: 24;
+
+  read  = {
+    // The address hits the DTLB.
+    if DTLB(va).hit then
+      tlbEntry = DTLB(va);
+
+      assert(JTLB(va).hit);
+      assert(tlbEntry == JTLB(va));
+    // The address hits the JTLB.
+    elif JTLB(va).hit then
+      tlbEntry = JTLB(va);
+    // The address does not hit the TLB.
+    else
+      exception("TLBMiss");
+    endif; // If the address hits the DTLB.
+
+    // The VPN is even.
+    if va.value<EVEN_ODD_BIT> == 0 then
+      g   = tlbEntry.G0;
+      v   = tlbEntry.V0;
+      d   = tlbEntry.D0;
+      c   = tlbEntry.C0;
+      pfn = tlbEntry.PFN0;
+    // The VPN is odd.
+    else
+      g   = tlbEntry.G1;
+      v   = tlbEntry.V1;
+      d   = tlbEntry.D1;
+      c   = tlbEntry.C1;
+      pfn = tlbEntry.PFN1;
+    endif; // If the VPN is even.
+
+    // The EntryLo is valid.
+    if v == 1 then
+      pa.value = pfn<23..(EVEN_ODD_BIT - 12)>::va.value<(EVEN_ODD_BIT - 1)..0>;
+      pa.cca = c;
+    // The EntryLo is invalid.
+    else
+      exception("TLBInvalid");
+    endif; // If the EntryLo is valid.
+
+    // Update DTLB.
+    DTLB(va) = tlbEntry;
+  }
+
+segment KSEG0 (va: VA) = (pa: PA)
+  range = (0xffffFFFF80000000, 0xffffFFFF9fffFFFF)
+
+  var zero: 7;
+
+  read  = {
+    zero = 0;
+    pa.value = zero::va.value<28..0>;
+    pa.cca = K0;
+  }
+
+segment KSEG1 (va: VA) = (pa: PA)
+  range = (0xffffFFFFa0000000, 0xffffFFFFbfffFFFF)
+
+  var zero: 7;
+
+  read  = {
+    zero = 0;
+    pa.value = zero::va.value<28..0>;
+    pa.cca = 2; // Uncached.
+  }
+
+segment XKPHYS (va: VA) = (pa: PA)
+  range = (0x8000000000000000, 0xbfffFFFFffffFFFF)
+  read  = {
+    pa.value = va.value<(PA_BITS - 1)..0>;
+    pa.cca = va.value<61..59>;
+  }
+
+function TranslateAddress(va: VA): PA
+var pa: PA;
+{
+  if USEG(va).hit then
+    pa = USEG(va);
+    trace("USEG: va=%x, pa=%x", va.value, pa.value);
+  elif KSEG0(va).hit then
+    pa = KSEG0(va);
+    trace("KSEG0: va=%x, pa=%x", va.value, pa.value);
+  elif KSEG1(va).hit then
+    pa = KSEG1(va);
+    trace("KSEG1: va=%x, pa=%x", va.value, pa.value);
+  elif XKPHYS(va).hit then
+    pa = XKPHYS(va);
+    trace("XKPHYS: va=%x, pa=%x", va.value, pa.value);
+  else
+    trace("ERROR: va=%x, pa=%x", va.value, pa.value);
+  endif;
+
+  return pa;
+}
+
+function IsCached(cca: 3): 1 {
+  if cca<1..0> == 2 then
+    return 0;
+  else
+    return 1;
+  endif;
+}
+
+function IsSecondaryBypass(cca: 3): 1 {
+  if cca<1..0> == 2 || cca<1..0> == 3 then
+    return 0;
+  else
+    return 1;
+  endif;
+}
+
+//==================================================================================================
+// Cache Units
+//==================================================================================================
+
+let DATA_BITS = 5
+let DATA_SIZE = 8 * (2 ** DATA_BITS)
+
+let L1_INDEX_BITS = 7
+let L1_SETS = 2 ** L1_INDEX_BITS
+let L1_WAYS = 4
+let L1_TAG_SIZE = PA_BITS - (L1_INDEX_BITS + DATA_BITS)
+
+let L2_INDEX_BITS = 12
+let L2_SETS = 2 ** L2_INDEX_BITS
+let L2_WAYS = 4
+let L2_TAG_SIZE = PA_BITS - (L2_INDEX_BITS + DATA_BITS)
+
+buffer L1 (pa: PA)
+  ways   = L1_WAYS
+  sets   = L1_SETS
+  entry  = (TAG: L1_TAG_SIZE, DATA: DATA_SIZE)
+  index  = pa.value<((L1_INDEX_BITS + DATA_BITS) - 1)..(DATA_BITS)>
+  match  = TAG == pa.value<(PA_BITS - 1)..(L1_INDEX_BITS + DATA_BITS)>
+  policy = PLRU
+
+buffer L2 (pa: PA)
+  ways   = L2_WAYS
+  sets   = L2_SETS
+  entry  = (TAG: L2_TAG_SIZE, DATA: DATA_SIZE)
+  index  = pa.value<((L2_INDEX_BITS + DATA_BITS) - 1)..(DATA_BITS)>
+  match  = TAG == pa.value<(PA_BITS - 1)..(L2_INDEX_BITS + DATA_BITS)>
+  policy = PLRU
+
+//==================================================================================================
+// Main Memory
+//==================================================================================================
+
+let MEM_SETS = 2 ** (PA_BITS - DATA_BITS)
+
+buffer MEM (pa: PA)
+  // Direct-mapped buffer.
+  ways  = 1
+  sets  = MEM_SETS
+  entry = (DATA: DATA_SIZE)
+  index = pa.value<(PA_BITS - 1)..(DATA_BITS)>
+  match = 0
+
+//==================================================================================================
+// Memory Management Unit
+//==================================================================================================
+
+mmu MMU (va: VA) = (data: 64)
+  var pa: PA;
+  var isCached: 1;
+  var l2Bypass: 1;
+  var line: DATA_SIZE;
+  var offset: 8;
+  var bitOffset: 8;
+  var l1Entry: L1.entry;
+  var l2Entry: L2.entry;
+  var memEntry: MEM.entry;
+
+  read = {
+    pa = TranslateAddress(va);
+
+    isCached = IsCached(pa.cca);
+    l2Bypass = IsSecondaryBypass(pa.cca);
+
+    offset<7..6> = 0;
+    offset<5..0> = pa.value<5..0>;
+    bitOffset = offset << 3;
+
+    if isCached == 1 then
+      if L1(pa).hit then
+        l1Entry = L1(pa);
+        line = l1Entry.DATA;
+      else
+        if l2Bypass == 0 then
+          if L2(pa).hit then
+            l2Entry = L2(pa);
+            line = l2Entry.DATA;
+          else
+            line = MEM(pa);
+
+            // Update L2.
+            l2Entry.TAG = pa.value<(PA_BITS - 1)..(L2_INDEX_BITS + DATA_BITS)>;
+            l2Entry.DATA = line;
+            L2(pa) = l2Entry;
+          endif;
+        else
+          line = MEM(pa);
+        endif;
+
+        // Update L1.
+        l1Entry.TAG = pa.value<(PA_BITS - 1)..(L1_INDEX_BITS + DATA_BITS)>;
+        l1Entry.DATA = line;
+        L1(pa) = l1Entry;
+      endif;
+    else
+      line = MEM(pa);
+    endif;
+
+    data = line<(bitOffset + 63)..bitOffset>;
+  }
+
+  write = {
+    pa = TranslateAddress(va);
+
+    offset<7..6> = 0;
+    offset<5..0> = pa.value<5..0>;
+    bitOffset = offset << 3;
+
+    isCached = IsCached(pa.cca);
+    l2Bypass = IsSecondaryBypass(pa.cca);
+
+    if isCached == 1 then
+      if L1(pa).hit then
+        l1Entry = L1(pa);
+        l1Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+        L1(pa) = l1Entry;
+      else
+        if l2Bypass == 0 then
+          if L2(pa).hit then
+            l2Entry = L2(pa);
+            l2Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+            L2(pa) = l2Entry;
+          else
+            memEntry = MEM(pa);
+            memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+            MEM(pa) = memEntry;
+
+            // Update L2.
+            l2Entry.TAG = pa.value<(PA_BITS - 1)..(L2_INDEX_BITS + DATA_BITS)>;
+            l2Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+            L2(pa) = l2Entry;
+          endif;
+        else
+          memEntry = MEM(pa);
+          memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+          MEM(pa) = memEntry;
+        endif;
+
+        // Update L1.
+        l1Entry.TAG = pa.value<(PA_BITS - 1)..(L1_INDEX_BITS + DATA_BITS)>;
+        l1Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+        L1(pa) = l1Entry;
+      endif;
+    else
+      memEntry = MEM(pa);
+      memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+      MEM(pa) = memEntry;
+    endif;
+  }
+
+//==================================================================================================
+// The End
+//==================================================================================================

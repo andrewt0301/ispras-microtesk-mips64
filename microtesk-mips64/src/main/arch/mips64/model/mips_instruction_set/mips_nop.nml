@@ -1,0 +1,74 @@
+/*
+ * MicroTESK MIPS Edition
+ *
+ * Copyright (c) 2015-2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS_NOP_INCLUDED
+#define MIPS_NOP_INCLUDED
+
+//==================================================================================================
+// NOP Instructions
+//==================================================================================================
+
+/*
+  NOP: No Operation (Assembly Idiom)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL 0     0     0     1     SLL
+  000000  00000 00000 00000 00000 000000
+
+  Format: NOP
+
+  Description:
+    NOP is the assembly idiom used to denote no operation. The actual instruction is interpreted by
+    the hardware as SLL r0, r0, 0.
+
+  Operation:
+    None
+ */
+op nop ()
+  init = {}
+  syntax = format("nop")
+  image  = format("00000000000000000000000000000000")
+  action = {
+    // Do nothing.
+  }
+
+/*
+  SSNOP: Superscalar No Operation (Assembly Idiom MIPS32)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL 0     0     0     1     SLL
+  000000  00000 00000 00000 00001 000000
+
+  Format: SSNOP
+
+  Description:
+  SSNOP is the assembly idiom used to denote superscalar no operation. The actual instruction is
+  interpreted by the hardware as SLL r0, r0, 1.
+
+  Operation:
+    None
+ */
+op ssnop ()
+  init = {}
+  syntax = format("ssnop")
+  image  = format("00000000000000000000000001000000")
+  action = {
+    // Do nothing.
+  }
+
+op MipsNopOp = nop
+             | ssnop
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

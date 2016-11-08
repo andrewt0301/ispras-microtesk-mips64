@@ -1,0 +1,1402 @@
+/*
+ * MicroTESK MIPS Edition
+ *
+ * Copyright (c) 2015-2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS_SYS_INCLUDED
+#define MIPS_SYS_INCLUDED
+
+//==================================================================================================
+// System Instructions
+//==================================================================================================
+
+op cache (operation: card(5), offset: SHORT, base: R)
+  init = {}
+  syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
+  image  = format("00000000000000000000000000000000")
+  action = {
+    // Do nothing.
+  }
+
+/*
+  MFHI: Move From HI Register (MIPS32, removed in Release 6)
+
+  31   26 25        16 15 11 10  6 5    0
+  SPECIAL 0            rd    0     MFHI
+  000000  00 0000 0000       00000 010000
+
+  Format: MFHI rd
+
+  Description: GPR[rd] <- HI
+  The contents of special register HI are loaded into GPR rd.
+
+  Operation:
+  GPR[rd] <- HI
+*/
+op mfhi (rd: R)
+  init = {}
+  syntax = format("mfhi %s", rd.syntax)
+  image  = format("0000000000000000%5s00000010000", rd.image)
+  action = {
+    rd = HI;
+  }
+
+/*
+  MFLO: Move From LO Register (MIPS32, removed in Release 6)
+
+  31   26 25        16 15 11 10  6 5    0
+  SPECIAL 0            rd    0     MFLO
+  000000  00 0000 0000       00000 010010
+
+  Description: GPR[rd] <- LO
+  The contents of special register LO are loaded into GPR rd.
+
+  Operation:
+  GPR[rd] <- LO
+*/
+op mflo (rd: R)
+  init = {}
+  syntax = format("mflo %s", rd.syntax)
+  image  = format("0000000000000000%5s00000010010", rd.image)
+  action = {
+    rd = LO;
+  }
+
+/*
+  MTHI: Move to HI Register (MIPS32, removed in Release 6)
+
+  31   26 25 21 20               6 5    0
+  SPECIAL rs    0                  MFHI
+  000000        00 0000 0000 00000 010001
+
+  Format: MTHI rs
+
+  Purpose: Move to HI Register
+  To copy a GPR to the special purpose HI register.
+
+  Description: HI <- GPR[rs]
+  */
+op mthi (rs: R)
+  init = {}
+  syntax = format("mthi %s", rs.syntax)
+  image  = format("000000%5s000000000000000010001", rs.image)
+  action = {
+    HI = rs;
+  }
+
+/*
+  MTLO: Move to LO Register (MIPS32, removed in Release 6)
+
+  31   26 25 21 20               6 5    0
+  SPECIAL rs    0                  MTLO
+  000000        00 0000 0000 00000 010011
+
+  Format: MTHI rs
+
+  Purpose: Move to HI Register
+  To copy a GPR to the special purpose HI register.
+
+  Description: HI <- GPR[rs]
+  */
+op mtlo (rs: R)
+  init = {}
+  syntax = format("mtlo %s", rs.syntax)
+  image  = format("000000%5s000000000000000010011", rs.image)
+  action = {
+    LO = rs;
+  }
+
+var temp_jtlb_index     [DWORD]
+var temp_jtlb_entry_hi  [DWORD]
+var temp_jtlb_entry_lo0 [DWORD]
+var temp_jtlb_entry_lo1 [DWORD]
+var temp_jtlb_entry     [JTLB_ENTRY]
+
+op tlbwi ()
+  init = {}
+  syntax = format("tlbwi")
+  image  = format("00000000000000000000000000000000")
+  action = {
+    temp_jtlb_index     = C0_INDEX;
+    temp_jtlb_entry_hi  = C0_ENTRY_HI;
+    temp_jtlb_entry_lo0 = C0_ENTRY_LO0;
+    temp_jtlb_entry_lo1 = C0_ENTRY_LO1;
+
+    temp_jtlb_entry = temp_jtlb_entry_hi::
+                      temp_jtlb_entry_lo0<31..0>::
+                      temp_jtlb_entry_lo1<31..0>;
+
+    JTLB[temp_jtlb_index] = temp_jtlb_entry;
+  }
+
+op tlbwr ()
+  init = {}
+  syntax = format("tlbwr")
+  image  = format("00000000000000000000000000000000")
+  action = {
+    temp_jtlb_index     = C0_RANDOM;
+    temp_jtlb_entry_hi  = C0_ENTRY_HI;
+    temp_jtlb_entry_lo0 = C0_ENTRY_LO0;
+    temp_jtlb_entry_lo1 = C0_ENTRY_LO1;
+
+    temp_jtlb_entry = temp_jtlb_entry_hi::
+                      temp_jtlb_entry_lo0<31..0>::
+                      temp_jtlb_entry_lo1<31..0>;
+
+    JTLB[temp_jtlb_index] = temp_jtlb_entry;
+  }
+/*
+  WAIT: Enter Standby Mode (MIPS32)
+
+  Encoding: | 31  26 | 25 | 24                          6 | 5    0 |
+            | COP0   | CO | Implementation-dependent code | WAIT   |
+            | 010000 | 1  |                               | 100000 |
+            | 6      | 1  | 19                            | 6      |
+
+  Format: WAIT
+  */
+op wait (code: card(19))
+  init = {}
+  syntax = format("wait 0x%x", code)
+  image  = format("0100001%19s100000", code)
+  action = {
+    // Do nothing.
+  }
+
+/*
+  EHB: Execution Hazard Barrier (Assembly Idiom MIPS32)
+
+  31   26 25 21 20 16 15 11 10  6 5    0
+  SPECIAL 0     0     0     1     SLL
+  000000  00000 00000 00000 00011 000000
+
+  Format: EHB
+
+  Description:
+    EHB is used to denote execution hazard barrier. The actual instruction is interpreted by the
+    hardware as SLL r0, r0, 3.
+
+  Operation:
+    ClearExecutionHazards()
+ */
+op ehb ()
+  init = {}
+  syntax = format("ehb")
+  image  = format("00000000000000000000000011000000")
+  action = {
+    // ClearExecutionHazards()
+  }
+
+//--------------------------------------------------------------------------------------------------
+// MIPS 32/64 System Exception
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    BREAK +
+    SYSCALL +
+    TEQ +
+    TEQI +
+    TGE +
+    TGEI +
+    TGEIU +
+    TGEU +
+    TLT +
+    TLTI +
+    TLTIU +
+    TLTU +
+    TNE +
+    TNEI +
+*/
+
+/*
+  BREAK: Breakpoint (MIPS32)
+
+  Encoding: | 31   26 | 25 6 | 5    0 |
+            | SPECIAL | code | BREAK  |
+            | 000000  |      | 001101 |
+            | 6       | 20   | 6      |
+
+  Format: BREAK
+
+  Description:
+    A breakpoint exception occurs, immediately and unconditionally transferring control to the
+    exception handler. The code field is available for use as software parameters, but is retrieved
+    by the exception handler only by loading the contents of the memory word containing the
+    instruction.
+
+  Operation:
+    SignalException(Breakpoint)
+  */
+op break_ins ()
+  init = {}
+  syntax = format("break")
+  image  = format("00000000000000000000000000001101")
+  action = {
+    exception("Breakpoint");
+  }
+
+/*
+  SYSCALL: System Call (MIPS32)
+
+  Encoding: | 31   26 | 25 6 | 5     0 |
+            | SPECIAL | code | SYSCALL |
+            | 000000  |      | 001100  |
+            | 6       | 20   | 6       |
+
+  Format: SYSCALL
+
+  Description:
+    A system call exception occurs, immediately and unconditionally transferring control to the
+    exception handler. The code field is available for use as software parameters, but is retrieved
+    by the exception handler only by loading the contents of the memory word containing the
+    instruction.
+
+  Operation:
+    SignalException(SystemCall)
+  */
+op syscall ()
+  init = {}
+  syntax = format("syscall")
+  image  = format("00000000000000000000000000001100")
+  action = {
+    exception("SystemCall");
+  }
+
+/*
+  TEQ: Trap if Equal (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TEQ    |
+            | 000000  |       |       |      | 110100 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TEQ rs, rt
+
+  Purpose: Trap if Equal
+    To compare GPRs and do a conditional trap.
+
+  Description: if GPR[rs] = GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is equal to GPR rt, then
+    take a Trap exception.
+    The contents of the code field are ignored by hardware and may be used to encode information for
+    system software. To retrieve the information, system software must load the instruction word
+    from memory.
+
+  Operation:
+    if GPR[rs] = GPR[rt] then
+      SignalException(Trap)
+    endif
+  */
+op teq (rs: R, rt: R)
+  init = {}
+  syntax = format("teq %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110100", rs.image, rs.image)
+  action = {
+    if rs<63..0> == rt<63..0> then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TEQI: Trap if Equal Immediate (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TEQI  | immediate |
+            | 000001 |       | 01100 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TEQI rs, immediate
+
+  Description: if GPR[rs] = immediate then Trap
+    Compare the contents of GPR rs and the 16-bit signed immediate as signed integers. If GPR rs is
+    equal to immediate, then take a Trap exception.
+
+  Operation:
+    if GPR[rs] = sign_extend(immediate) then
+      SignalException(Trap)
+    endif
+  */
+op teqi (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("teqi %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01100%16s", rs.image, immediate)
+  action = {
+    if rs<63..0> == sign_extend(DWORD, immediate) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TGE: Trap if Greater or Equal (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TGE    |
+            | 000000  |       |       |      | 110000 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TGE rs, rt MIPS32
+
+  Description: if GPR[rs] >= GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is greater than or equal
+    to GPR rt, then take a Trap exception.
+    The contents of the code field are ignored by hardware and may be used to encode information for
+    system software.
+    To retrieve the information, the system software must load the instruction word from memory.
+
+  Operation:
+    if GPR[rs] >= GPR[rt] then
+      SignalException(Trap)
+    endif
+  */
+op tge (rs: R, rt: R)
+  init = {}
+  syntax = format("tge %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110000", rs.image, rs.image)
+  action = {
+    if coerce(LONG, rs<63..0>) >= coerce(LONG, rt<63..0>) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TGEI: Trap if Greater or Equal Immediate (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TGEI  | immediate |
+            | 000001 |       | 01000 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TGEI rs, immediate
+
+  Description: if GPR[rs] >= immediate then Trap
+    Compare the contents of GPR rs and the 16-bit signed immediate as signed integers. If GPR rs is
+    greater than or equal to immediate, then take a Trap exception.
+
+  Operation:
+    if GPR[rs] >= sign_extend(immediate) then
+      SignalException(Trap)
+    endif
+  */
+op tgei (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("tgei %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01000%16s", rs.image, immediate)
+  action = {
+    if coerce(LONG, rs<63..0>) >= coerce(LONG, sign_extend(DWORD, immediate)) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TGEIU: Trap if Greater or Equal Immediate Unsigned (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TGEIU | immediate |
+            | 000001 |       | 01001 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TGEIU rs, immediate
+
+  Description: if GPR[rs] >= immediate then Trap
+  Compare the contents of GPR rs and the 16-bit sign-extended immediate as unsigned integers. If GPR
+  rs is greater than or equal to immediate, then take a Trap exception.
+  Because the 16-bit immediate is sign-extended before comparison, the instruction can represent the
+  smallest or largest unsigned numbers. The representable values are at the minimum [0, 32767] or
+  maximum [max_unsigned-32767, max_unsigned] end of the unsigned range.
+
+  Operation:
+    if (0 || GPR[rs]) >= (0 || sign_extend(immediate)) then
+      SignalException(Trap)
+    endif
+  */
+op tgeiu (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("tgeiu %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01001%16s", rs.image, immediate)
+  action = {
+    if rs<63..0> >= sign_extend(DWORD, immediate) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TGEU: Trap if Greater or Equal Unsigned
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TGEU   |
+            | 000000  |       |       |      | 110001 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TGEU rs, rt MIPS32
+
+  Description: if GPR[rs] >= GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as unsigned integers. If GPR rs is greater than or
+    equal to GPR rt, then take a Trap exception.
+    The contents of the code field are ignored by hardware and may be used to encode information for
+    system software.
+    To retrieve the information, the system software must load the instruction word from memory.
+
+  Operation:
+    if (0 || GPR[rs]) <= (0 || GPR[rt]) then
+      SignalException(Trap)
+    endif
+    */
+op tgeu (rs: R, rt: R)
+  init = {}
+  syntax = format("tgeu %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110000", rs.image, rs.image)
+  action = {
+    if rs<63..0> >= rt<63..0> then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TLT: Trap if Less Than (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TLT    |
+            | 000000  |       |       |      | 110010 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TLT rs, rt
+
+  Description: if GPR[rs] < GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is less than GPR rt,
+    then take a Trap exception. The contents of the code field are ignored by hardware and may be
+    used to encode information for system software.
+    To retrieve the information, system software must load the instruction word from memory.
+
+  Operation:
+    if GPR[rs] < GPR[rt] then
+      SignalException(Trap)
+    endif
+  */
+op tlt (rs: R, rt: R)
+  init = {}
+  syntax = format("tlt %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110010", rs.image, rs.image)
+  action = {
+    if coerce(LONG, rs<63..0>) < coerce(LONG, rt<63..0>) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TLTI: Trap if Less Than Immediate (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TLTI  | immediate |
+            | 000001 |       | 01010 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TLTI rs, immediate
+
+  Description: if GPR[rs] <  immediate then Trap
+    Compare the contents of GPR rs and the 16-bit signed immediate as signed integers. If GPR rs is
+    less than immediate, then take a Trap exception.
+
+  Operation:
+    if GPR[rs] < sign_extend(immediate) then
+      SignalException(Trap)
+    endif
+  */
+op tlti (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("tlti %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01010%16s", rs.image, immediate)
+  action = {
+    if coerce(LONG, rs<63..0>) < coerce(LONG, sign_extend(DWORD, immediate)) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TLTIU: Trap if Less Than Immediate Unsigned (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TLTIU | immediate |
+            | 000001 |       | 01011 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TLTIU rs, immediate
+
+  Description: if GPR[rs] < immediate then Trap
+    Compare the contents of GPR rs and the 16-bit sign-extended immediate as unsigned integers. If
+    GPR rs is less than immediate, then take a Trap exception.
+    Because the 16-bit immediate is sign-extended before comparison, the instruction can represent
+    the smallest or largest unsigned numbers. The representable values are at the minimum [0, 32767]
+    or maximum [max_unsigned-32767, max_unsigned] end of the unsigned range.
+
+  Operation:
+    if (0 || GPR[rs]) < (0 || sign_extend(immediate)) then
+      SignalException(Trap)
+    endif
+  */
+op tltiu (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("tltiu %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01011%16s", rs.image, immediate)
+  action = {
+    if rs<63..0> < sign_extend(DWORD, immediate) then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TLTU: Trap if Less Than Unsigned
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TGEU   |
+            | 000000  |       |       |      | 110001 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TLTU rs, rt MIPS32
+
+  Description: if GPR[rs] < GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as unsigned integers. If GPR rs is less than GPR rt,
+    then take a Trap exception.
+    The contents of the code field are ignored by hardware and may be used to encode information for
+    system software. To retrieve the information, system software must load the instruction word
+    from memory.
+
+  Operation:
+    if (0 || GPR[rs]) < (0 || GPR[rt]) then
+      SignalException(Trap)
+    endif
+    */
+op tltu (rs: R, rt: R)
+  init = {}
+  syntax = format("tltu %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110001", rs.image, rs.image)
+  action = {
+    if rs<63..0> < rt<63..0> then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TNE: Trap if Not Equal (MIPS32)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
+            | SPECIAL | rs    | rt    | code | TNE    |
+            | 000000  |       |       |      | 110100 |
+            | 6       | 5     | 5     | 10   | 6      |
+
+  Format: TNE rs, rt
+
+  Description: if GPR[rs] ≠ GPR[rt] then Trap
+    Compare the contents of GPR rs and GPR rt as signed integers. If GPR rs is not equal to GPR rt,
+    then take a Trap exception. The contents of the code field are ignored by hardware and may be
+    used to encode information for system software.
+    To retrieve the information, system software must load the instruction word from memory.
+
+  Operation:
+    if GPR[rs] ≠ GPR[rt] then
+      SignalException(Trap)
+    endif
+  */
+op tne (rs: R, rt: R)
+  init = {}
+  syntax = format("tne %s, %s", rs.syntax, rs.syntax)
+  image  = format("000000%5s%5s0000000000110110", rs.image, rs.image)
+  action = {
+    if rs<63..0> != rt<63..0> then
+      exception("Trap");
+    endif;
+  }
+
+/*
+  TNEI: Trap if Not Equal Immediate (MIPS32, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | REGIMM | rs    | TNEI  | immediate |
+            | 000001 |       | 01110 |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: TNEI rs, immediate
+
+  Description: if GPR[rs] =/= immediate then Trap
+    Compare the contents of GPR rs and the 16-bit signed immediate as signed integers. If GPR rs is
+    not equal to immediate, then take a Trap exception.
+
+  Operation:
+    if GPR[rs] =/= sign_extend(immediate) then
+      SignalException(Trap)
+    endif
+  */
+op tnei (rs: R, immediate: card(16))
+  init = {}
+  syntax = format("tnei %s, %d", rs.syntax, immediate)
+  image  = format("000001%5s01110%16s", rs.image, immediate)
+  action = {
+    if rs<63..0> != sign_extend(DWORD, immediate) then
+      exception("Trap");
+    endif;
+  }
+
+op MipsSysTrapOp = break_ins
+                 | teq
+                 | teqi
+                 | tge
+                 | tgei
+                 | tgeiu
+                 | tgeu
+                 | tlt
+                 | tlti
+                 | tltiu
+                 | tltu
+                 | tne
+                 | tnei
+
+//--------------------------------------------------------------------------------------------------
+// MIPS Debug
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    DERET
+    SDBBP
+*/
+
+/*
+  DERET: Debug Exception Return
+
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | DERET  |
+            | 010000 | 1  | 000 0000 0000 0000 0000 | 011111 |
+            | 6      | 1  | 19                      | 6      |
+
+  Format: DERET EJTAG
+
+  Description:
+    DERET clears execution and instruction hazards, returns from Debug Mode and resumes non-debug
+    execution at the instruction whose address is contained in the DEPC register. DERET does not
+    execute the next instruction (i.e. it has no delay slot).
+
+  Operation:
+    DebugDM <- 0
+    DebugIEXI <- 0
+    if IsMIPS16Implemented() | (Config3ISA > 0) then
+      PC <- DEPC63..1 || 0
+      ISAMode <- DEPC0
+    else
+      PC <- DEPC
+    endif
+    ClearHazards()
+  */
+op deret ()
+  init = {}
+  syntax = format("deret")
+  image  = format("01000010000000000000000000011111")
+  action = {
+    // TODO
+    C0_DEBUG_DM   = coerce(BIT, 0x0);
+    C0_DEBUG_IEXI = coerce(BIT, 0x0);
+    if  coerce(card(2), C0_CONFIG3_ISA) > coerce(card(2), 0x0) then
+    else
+    endif;
+  }
+
+/*
+  SDBBP: Software Debug Breakpoint (EJTAG)
+
+  Encoding: | 31  26  | 25                6 | 5    0 |
+            | SPECIAL | code - use syscall  | SDBBP  |
+            | 000000  |                     | 001110 |
+            | 6       | 20                  | 6      |
+
+  Format: SDBBP code
+
+  Description:
+    This instruction causes a debug exception, passing control to the debug exception handler.
+    If the processor is executing in Debug Mode when the SDBBP instruction is executed, the
+    exception is a Debug Mode Exception, which sets the DebugDExcCode field to the value 0x9 (Bp).
+    The code field can be used for passing information to the debug exception handler, and is
+    retrieved by the debug exception handler only by loading the contents of the memory word
+    containing the instruction, using the DEPC register. The CODE field is not used in any way by
+    the hardware.
+
+  Operation:
+    if Config5.SBRI=1 then / SBRI is a MIPS Release 6 feature /
+      SignalException(ReservedInstruction) endif
+    If DebugDM = 1 then SignalDebugModeBreakpointException() endif // nested
+    SignalDebugBreakpointException() // normal
+  */
+op sdbbp (code_sdbbp: card(20))
+  init = {}
+  syntax = format("sdbbp %d", code_sdbbp)
+  image  = format("000000%20s001110", code_sdbbp)
+  action = {
+    // TODO: Config5
+    if C0_DEBUG_DM == coerce(BIT, 0x1) then
+      exception("SignalDebugModeBreakpointException");
+    endif;
+    exception("SignalDebugBreakpointException");
+  }
+
+op MipsSysDebugOp = deret
+                  | sdbbp
+
+//--------------------------------------------------------------------------------------------------
+// MIPS Coprocessor 0
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+    CACHE
+    DI +
+    DMFC0 +
+    DMTC0 +
+    EI +
+    ERET +
+    MFC0 +
+    MTC0 +
+    TLBP
+    TLBR
+    TLBWI
+    TLBWR
+    WAIT +
+*/
+
+/*
+  DI: Disable Interrupts (MIPS32 Release 2)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10  6 | 5  | 4 3 | 2 0 |
+            | COP0   | MFMC0 | rt    | 12    | 0     | sc | 0   | 0   |
+            | 010000 | 01011 |       | 01100 | 00000 | 0  | 00  | 000 |
+            | 6      | 5     | 5     | 5     | 5     | 1  | 2   | 3   |
+
+  Format: DI
+          DI rt
+
+  Description: GPR[rt] <- Status; StatusIE <- 0
+    The current value of the Status register is sign-extended and loaded into general register rt.
+    The Interrupt Enable (IE) bit in the Status register is then cleared.
+
+  Operation:
+    This operation specification is for the general interrupt enable/disable operation, with the sc
+    field as a variable. The individual instructions DI and EI have a specific value for the sc
+    field.
+    data <- Status
+    GPR[rt] <- sign_extend(data)
+    StatusIE <- 0
+  */
+op di (rt: R)
+  init = {}
+  syntax = format("di %s", rt.syntax)
+  image  = format("01000001011%5s0110000000000000", rt.image)
+  action = {
+    temp64 = C0_STATUS;
+    rt = sign_extend(DWORD, temp64);
+    C0_STATUS_IE = coerce(BIT, 0x0);
+  }
+
+op di2 (bug: R) // TODO: fixed bug
+  init = {}
+  syntax = format("di")
+  image  = format("01000001011000000110000000000000")
+  action = {
+    di(R(0)).action;
+  }
+
+/*
+  EI: Enable Interrupts (MIPS32 Release 2)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10  6 | 5  | 4 3 | 2 0 |
+            | COP0   | MFMC0 | rt    | 12    | 0     | sc | 0   | 0   |
+            | 010000 | 01011 |       | 01100 | 00000 | 1  | 00  | 000 |
+            | 6      | 5     | 5     | 5     | 5     | 1  | 2   | 3   |
+
+  Format: EI
+          EI rt
+
+  Description: GPR[rt] <- Status; StatusIE <- 1
+    The current value of the Status register is sign-extended and loaded into general register rt.
+    The Interrupt Enable (IE) bit in the Status register is then cleared.
+
+  Operation:
+    This operation specification is for the general interrupt enable/disable operation, with the sc
+    field as a variable. The individual instructions DI and EI have a specific value for the sc
+    field.
+    data <- Status
+    GPR[rt] <- sign_extend(data)
+    StatusIE <- 1
+  */
+op ei (rt: R)
+  init = {}
+  syntax = format("ei %s", rt.syntax)
+  image  = format("01000001011%5s0110000000100000", rt.image)
+  action = {
+    temp64 = C0_STATUS;
+    rt = sign_extend(DWORD, temp64);
+    C0_STATUS_IE = coerce(BIT, 0x1);
+  }
+
+op ei2 (bug: R) // TODO: fixed bug
+  init = {}
+  syntax = format("ei")
+  image  = format("01000001011000000110000000100000")
+  action = {
+    ei(R(0)).action;
+  }
+
+/*
+  ERET: Exception Return (MIPS32)
+
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | ERET   |
+            | 010000 | 1  | 000 0000 0000 0000 0000 | 011000 |
+            | 6      | 1  | 19                      | 6      |
+
+  Format: ERET
+
+  Description:
+    ERET clears execution and instruction hazards, conditionally restores SRSCtlCSS from SRSCtlPSS
+    in a Release 2 implementation, and returns to the interrupted instruction at the completion of
+    interrupt, exception, or error processing.
+    ERET does not execute the next instruction (that is, it has no delay slot).
+
+    Operation:
+      if StatusERL = 1 then
+        temp <- ErrorEPC
+        StatusERL <- 0
+      else
+        temp <- EPC
+        StatusEXL <- 0
+        if (ArchitectureRevision ≥ 2) and (SRSCtlHSS > 0) and (StatusBEV = 0) then
+          SRSCtlCSS <- SRSCtlPSS
+        endif
+      endif
+      if IsMIPS16Implemented() | (Config3ISA > 0) then
+        PC <- temp63..1 || 0
+        ISAMode <- temp0
+      else
+        PC <- temp
+      endif
+      LLbit <- 0
+      ClearHazards()
+  */
+op eret ()
+  init = {}
+  syntax = format("eret")
+  image  = format("01000010000000000000000000011000")
+  action = {
+    if  C0_STATUS_ERL == coerce(BIT, 0x1) then
+      temp64 = coerce(DWORD, C0_ERROR_EPC);
+      C0_STATUS_ERL = coerce(BIT, 0x0);
+    else
+      temp64 = coerce(DWORD, C0_EPC);
+      C0_STATUS_EXL = coerce(BIT, 0x0);
+      if coerce(card(3), ArchitectureRevision) >= coerce(card(3), 0x2) &&
+         C0_SRSCTL_HSS > coerce(card(4), 0x0) &&
+         C0_STATUS_BEV == coerce(BIT, 0x0) then
+        C0_SRSCTL_CSS = C0_SRSCTL_PSS;
+      endif;
+    endif;
+    if C0_CONFIG3_ISA > coerce(BIT, 0b0) then
+      temp_bit = coerce(BIT, 0x0);
+      NEXTPC = temp64<63..1>::temp_bit<0>;
+      ISAMode = temp64<0>;
+    else
+      NEXTPC = temp64;
+    endif;
+    LLbit = coerce(BIT, 0x0);
+    //TODO: ClearHazards()
+  }
+
+/*
+  DMFC0: Doubleword Move from Coprocessor 0 (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10      3 | 2 0 |
+            | COP0   | DMF   | rt    | rd    | 0         | sel |
+            | 010000 | 00001 |       |       | 0000 0000 |     |
+            | 6      | 5     | 5     | 5     | 8         | 3   |
+
+  Format: DMFC0 rt, rd
+          DMFC0 rt, rd, sel
+
+  Description: GPR[rt] <- CPR[0,rd,sel]
+    The contents of the coprocessor 0 register are loaded into GPR rt. Note that not all coprocessor
+    0 registers support the sel field. In those instances, the sel field must be zero.
+
+  Operation:
+    // ‘Width’ returns width (32/64) of data returned by CPR
+    if ((Width(CPR[0,rd,sel]) = 32) and (ConfigAR>=2) ) then
+      dataword <- CPR[0,rd,sel]
+      GPR[rt] <- { x0000_0000 || dataword}
+    elseif ((Width(CPR[0,rd,sel]) = 32) and (ConfigAR<2)) then
+      UNDEFINED
+    else
+      datadoubleword <- CPR[0,rd,sel]
+      GPR[rt] <- datadoubleword
+    endif
+  */
+op dmfc0 (rt: R, rd: card(5), sel: card(3))
+  init = {}
+  syntax = format("dmfc0 %s, $%d, %d", rt.syntax, rd, sel)
+  image  = format("01000000001%5s%5s00000000%3s", rt.image, rd, sel)
+  action = {
+    // TODO:
+    CPRGET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action;
+    rt = tempCPR;
+  }
+
+op dmfc0_2 (rt: R, rd: card(5))
+  init = {}
+  syntax = format("dmfc0 %s, $%d", rt.syntax, rd)
+  image  = format("01000000001%5s%5s00000000000", rt.image, rd)
+  action = {
+    dmfc0(rt, rd, 0).action;
+  }
+
+/*
+  DMTC0: Doubleword Move to Coprocessor 0 (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10      3 | 2 0 |
+            | COP0   | DMT   | rt    | rd    | 0         | sel |
+            | 010000 | 00101 |       |       | 0000 0000 |     |
+            | 6      | 5     | 5     | 5     | 8         | 3   |
+
+  Format: DMTC0 rt, rd
+          DMTC0 rt, rd, sel
+
+  Description: CPR[0,rd,sel] <- GPR[rt]
+    The contents of GPR rt are loaded into the coprocessor 0 register specified in the rd and sel
+    fields. Not all coprocessor 0 registers support the sel field. In those instances, the sel field
+    must be zero.
+
+  Operation:
+    // ‘Width’ returns width (32/64) of data returned by CPR.
+    if ((Width(CPR[0,rd,sel]) = 32) and (ConfigAR>=2) ) then
+      dataword <- GPR[rt]31:0
+      CPR[0,rd,sel] <- dataword
+    elseif ((Width(CPR[0,rd,sel]) = 32) and (ConfigAR<2)) then
+      UNDEFINED
+    else
+      datadoubleword <- GPR[rt]
+      CPR[0,rd,sel] <- datadoubleword
+    endif
+  */
+op dmtc0 (rt: R, rd: card(5), sel: card(3))
+  init = {}
+  syntax = format("dmtc0 %s, $%d, %d", rt.syntax, rd, sel)
+  image  = format("01000000101%5s%5s00000000%3s", rt.image, rd, sel)
+  action = {
+    // TODO:
+    tempCPR = rt;
+    CPRSET(coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel)).action;
+  }
+
+op dmtc0_2 (rt: R, rd: card(5))
+  init = {}
+  syntax = format("dmtc0 %s, $%d", rt.syntax, rd)
+  image  = format("01000000101%5s%5s00000000000", rt.image, rd)
+  action = {
+    dmtc0(rt, rd, 0).action;
+  }
+
+/*
+  MFC0: Move from Coprocessor 0 (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10     3 | 2 0 |
+            | COP0   | MF    | rt    | rd    | 0        | sel |
+            | 010000 | 00000 |       |       | 00000000 |     |
+            | 6      | 5     | 5     | 5     | 8        | 3   |
+
+  Format: MFC0 rt, rd
+          MFC0 rt, rd, sel
+
+  Description: GPR[rt] <- CPR[0,rd,sel]
+    The contents of the coprocessor 0 register specified by the combination of rd and sel are
+    sign-extended and loaded into general register rt. Not all coprocessor 0 registers support the
+    sel field. In those instances, the sel field must be zero.
+    When the coprocessor 0 register specified is the EntryLo0 or the EntryLo1 register, the RI/XI
+    fields are moved to bits 31:30 of the destination register. This feature supports MIPS32
+    backward compatibility on a MIPS64 system.
+
+  Operation:
+    reg = rd
+    if IsCoprocessorRegisterImplemented(0, reg, sel) then
+      data <- CPR[0, reg, sel]
+      if (reg,sel = EntryLo1 or reg,sel = EntryLo0) then
+        GPR[rt]29..0 <- data29..0
+        GPR[rt]31 <- data63
+        GPR[rt]30 <- data62
+        GPR[rt]63..32 <- sign_extend(data63)
+      else
+        GPR[rt] <- sign_extend(data)
+      endif
+    else
+      if ArchitectureRevision() ≥ 6 then
+        GPR[rt] <- 0
+      else
+        UNDEFINED
+      endif
+    endif
+  */
+op mfc0 (rt: R, rd: C0_R)
+  init = {}
+  syntax = format("mfc0 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01000000000%5s%5s00000000%3s", rt.image, rd.r, rd.s)
+  action = {
+    rt = rd;
+  }
+
+op mfc0_2 (rt: R, rd: card(5), sel: card(3))
+  init = {}
+  syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
+  image  = format("01000000000%5s%5s00000000%3s", rt.image, rd, sel)
+  action = {
+    CPRGET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action; // output: tempCPR
+    if (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 2) ||
+       (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 3) then
+      temp64<29..0> = tempCPR<29..0>;
+      temp64<31> = tempCPR<63>;
+      temp64<30> = tempCPR<62>;
+      temp64<63..32> = sign_extend(WORD, tempCPR<63>);
+    else
+      rt = sign_extend(DWORD, tempCPR<31..0>);
+    endif;
+    // TODO:
+  }
+
+op mfc0_3 (rt: R, rd: card(5))
+  init = {}
+  syntax = format("mfc0 %s, $%d", rt.syntax, rd)
+  image  = format("01000000000%5s%5s00000000000", rt.image, rd)
+  action = {
+    mfc0_2(rt, rd, 0).action;
+  }
+
+/*
+  MTC0: Move to Coprocessor 0 (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10     3 | 2 0 |
+            | COP0   | MT    | rt    | rd    | 0        | sel |
+            | 010000 | 00100 |       |       | 00000000 |     |
+            | 6      | 5     | 5     | 5     | 8        | 3   |
+
+  Format: MTC0 rt, rd
+          MTC0 rt, rd, sel
+
+  Description: CPR[0, rd, sel] <- GPR[rt]
+    The contents of general register rt are loaded into the coprocessor 0 register specified by the
+    combination of rd and sel. Not all coprocessor 0 registers support the sel field. In those
+    instances, the sel field must be set to zero. When the COP0 destination register specified is
+    the EntryLo0 or the EntryLo1 register, bits 31:30 appear in the RI/XI fields of the destination
+    register. This feature supports MIPS32 backward compatibility on a MIPS64 implementation.
+
+  Operation:
+    data <- GPR[rt]
+    reg <- rd
+    if IsCoprocessorRegisterImplemented (0, reg, sel) then
+      if (reg,sel = EntryLo1 or EntryLo0) then
+        CPR[0,reg,sel]29..0 <- data29..0
+        CPR[0,reg,sel]63 <- data31
+        CPR[0,reg,sel]62 <- data30
+        CPR[0,reg,sel]61:30 <- 032
+      elseif (Width(CPR[0,reg,sel]) = 64) then
+        CPR[0,reg,sel] <- data
+      else
+        CPR[0,reg,sel] <- data31..0
+        if (Config5MVH = 1) then
+          if (Config3LPA = 1) then
+            if (reg,sel = EntryLo0 or EntryLo1) then CPR[0,reg,sel]63:32 = 032
+            endif
+            if (reg,sel = MAAR) then CPR[0,reg,sel]63:32 = 032 endif
+            // TagLo is zeroed only if the implementation-dependent bits are writeable
+            if (reg,sel = TagLo) then CPR[0,reg,sel]63:32 = 032 endif
+            if (Config3VZ = 1) then
+              if (reg,sel = EntryHi) then CPR[0,reg,sel]63:32 = 032 endif
+            endif
+          endif
+        endif
+      endif
+    else
+      if ArchitectureRevision() ≥ 6 then
+        // nop (no exceptions, coprocessor state not modified)
+      else
+        UNDEFINED
+      endif
+    endif
+  */
+op mtc0 (rt: R, rd: C0_R)
+  init = {}
+  syntax = format("mtc0 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01000000100%5s%5s00000000%3s", rt.image, rd.r, rd.s)
+  action = {
+    rd = rt;
+  }
+
+op mtc0_2 (rt: R, rd: card(5), sel: card(3))
+  init = {}
+  syntax = format("mtc0 %s, $%d, %d", rt.syntax, rd, sel)
+  image  = format("01000000100%5s%5s00000000%3s", rt.image, rd, sel)
+  action = {
+    temp64 = rt;
+    if (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 2) ||
+       (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 3) then
+      tempCPR<29..0> = temp64<29..0>;
+      tempCPR<63> = temp64<31>;
+      tempCPR<62> = temp64<30>;
+      tempCPR<61..30> = 0;
+    else
+      tempCPR = temp64;
+    endif;
+
+    CPRSET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action; // input: tempCPR
+    // TODO:
+  }
+
+op mtc0_3 (rt: R, rd: card(5))
+  init = {}
+  syntax = format("mtc0 %s, $%d", rt.syntax, rd)
+  image  = format("01000000100%5s%5s00000000000", rt.image, rd)
+  action = {
+    mtc0_2(rt, rd, 0).action;
+  }
+
+
+/*
+  TLBP: Probe TLB for Matching Entry (MIPS32)
+
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | TLBP   |
+            | 010000 | 1  | 000 0000 0000 0000 0000 | 001000 |
+            | 6      | 1  | 19                      | 6      |
+
+  Format: TLBP MIPS32
+
+  Description:
+    The Index register is loaded with the address of the TLB entry whose contents match the contents
+  of the EntryHi register. If no TLB entry matches, the high-order bit of the Index register is set.
+  */
+op tlbp ()
+  init = {}
+  syntax = format("tlbp")
+  image  = format("01000010000000000000000000001000")
+  action = {
+    //TODO:
+  }
+
+/*
+  TLBR: Read Indexed TLB Entry (MIPS32)
+
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | TLBR   |
+            | 010000 | 1  | 000 0000 0000 0000 0000 | 000001 |
+            | 6      | 1  | 19                      | 6      |
+
+  Format: TLBP MIPS32
+
+  Description:
+    The Index register is loaded with the address of the TLB entry whose contents match the contents
+  of the EntryHi register. If no TLB entry matches, the high-order bit of the Index register is set.
+  */
+op tlbr ()
+  init = {}
+  syntax = format("tlbr")
+  image  = format("01000010000000000000000000000001")
+  action = {
+    //TODO:
+  }
+
+op MipsSysC0Op = di
+               | di2
+               | ei
+               | ei2
+               | eret
+               | dmfc0
+               | dmfc0_2
+               | dmtc0
+               | dmtc0_2
+               | mfc0
+               | mfc0_2
+               | mfc0_3
+               | mtc0
+               | mtc0_2
+               | mtc0_3
+               | tlbwr
+               | tlbp
+               | tlbr
+
+//--------------------------------------------------------------------------------------------------
+// MIPS Coprocessor 2
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+      DMFC2
+      DMTC2
+      MFC2
+      MTC2
+*/
+
+/*
+  DMFC2: Doubleword Move from Coprocessor 2 (MIPS64)
+
+  Format: DMFC2 rt, rd
+          DMFC2 rt, rd, sel
+  */
+op dmfc2 (rt: R, rd: R, sel: card(3))
+  init = {}
+  syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
+  image  = format("01001000001%5s%16s", rt.image, sel)
+  action = {
+    // TODO:
+  }
+
+op dmfc22 (rt: R, rd: R)
+  init = {}
+  syntax = format("dmfc2 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  action = {
+    dmfc2(rt, rd, 0).action;
+  }
+
+/*
+  DMTC2: Doubleword Move to Coprocessor 2 (MIPS64)
+
+  Format: DMTC2 rt, Impl
+          DMTC2 rt, Impl, sel
+  */
+op dmtc2 (rt: R, rd: R, sel: card(3))
+  init = {}
+  syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
+  image  = format("01001000001%5s%16s", rt.image, sel)
+  action = {
+    // TODO:
+  }
+
+op dmtc22 (rt: R, rd: R)
+  init = {}
+  syntax = format("dmtc2 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  action = {
+    dmtc2(rt, rd, 0).action;
+  }
+
+/*
+  MFC2: Doubleword Move from Coprocessor 2 (MIPS64)
+
+  Format: MFC2 rt, Impl
+          MFC2 rt, Impl, sel
+  */
+op mfc2 (rt: R, rd: R, sel: card(3))
+  init = {}
+  syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
+  image  = format("01001000001%5s%16s", rt.image, sel)
+  action = {
+    // TODO:
+  }
+
+op mfc22 (rt: R, rd: R)
+  init = {}
+  syntax = format("mfc2 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  action = {
+    mfc2(rt, rd, 0).action;
+  }
+
+/*
+  MTC2 Move Word to Coprocessor 2 (MIPS64)
+
+  Format: MTC2 rt, Impl
+          MTC2 rt, Impl, sel
+  */
+op mtc2 (rt: R, rd: R, sel: card(3))
+  init = {}
+  syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
+  image  = format("01001000001%5s%16s", rt.image, sel)
+  action = {
+    // TODO:
+  }
+
+op mtc22 (rt: R, rd: R)
+  init = {}
+  syntax = format("mtc2 %s, %s", rt.syntax, rd.syntax)
+  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  action = {
+    mtc2(rt, rd, 0).action;
+  }
+
+op MipsSysC2Op = dmfc2
+               | dmfc22
+               | dmtc2
+               | dmtc22
+               | mfc2
+               | mfc22
+               | mtc2
+               | mtc22
+
+//--------------------------------------------------------------------------------------------------
+// MIPS Load/Store Coprocessor 2
+//--------------------------------------------------------------------------------------------------
+
+/*  Instructions:
+      LDC2
+      LWC2
+*/
+
+/*
+  LDC2: Load Doubleword to Coprocessor 2 (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10   0 |
+            | COP2   | LDC2  | rt    | base  | offset |
+            | 010010 | 01110 |       |       |        |
+            | 6      | 5     | 5     | 5     | 11     |
+
+  Format: LDC2 rt, offset(base)
+*/
+op ldc2 (rt: R, offset: card(11), base: R)
+  init = {}
+  syntax = format("ldc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("01001001110%5s%5s%11s", rt.image, base.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  LWC2: Load Word to Coprocessor 2 (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10   0 |
+            | COP2   | LWC2  | rt    | base  | offset |
+            | 010010 | 01010 |       |       |        |
+            | 6      | 5     | 5     | 5     | 11     |
+
+  Format: LWC2 rt, offset(base)
+*/
+op lwc2 (rt: R, offset: card(11), base: R)
+  init = {}
+  syntax = format("lwc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("01001001010%5s%5s%11s", rt.image, base.image, offset)
+  action = {
+    // TODO:
+  }
+
+op MipsSysLSOp = ldc2
+               | lwc2
+
+op MipsSysOp = MipsSysTrapOp
+             | MipsSysDebugOp
+             | MipsSysC0Op
+             | MipsSysC2Op
+             | MipsSysLSOp
+             | cache
+             | mfhi
+             | mflo
+             | mthi
+             | mtlo
+             | tlbwi
+             | wait
+             | ehb
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

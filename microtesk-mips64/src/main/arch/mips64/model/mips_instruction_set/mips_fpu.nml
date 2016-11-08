@@ -1,0 +1,2375 @@
+/*
+ * MicroTESK MIPS Edition
+ *
+ * Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+#ifndef MIPS_FPU_INCLUDED
+#define MIPS_FPU_INCLUDED
+
+//==================================================================================================
+// FPU Instructions
+//==================================================================================================
+
+let FMT_S  = 16 // Floating point: single
+let FMT_D  = 17 // Floating point: double
+let FMT_W  = 20 // Fixed point: word
+let FMT_L  = 21 // Fixed point: long
+let FMT_PS = 22 // Floating point: paired single
+
+var fmt_fpu [card(5)]
+
+mode FMT_FORMAT_S ()
+  init = { fmt_fpu = coerce(card(5), FMT_S); }
+  syntax = "S"
+  image  = format("%5s", fmt_fpu)
+  action = {}
+
+mode FMT_FORMAT_D ()
+  init = { fmt_fpu = coerce(card(5), FMT_D); }
+  syntax = "D"
+  image  = format("%5s", fmt_fpu)
+  action = {}
+
+mode FMT_FORMAT_W ()
+  init = { fmt_fpu = coerce(card(5), FMT_W); }
+  syntax = "W"
+  image  = format("%5s", fmt_fpu)
+  action = {}
+
+mode FMT_FORMAT_L ()
+  init = { fmt_fpu = coerce(card(5), FMT_L); }
+  syntax = "L"
+  image  = format("%5s", fmt_fpu)
+  action = {}
+
+mode FMT_FORMAT_PS ()
+  init = { fmt_fpu = coerce(card(5), FMT_PS); }
+  syntax = "PS"
+  image  = format("%5s", fmt_fpu)
+  action = {}
+
+mode FMT_FORMAT = FMT_FORMAT_S
+                | FMT_FORMAT_D
+                | FMT_FORMAT_PS
+
+mode FMT_FORMAT_ALL = FMT_FORMAT
+                    | FMT_FORMAT_W
+                    | FMT_FORMAT_L
+//--------------------------------------------------------------------------------------------------
+// FPU Arithmetic
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    ABS.fmt +
+    ADD.fmt +
+    DIV.fmt +
+    MADD.fmt +
+    MSUB.fmt +
+    MUL.fmt +
+    NEG.fmt +
+    NMADD.fmt +
+    NMSUB.fmt +
+    RECIP.fmt +
+    RSQRT.fmt +
+    SQRT.fmt +
+    SUB.fmt +
+*/
+
+/*
+  case fmt of
+  S, W, UNINTERPRETED_WORD:
+    FPR[fpr] <- UNPREDICTABLE32 || value31..0
+
+  D, UNINTERPRETED_DOUBLEWORD:
+    if (FP32RegistersMode = 0)
+      if (fpr0 =/= 0) then
+        UNPREDICTABLE
+      else
+        FPR[fpr] <- UNPREDICTABLE32 || value31..0
+        FPR[fpr+1] <- UNPREDICTABLE32 || value63..32
+      endif
+    else
+      FPR[fpr] <- value
+    endif
+
+  L, OB, QH:
+    if (FP32RegistersMode = 0) then
+      UNPREDICTABLE
+    else
+      FPR[fpr] <- value
+    endif
+  endcase
+*/
+op StoreFPR(fpu_reg_number: card(5), fmt_value: card(5), value: card (64))
+  action = {
+    temp0 = coerce(WORD, 0);
+
+    if (fmt_value == coerce(card(4), FMT_S)) || (fmt_value == coerce(card(4), FMT_W)) then
+      FPR[fpu_reg_number] = temp0<31..0>::value<31..0>;
+    elif (fmt_value == coerce(card(4), FMT_D)) then
+      if FP32RegistersMode == 0 then
+        if fpu_reg_number<0> != 0 then
+          unpredicted;
+        else
+          FPR[fpu_reg_number]   = temp0<31..0>::value<31..0>;
+          FPR[fpu_reg_number+1] = temp0<31..0>::value<63..32>;
+        endif;
+      else
+        FPR[fpu_reg_number] = value<63..0>;
+      endif;
+    elif (fmt_value == coerce(card(4), FMT_L)) then
+      if FP32RegistersMode == 0 then
+        unpredicted;
+      else
+        FPR[fpu_reg_number] = value<63..0>;
+      endif;
+    endif;
+  }
+
+/*
+  ADD.fmt Floating Point Add
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | ft    | fs    | fd   | ADD    |
+            | 010001 |       |       |       |      | 000000 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: ADD.fmt
+          ADD.S  fd, fs, ft (MIPS32)
+          ADD.D  fd, fs, ft (MIPS32)
+          ADD.PS fd, fs, ft (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Description: FPR[fd] <- FPR[fs] + FPR[ft]
+  The value in FPR ft is added to the value in FPR fs. The result is calculated to infinite
+  precision, rounded by using to the current rounding mode in FCSR, and placed into FPR fd. The
+  operands and result are values in format fmt.
+
+  Operation:
+  StoreFPR (fd, fmt, ValueFPR(fs, fmt) + fmt ValueFPR(ft, fmt))
+*/
+op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("add.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%5s000000", op_fmt.image, fs.image, ft.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) + int_to_float(FLOAT32, ft<31..0>);
+      fd = coerce(DWORD, float_to_int(WORD, temp_fp_s));
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, fs<63..0>) + int_to_float(FLOAT64, ft<63..0>);
+      fd = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) + int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      temp_fp_s = int_to_float(FLOAT32, fs<63..32>) + int_to_float(FLOAT32, ft<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  ABS.fmt Floating Point Absolute Value
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | ABS    |
+            | 010001 |       | 00000 |       |      | 000101 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: ABS.fmt
+          ABS.S  fd, fs (MIPS32)
+          ABS.D  fd, fs (MIPS32)
+          ABS.PS fd, fs (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Description: FPR[fd] <- abs(FPR[fs])
+  The absolute value of the value in FPR fs is placed in FPR fd. The operand and result are values
+  in format fmt. ABS.PS takes the absolute value of the two values in FPR fs independently, and ORs
+  together any generated exceptions.
+
+  Operation:
+    StoreFPR(fd, fmt, AbsoluteValue(ValueFPR(fs, fmt)))
+*/
+op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("abs.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s000101", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      fd = fs;
+      fd<31> = coerce(BIT, 0b0);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      fd = fs;
+      fd<63> = coerce(BIT, 0b0);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      fd = fs;
+      fd<31> = coerce(BIT, 0b0);
+      fd<63> = coerce(BIT, 0b0);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  DIV.fmt IFloating Point Divide
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | ft    | fs    | fd   | DIV    |
+            | 010001 |       |       |       |      | 000011 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: DIV.fmt
+          DIV.S fd, fs, ft (MIPS32)
+          DIV.D fd, fs, ft (MIPS32)
+
+  Description: FPR[fd] <- FPR[fs] / FPR[ft]
+  The value in FPR fs is divided by the value in FPR ft. The result is calculated to infinite
+  precision, rounded according to the current rounding mode in FCSR, and placed into FPR fd. The
+  operands and result are values in format fmt.
+
+  Operation:
+    StoreFPR (fd, fmt, ValueFPR(fs, fmt) / ValueFPR(ft, fmt))
+*/
+op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("div.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%5s000011", op_fmt.image, fs.image, ft.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) / int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, fs) / int_to_float(FLOAT64, ft);
+      fd = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) / int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      temp_fp_s = int_to_float(FLOAT32, fs<63..32>) / int_to_float(FLOAT32, ft<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  MADD.fmt Floating Point Multiply Add
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5  3 | 2  0 |
+            | COP1X  | fr    | ft    | fs    | fd   | MADD | fmt  |
+            | 010011 |       |       |       |      | 100  |      |
+            | 6      | 5     | 5     | 5     | 5    | 3    | 3    |
+
+  Format: MADD.fmt
+          MADD.S  fd, fr, fs, ft (MIPS64, MIPS32 Release 2, removed in Release 6)
+          MADD.D  fd, fr, fs, ft (MIPS64, MIPS32 Release 2, removed in Release 6)
+          MADD.PS fd, fr, fs, ft (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Description: FPR[fd] <- (FPR[fs] x FPR[ft]) + FPR[fr]
+  The value in FPR fs is multiplied by the value in FPR ft to produce an intermediate product. The
+  intermediate product is rounded according to the current rounding mode in FCSR. The value in FPR
+  fr is added to the product. The result sum is calculated to infinite precision, rounded according
+  to the current rounding mode in FCSR, and placed into FPR fd. The operands and result are values
+  in format fmt. The results and flags are as if separate floating-point multiply and add
+  instructions were executed.
+  MADD.PS multiplies then adds the upper and lower halves of FPR fr, FPR fs, and FPR ft
+  independently, and ORs together any generated exceptional conditions.
+  The Cause bits are ORed into the Flag bits if no exception is taken.
+
+  Operation:
+    vfr <- ValueFPR(fr, fmt)
+    vfs <- ValueFPR(fs, fmt)
+    vft <- ValueFPR(ft, fmt)
+    StoreFPR(fd, fmt, (vfs x vft) + vfr)
+  */
+op madd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = { op_fmt.init; }
+  syntax = format("madd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
+                                            ft.syntax)
+  image  = format("010011%5s%5s%5s%5s100%3s", fr.image, ft.image, fs.image, fd.image,
+                                              fmt_fpu<4..2>)  //, op_fmt.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
+         int_to_float(FLOAT32, fr<31..0>);
+
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) +
+         int_to_float(FLOAT64, fr<63..0>);
+
+      fd<63..0> = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
+         int_to_float(FLOAT32, fr<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+
+      temp_fp_s = (int_to_float(FLOAT32, fs<63..32>) * int_to_float(FLOAT32, ft<63..32>)) +
+         int_to_float(FLOAT32, fr<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  MSUB.fmt Floating Point Multiply Subtract (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5  3 | 2  0 |
+            | COP1X  | fr    | ft    | fs    | fd   | MSUB | fmt  |
+            | 010011 |       |       |       |      | 101  |      |
+            | 6      | 5     | 5     | 5     | 5    | 3    | 3    |
+
+  Format: MSUB.fmt
+          MSUB.S fd, fr, fs, ft
+          MSUB.D fd, fr, fs, ft
+          MSUB.PS fd, fr, fs, ft
+
+  Description: FPR[fd] <- (FPR[fs] x FPR[ft]) + FPR[fr]
+
+  The value in FPR fs is multiplied by the value in FPR ft to produce an intermediate product. The
+  intermediate product is rounded according to the current rounding mode in FCSR. The subtraction
+  result is calculated to infinite precision, rounded according to the current rounding mode in
+  FCSR, and placed into FPR fd. The operands and result are values in format fmt. The results and
+  flags are as if separate floating-point multiply and subtract instructions were executed.
+
+  MSUB.PS multiplies then subtracts the upper and lower halves of FPR fr, FPR fs, and FPR ft
+  independently, and ORs together any generated exceptional conditions.
+  The Cause bits are ORed into the Flag bits if no exception is taken.
+
+  Operation:
+    vfr <- ValueFPR(fr, fmt)
+    vfs <- ValueFPR(fs, fmt)
+    vft <- ValueFPR(ft, fmt)
+    StoreFPR(fd, fmt, (vfs x vft) - vfr)
+  */
+op msub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = { op_fmt.init; }
+  syntax = format("msub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
+                                            ft.syntax)
+  image  = format("010011%5s%5s%5s%5s101%3s", fr.image, ft.image, fs.image, fd.image,
+                                              fmt_fpu<4..2>)  //, op_fmt.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
+         int_to_float(FLOAT32, fr<31..0>);
+
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) -
+         int_to_float(FLOAT64, fr<63..0>);
+
+      fd<63..0> = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
+         int_to_float(FLOAT32, fr<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+
+      temp_fp_s = (int_to_float(FLOAT32, fs<63..32>) * int_to_float(FLOAT32, ft<63..32>)) -
+         int_to_float(FLOAT32, fr<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  MUL.fmt Floating Point Multiply
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | ft    | fs    | fd   | MUL    |
+            | 010001 |       |       |       |      | 000010 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: MUL.fmt
+          MUL.S fd, fs, ft (MIPS32)
+          MUL.D fd, fs, ft (MIPS32)
+          MUL.PS fd, fs, ft (MIPS64, MIPS32 Release 3, removed in Release 6)
+
+  Description: FPR[fd] <- FPR[fs] x FPR[ft]
+    The value in FPR fs is multiplied by the value in FPR ft. The result is calculated to infinite
+    precision, rounded according to the current rounding mode in FCSR, and placed into FPR fd. The
+    operands and result are values in format fmt.
+    MUL.PS multiplies the upper and lower halves of FPR fs and FPR ft independently, and ORs
+    together any generated     exceptional conditions.
+
+  Operation:
+    StoreFPR (fd, fmt, ValueFPR(fs, fmt) x ValueFPR(ft, fmt))
+*/
+op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("mul.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%5s000011", op_fmt.image, fs.image, ft.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, fs) * int_to_float(FLOAT64, ft);
+      fd = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      temp_fp_s = int_to_float(FLOAT32, fs<63..32>) * int_to_float(FLOAT32, ft<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  NEG.fmt Floating Point Negate
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | NEG    |
+            | 010001 |       | 00000 |       |      | 000111 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: NEG.fmt
+          NEG.S fd, fs (MIPS32)
+          NEG.D fd, fs (MIPS32)
+          NEG.PS fd, fs (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Description: FPR[fd]  -FPR[fs]
+    The value in FPR fs is negated and placed into FPR fd. The value is negated by changing the sign
+    bit value. The operand and result are values in format fmt. NEG.PS negates the upper and lower
+    halves of FPR fs independently, and ORs together any generated exceptional conditions.
+
+    If FIRHas2008=0 or FCSRABS2008=0 then this operation is arithmetic. For this case, any NaN
+    operand signals invalid operation.
+
+    If FCSRABS2008=1 then this operation is non-arithmetic. For this case, both regular floating
+    point numbers and NAN values are treated alike, only the sign bit is affected by this
+    instruction. No IEEE 754 exception can be generated for this case, and the FCSRCause and
+    FCSRFlags fields are not modified.
+
+  Operation:
+    StoreFPR(fd, fmt, Negate(ValueFPR(fs, fmt)))
+*/
+op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("neg.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s000111", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      fd = fs;
+      fd<31> = coerce(BIT, ~fs<31>);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      fd = fs;
+      fd<63> = coerce(BIT, ~fs<63>);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      fd = fs;
+      fd<31> = coerce(BIT, ~fs<31>);
+      fd<63> = coerce(BIT, ~fs<63>);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  NMADD.fmt Floating Point Negative Multiply Add (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5   3 | 2  0 |
+            | COP1X  | fr    | ft    | fs    | fd   | NMADD | fmt  |
+            | 010011 |       |       |       |      | 110   |      |
+            | 6      | 5     | 5     | 5     | 5    | 3     | 3    |
+
+  Format: NMADD.fmt
+          NMADD.S fd, fr, fs, ft
+          NMADD.D fd, fr, fs, ft
+          NMADD.PS fd, fr, fs, ft
+
+  Description: FPR[fd] <- -(FPR[fs] x FPR[ft]) + FPR[fr]
+    The value in FPR fs is multiplied by the value in FPR ft to produce an intermediate product. The
+    intermediate product is rounded according to the current rounding mode in FCSR. The value in FPR
+    fr is added to the product.
+    The result sum is calculated to infinite precision, rounded according to the current rounding
+    mode in FCSR, negated by changing the sign bit, and placed into FPR fd. The operands and result
+    are values in format fmt. The results and flags are as if separate floating-point multiply and
+    add and negate instructions were executed.
+    NMADD.PS applies the operation to the upper and lower halves of FPR fr, FPR fs, and FPR ft
+    independently, and ORs together any generated exceptional conditions.
+    The Cause bits are ORed into the Flag bits if no exception is taken.
+
+  Operation:
+    vfr <- ValueFPR(fr, fmt)
+    vfs <- ValueFPR(fs, fmt)
+    vft <- ValueFPR(ft, fmt)
+    StoreFPR(fd, fmt, -(vfr +fmt (vfs xfmt vft)))
+  */
+op nmadd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = { op_fmt.init; }
+  syntax = format("nmadd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
+                                            ft.syntax)
+  image  = format("010011%5s%5s%5s%5s110%3s", fr.image, ft.image, fs.image, fd.image,
+                                              fmt_fpu<4..2>)  //, op_fmt.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
+         int_to_float(FLOAT32, fr<31..0>);
+
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      fd<31> = ~fd<31>;
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) +
+         int_to_float(FLOAT64, fr<63..0>);
+
+      fd<63..0> = float_to_int(DWORD, temp_fp_d);
+      fd<63> = ~fd<63>;
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
+         int_to_float(FLOAT32, fr<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      fd<31> = ~fd<31>;
+
+      temp_fp_s = (int_to_float(FLOAT32, fs<63..32>) * int_to_float(FLOAT32, ft<63..32>)) +
+         int_to_float(FLOAT32, fr<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+      fd<63> = ~fd<63>;
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  NMSUB.fmt Floating Point Negative Multiply Subtract (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5   3 | 2  0 |
+            | COP1X  | fr    | ft    | fs    | fd   | NMSUB | fmt  |
+            | 010011 |       |       |       |      | 111   |      |
+            | 6      | 5     | 5     | 5     | 5    | 3     | 3    |
+
+  Format: NMSUB.fmt
+          NMSUB.S fd, fr, fs, ft
+          NMSUB.D fd, fr, fs, ft
+          NMSUB.PS fd, fr, fs, ft
+
+  Description: FPR[fd] <- -(FPR[fs] x FPR[ft]) - FPR[fr]
+    The value in FPR fs is multiplied by the value in FPR ft to produce an intermediate product. The
+    intermediate product is rounded according to the current rounding mode in FCSR. The value in FPR
+    fr is subtracted from the product.
+    The result is calculated to infinite precision, rounded according to the current rounding mode
+    in FCSR, negated by changing the sign bit, and placed into FPR fd. The operands and result are
+    values in format fmt. The results and flags are as if separate floating-point multiply and
+    subtract and negate instructions were executed.
+    NMSUB.PS applies the operation to the upper and lower halves of FPR fr, FPR fs, and FPR ft
+    independently, and ORs together any generated exceptional conditions.
+    The Cause bits are ORed into the Flag bits if no exception is taken.
+
+  Operation:
+    vfr <- ValueFPR(fr, fmt)
+    vfs <- ValueFPR(fs, fmt)
+    vft <- ValueFPR(ft, fmt)
+    StoreFPR(fd, fmt, -((vfs xfmt vft) -fmt vfr))
+  */
+op nmsub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = { op_fmt.init; }
+  syntax = format("nmsub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
+                                            ft.syntax)
+  image  = format("010011%5s%5s%5s%5s111%3s", fr.image, ft.image, fs.image, fd.image,
+                                              fmt_fpu<4..2>)  //, op_fmt.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
+         int_to_float(FLOAT32, fr<31..0>);
+
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      fd<31> = ~fd<31>;
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) -
+         int_to_float(FLOAT64, fr<63..0>);
+
+      fd<63..0> = float_to_int(DWORD, temp_fp_d);
+      fd<63> = ~fd<63>;
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
+         int_to_float(FLOAT32, fr<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      fd<31> = ~fd<31>;
+
+      temp_fp_s = (int_to_float(FLOAT32, fs<63..32>) * int_to_float(FLOAT32, ft<63..32>)) -
+         int_to_float(FLOAT32, fr<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+      fd<63> = ~fd<63>;
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  RECIP.fmt Reciprocal Approximation (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | RECIP  |
+            | 010001 |       | 00000 |       |      | 010101 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: RECIP.fmt
+          RECIP.S fd, fs
+          RECIP.D fd, fs
+
+  Description: FPR[fd] <- 1.0 / FPR[fs]
+    The reciprocal of the value in FPR fs is approximated and placed into FPR fd. The operand and
+    result are values in format fmt.
+    The numeric accuracy of this operation is implementation dependent. It does not meet the
+    accuracy specified by the IEEE 754 Floating Point standard. The computed result differs from the
+    both the exact result and the IEEE-mandated representation of the exact result by no more than
+    one unit in the least-significant place (ULP).
+    It is implementation dependent whether the result is affected by the current rounding mode in
+    FCSR.
+
+  Operation:
+    StoreFPR(fd, fmt, 1.0 / valueFPR(fs, fmt))
+*/
+op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("recip.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s010101", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    temp = coerce(WORD, 1);
+
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, temp) / int_to_float(FLOAT32, fs<31..0>);
+      fd = coerce(DWORD, float_to_int(WORD, temp_fp_s));
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, temp) / int_to_float(FLOAT64, fs<63..0>);
+      fd = float_to_int(DWORD, temp_fp_d);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  RSQRT.fmt Reciprocal Square Root Approximation (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | RSQRT  |
+            | 010001 |       | 00000 |       |      | 010110 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: RSQRT.fmt
+          RSQRT.S fd, fs
+          RSQRT.D fd, fs
+
+  Description: FPR[fd] <- 1.0 / sqrt(FPR[fs])
+    The reciprocal of the positive square root of the value in FPR fs is approximated and placed
+    into FPR fd. The operand and result are values in format fmt.
+    The numeric accuracy of this operation is implementation dependent; it does not meet the
+    accuracy specified by the IEEE 754 Floating Point standard. The computed result differs from
+    both the exact result and the IEEE-mandated representation of the exact result by no more than
+    two units in the least-significant place (ULP).
+    The effect of the current FCSR rounding mode on the result is implementation dependent.
+
+  Operation:
+    StoreFPR(fd, fmt, 1.0 / SquareRoot(valueFPR(fs, fmt)))
+*/
+op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("rsqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s010110", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    temp = coerce(WORD, 1);
+
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, temp) / sqrt(int_to_float(FLOAT32, fs<31..0>));
+      fd = coerce(DWORD, float_to_int(WORD, temp_fp_s));
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, temp) / sqrt(int_to_float(FLOAT64, fs<63..0>));
+      fd = float_to_int(DWORD, temp_fp_d);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  SQRT.fmt Floating Point Square Root (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | SQRT  |
+            | 010001 |       | 00000 |       |      | 000100 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: SQRT.fmt
+          SQRT.S fd, fs
+          SQRT.D fd, fs
+
+  Description: FPR[fd] <- SQRT(FPR[fs])
+    The square root of the value in FPR fs is calculated to infinite precision, rounded according to
+    the current rounding mode in FCSR, and placed into FPR fd. The operand and result are values in
+    format fmt.
+    If the value in FPR fs corresponds to – 0, the result is – 0.
+
+  Operation:
+    StoreFPR(fd, fmt, 1.0 / SquareRoot(valueFPR(fs, fmt)))
+*/
+op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("sqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s000100", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = sqrt(int_to_float(FLOAT32, fs<31..0>));
+      fd = coerce(DWORD, float_to_int(WORD, temp_fp_s));
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = sqrt(int_to_float(FLOAT64, fs<63..0>));
+      fd = float_to_int(DWORD, temp_fp_d);
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  SUB.fmt Floating Point Subtract
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | ft    | fs    | fd   | SUB    |
+            | 010001 |       |       |       |      | 000001 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: SUB.fmt
+          SUB.S fd, fs, ft (MIPS32)
+          SUB.D fd, fs, ft (MIPS32)
+          SUB.PS fd, fs, ft (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Description: FPR[fd] <- FPR[fs] - FPR[ft]
+    The value in FPR ft is subtracted from the value in FPR fs. The result is calculated to infinite
+    precision, rounded according to the current rounding mode in FCSR, and placed into FPR fd. The
+    operands and result are values in format fmt. SUB.PS subtracts the upper and lower halves of FPR
+    fs and FPR ft independently, and ORs together any generated exceptional conditions.
+
+  Operation:
+    StoreFPR (fd, fmt, ValueFPR(fs, fmt) - fmt ValueFPR(ft, fmt))
+*/
+op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("sub.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%5s000000", op_fmt.image, fs.image, ft.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) - int_to_float(FLOAT32, ft<31..0>);
+      fd = coerce(DWORD, float_to_int(WORD, temp_fp_s));
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d = int_to_float(FLOAT64, fs<63..0>) - int_to_float(FLOAT64, ft<63..0>);
+      fd = float_to_int(DWORD, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_PS) then
+      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) - int_to_float(FLOAT32, ft<31..0>);
+      fd<31..0> = float_to_int(WORD, temp_fp_s);
+      temp_fp_s = int_to_float(FLOAT32, fs<63..32>) - int_to_float(FLOAT32, ft<63..32>);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+  }
+
+  op MIPS64FpuArithmeticRR = abs_fmt
+                           | neg_fmt
+                           | recip_fmt
+                           | rsqrt_fmt
+                           | sqrt_fmt
+
+  op MIPS64FpuArithmeticRRR = add_fmt
+                            | div_fmt
+                            | mul_fmt
+                            | sub_fmt
+
+  op MIPS64FpuArithmeticRRRR = madd_fmt
+                             | msub_fmt
+                             | nmadd_fmt
+                             | nmsub_fmt
+
+  op MIPS64FpuArithmetic = MIPS64FpuArithmeticRR
+                         | MIPS64FpuArithmeticRRR
+                         | MIPS64FpuArithmeticRRRR
+
+//--------------------------------------------------------------------------------------------------
+// FPU Branch
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    C.cond.fmt
+    BC1F
+    BC1FL
+    BC1T
+    BC1TL
+*/
+
+type  CC_FPU = card(3)
+
+var fpu_cond[card(4)]
+
+// FPU Comparisons Without Special Operand Exceptions
+mode F_COND ()
+  init = {fpu_cond = coerce(card(4), 0);}
+  syntax = "F"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode UN_COND ()
+  init = {fpu_cond = coerce(card(4), 1);}
+  syntax = "UN"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode EQ_COND ()
+  init = {fpu_cond = coerce(card(4), 2);}
+  syntax = "EQ"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode UEQ_COND ()
+  init = {fpu_cond = coerce(card(4), 3);}
+  syntax = "UEQ"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode OLT_COND ()
+  init = {fpu_cond = coerce(card(4), 4);}
+  syntax = "OLT"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode ULT_COND ()
+  init = {fpu_cond = coerce(card(4), 5);}
+  syntax = "ULT"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode OLE_COND ()
+  init = {fpu_cond = coerce(card(4), 6);}
+  syntax = "OLE"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode ULE_COND ()
+  init = {fpu_cond = coerce(card(4), 7);}
+  syntax = "ULE"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+// FPU Comparisons With Special Operand Exceptions for QNaNs
+
+mode SF_COND ()
+  init = {fpu_cond = coerce(card(4), 8);}
+  syntax = "SF"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode NGLE_COND ()
+  init = {fpu_cond = coerce(card(4), 9);}
+  syntax = "NGLE"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode SEQ_COND ()
+  init = {fpu_cond = coerce(card(4), 10);}
+  syntax = "SEQ"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode NGL_COND ()
+  init = {fpu_cond = coerce(card(4), 11);}
+  syntax = "NGL"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode LT_COND ()
+  init = {fpu_cond = coerce(card(4), 12);}
+  syntax = "LT"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode NGE_COND ()
+  init = {fpu_cond = coerce(card(4), 13);}
+  syntax = "NGE"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode LE_COND ()
+  init = {fpu_cond = coerce(card(4), 14);}
+  syntax = "LE"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode NGT_COND ()
+  init = {fpu_cond = coerce(card(4), 15);}
+  syntax = "NGT"
+  image  = format("%4s", fpu_cond)
+  action = {}
+
+mode FPU_COND_TYPE = F_COND
+                   | UN_COND
+                   | EQ_COND
+                   | UEQ_COND
+                   | OLT_COND
+                   | ULT_COND
+                   | OLE_COND
+                   | ULE_COND
+                   | SF_COND
+                   | NGLE_COND
+                   | SEQ_COND
+                   | NGL_COND
+                   | LT_COND
+                   | NGE_COND
+                   | LE_COND
+                   | NGT_COND
+
+/*
+  C.cond.fmt Floating Point Compare (MIPS32, MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 8 | 7 | 6 | 5 4 | 3  0 |
+            | COP1   | fmt   | ft    | fs    | cc   | 0 | A | FC  | cond |
+            | 010001 |       |       |       |      |   | 0 | 11  |      |
+            | 6      | 5     | 5     | 5     | 3    | 1 | 1 | 2   | 4    |
+
+  Format: C.cond.fmt
+          C.cond.S fs, ft (cc = 0 implied)  MIPS32, removed in Release 6
+          C.cond.D fs, ft (cc = 0 implied)  MIPS32, removed in Release 6
+          C.cond.PS fs, ft(cc = 0 implied)  MIPS64, MIPS32 Release 2, removed in Release 6
+          C.cond.S cc, fs, ft               MIPS32, removed in Release 6
+          C.cond.D cc, fs, ft               MIPS32, removed in Release 6
+          C.cond.PS cc, fs, ft              MIPS64, MIPS32 Release 2, removed in Release 6
+
+  Description: FPConditionCode(cc) <- FPR[fs] compare_cond FPR[ft]
+    The value in FPR fs is compared to the value in FPR ft; the values are in format fmt. The
+    comparison is exact and neither overflows nor underflows.
+    If the comparison specified by the cond field of the instruction is true for the operand values,
+    the result is true; otherwise, the result is false. If no exception is taken, the result is
+    written into condition code CC; true is 1 and false is 0.
+
+  Operation:
+    if SNaN(ValueFPR(fs, fmt)) or SNaN(ValueFPR(ft, fmt)) or
+    QNaN(ValueFPR(fs, fmt)) or QNaN(ValueFPR(ft, fmt)) then
+      less <- false
+      equal <- false
+      unordered <- true
+      if (SNaN(ValueFPR(fs,fmt)) or SNaN(ValueFPR(ft,fmt))) or
+      (cond3 and (QNaN(ValueFPR(fs,fmt)) or QNaN(ValueFPR(ft,fmt)))) then
+        SignalException(InvalidOperation)
+      endif
+    else
+      less <- ValueFPR(fs, fmt) < fmt ValueFPR(ft, fmt)
+      equal <- ValueFPR(fs, fmt) = fmt ValueFPR(ft, fmt)
+      unordered <- false
+    endif
+    condition <- (cond2 and less) or (cond1 and equal)
+      or (cond0 and unordered)
+    SetFPConditionCode(cc, condition)
+  */
+op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, ft: FR)
+  init = {}
+  syntax = format("c.%s.%s %d, %s, %s",
+                  cond_value.syntax, op_fmt.syntax, cc, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%3s0011%4s",
+                  op_fmt.image, ft.image, fs.image, cc, cond_value.image)
+  action = {
+
+    // D
+    temp_fp_d  = int_to_float(FLOAT64, fs<63..0>);
+    temp_fp_d2 = int_to_float(FLOAT64, ft<63..0>);
+
+    if is_nan(temp_fp_d) then
+      trace("X");
+    endif;
+ //   if is_nan(temp_fp_d) || is_nan(temp_fp_d2) ||
+//       is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2)
+  //     then
+      // TODO: Bug #7403 ... to continue
+  //  endif;
+  }
+
+let CC_COND2 = 0 // cc = 0
+op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
+  init = {}
+  syntax = format("c.%s.%s %s, %s",
+                  cond_value.syntax, op_fmt.syntax, fs.syntax, ft.syntax)
+  image  = format("010001%5s%5s%5s%3s0011%4s",
+                  op_fmt.image, ft.image, fs.image, coerce(card(3), CC_COND2), cond_value.image)
+  action = {
+    C_cond(cond_value, op_fmt, coerce(card(3), CC_COND2), fs, ft).action;
+  }
+
+reg FPConditionCode_value[BIT]
+
+/*
+  The FPConditionCode function returns the value of a specific floating point condition code.
+
+  Code:
+  tf <- FPConditionCode(cc)
+    // tf: The value of the specified condition code
+    // cc: The Condition code number in the range 0..7
+    if cc = 0 then
+      FPConditionCode <- FCSR23
+    else
+      FPConditionCode <- FCSR24+cc
+    endif
+  endfunction FPConditionCode
+*/
+op FPConditionCode (cc: card(3))
+  action = {
+    if cc == 0 then
+      FPConditionCode_value = FCSR_FCC_0;
+    else
+      FPConditionCode_value = FCSR_FCC_1_7<cc>;
+    endif;
+  }
+
+/*
+  BC1F Branch on FP False (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15   0 |
+            | COP1    | BC    | cc    | nd | tf | offset |
+            | 010001  | 01000 | 3     | 0  | 0  |        |
+            | 6       | 5     | 3     | 1  | 1  | 16     |
+
+  Format: BC1F offset (cc = 0 implied)
+          BC1F cc, offset
+
+  Description: if FPConditionCode(cc) = 0 then branch
+    An 18-bit signed offset (the 16-bit offset field shifted left 2 bits) is added to the address of
+    the instruction following the branch (not the branch itself) in the branch delay slot to form a
+    PC-relative effective target address. If the FP condition code bit cc is false (0), the program
+    branches to the effective target address after the instruction in the delay slot is executed. An
+    FP condition code is set by the FP compare instruction, C.cond.fmt.
+
+  Operation:
+    I:
+    condition <- FPConditionCode(cc) = 0
+    target_offset <- (offset15)GPRLEN-(16+2) || offset || 02
+    I+1:
+    if condition then
+      PC <- PC + target_offset
+    endif
+  */
+op bc1f (cc: card(3), offset: SHORT)
+  init = {}
+  syntax = format("bc1f %d, %<label>d", cc, offset)
+  image  = format("01000101000%3s00%16s", cc, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, 0) then
+      BRANCH = 1;
+      NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
+    endif;
+  }
+
+  op MIPS64FpuBranchOp = bc1f
+
+  op MIPS64FpuBranchCond = C_cond
+                         | C_cond2
+
+  op MIPS64FpuBranch = MIPS64FpuBranchCond
+                     | MIPS64FpuBranchOp
+
+//--------------------------------------------------------------------------------------------------
+// FPU Load/Store
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    LDC1 +
+    LDXC1
+    LUXC1
+    LWC1
+    LWXC1
+    PREFX
+    SDC1
+    SDXC1
+    SUXC1
+    SWC1
+    SWXC1
+*/
+
+let MEM_FPU_DWORD = 8
+let MEM_FPU_WORD  = 4
+//let MEM_FPU_HWORD = 2
+//let MEM_FPU_BYTE  = 1
+
+var temp_fpu_byte_offset[card(3)]
+
+var load_fpu_temp64[DWORD]
+var address_load_fpu[DWORD]
+var error_address_load_fpu[WORD]
+
+op mips64_load_fpu (load_op: card(4), rt: FR, load_offset: DWORD, load_base: R)
+  action = {
+    address_load_fpu = load_base + load_offset;
+
+    load_fpu_temp64 = MEM[address_load_fpu >> 3];
+    temp_fpu_byte_offset<1..0> = address_load_fpu<1..0> ^ coerce(card(2), 0b0);
+    temp_fpu_byte_offset<2> = address_load_fpu<2> ^ coerce(card(1), BigEndianCPU);
+
+    error_address_load_fpu = coerce(WORD, temp_fpu_byte_offset<2..0>) % coerce(WORD, load_op);
+    if error_address_load_fpu > coerce(WORD, 0) then
+      C0_EPC = CIA;
+      exception("AddressError: mips64_load_fpu");
+      trace("type = 0x%x", load_op);
+    endif;
+
+    temp = coerce(WORD, 8) * coerce(WORD, temp_fpu_byte_offset<2..0>);
+    temp64_0 = load_fpu_temp64 >> temp;
+
+      if load_op == coerce(card(4), MEM_FPU_DWORD) then
+        //DWORD
+        rt = load_fpu_temp64<63..32>::load_fpu_temp64<31..0>;
+      elif load_op == coerce(card(4), MEM_FPU_WORD) then
+        //WORD
+        rt = sign_extend(DWORD, temp64_0<31..0>);
+      else
+        exception("mips64_load signed: error");
+      endif;
+  }
+
+op mips64_load_fpu_short (load_op: card(4), rt: FR, load_offset: SHORT, load_base: R)
+  action = {
+    temp64 = sign_extend(DWORD, load_offset);
+    mips64_load_fpu(load_op, rt, temp64, load_base).action;
+  }
+
+/*
+  LDC1 Load Doubleword to Floating Point (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LDC1   | base  | ft    | offset |
+            | 110101 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LDC1 ft, offset(base)
+
+  Description: FPR[ft] <- memory[GPR[base] + offset]
+  The contents of the 64-bit doubleword at the memory location specified by the aligned effective
+  address are fetched and placed in FPR ft. The 16-bit signed offset is added to the contents of GPR
+  base to form the effective address.
+
+  Operation:
+    vAddr <- sign_extend(offset) + GPR[base]
+    (pAddr, CCA) <- AddressTranslation (vAddr, DATA, LOAD)
+    memdoubleword <- LoadMemory(CCA, DOUBLEWORD, pAddr, vAddr, DATA)
+    paddr <- paddr xor ((BigEndianCPU xor ReverseEndian) || 02)
+    memlsw <- LoadMemory(CCA, WORD, pAddr, vAddr, DATA)
+    paddr <- paddr xor 0b100
+    memmsw <- LoadMemory(CCA, WORD, pAddr, vAddr+4, DATA)
+    memdoubleword <- memmsw || memlsw
+    StoreFPR(ft, UNINTERPRETED_DOUBLEWORD, memdoubleword)
+*/
+op ldc1 (ft: FR, offset: SHORT, base: R)
+  init = {}
+  syntax = format("ld %s, %d(%s)", ft.syntax, offset, base.syntax)
+  image  = format("110101%5s%5s%16s", base.image, ft.syntax, offset)
+  action = {
+    mips64_load_fpu_short(MEM_FPU_DWORD, ft, offset, base).action;
+  }
+
+op ldxc1 (fd: FR, index: R, base: R)
+  init = {}
+  syntax = format("ld %s, %s(%s)", fd.syntax, index.syntax, base.syntax)
+  image  = format("110101%5s%5s00000%5s000001", base.image, index.image, fd.image)
+  action = {
+    mips64_load_fpu(MEM_FPU_DWORD, fd, coerce(DWORD, index<63..0>), base).action;
+  }
+
+/**/
+
+  op MIPS64FpuMEM = ldc1
+                  | ldxc1
+
+//--------------------------------------------------------------------------------------------------
+// FPU Move
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    CFC1
+CTC1
+DMFC1
+DMTC1
+MFC1
+MFHC1
+MTC1
+MTHC1
+MOV.fmt
+MOVF.fmt
+MOVN.fmt
+MOVT.fmt
+MOVZ.fmt
+*/
+
+/*
+  CFC1: Move Control Word From Floating Point (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | CF    | rt    | fs    |               |
+            | 010001 | 00010 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: CFC1 rt, fs
+
+  Description: GPR[rt] <- FP_Control[fs]
+    Copy the 32-bit word from FP (coprocessor 1) control register fs into GPR rt, sign-extending it
+    to 64 bits.
+*/
+op cfc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("cfc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100010%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    // TODO:
+    rt = sign_extend(DWORD, fs<31..0>);
+  }
+
+/*
+  CTC1: Move Control Word to Floating Point (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | CT    | rt    | fs    |               |
+            | 010001 | 00110 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: CTC1 rt, fs
+
+  Description: FP_Control[fs] <- GPR[rt]
+    Copy the low word from GPR rt into the FP (coprocessor 1) control register indicated by fs.
+  */
+op ctc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("ctc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100110%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    // TODO:
+    fs<31..0> = rt<31..0>;
+  }
+
+/*
+  DMFC1: Doubleword Move from Floating Point (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | DMF   | rt    | fs    |               |
+            | 010001 | 00001 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: DMFC1 rt, fs
+
+  Description: GPR[rt] <- FPR[fs]
+  The contents of FPR fs are loaded into GPR rt.
+  */
+op dmfc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("dmfc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100001%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    rt<63..0> = fs<63..0>;
+  }
+
+/*
+  DMTC1: Doubleword Move to Floating Point (MIPS64)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | DMT   | rt    | fs    |               |
+            | 010001 | 00101 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: DMTC1 rt, fs
+  Description: FPR[fs] <- GPR[rt]
+    The doubleword contents of GPR rt are placed into FPR fs.
+  */
+op dmtc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("dmtc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100101%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    fs<63..0> = rt<63..0>;
+  }
+
+/*
+  MFC1: Move Word From Floating Point (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | MF    | rt    | fs    |               |
+            | 010001 | 00000 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: MFC1 rt, fs
+
+  Description: GPR[rt] <- FPR[fs]
+    The contents of FPR fs are sign-extended and loaded into general register rt.
+  */
+op mfc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("mfc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100000%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    rt = sign_extend(DWORD, fs<31..0>);
+  }
+
+/*
+  MTC1: Move Word to Floating Point (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | MT    | rt    | fs    |               |
+            | 010001 | 00100 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: MTC1 rt, fs
+
+  Description: FPR[fs] <- GPR[rt]
+    The low word in GPR rt is placed into the low word of FPR fs. If FPRs are 64 bits wide, bits
+    63..32 of FPR fs become UNPREDICTABLE.
+  */
+op mtc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("mtc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100100%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    fs<31..0> = rt<31..0>;
+  }
+
+/*
+  MFHC1: Move Word From High Half of Floating Point Register (MIPS32 Release 2)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | MFH   | rt    | fs    |               |
+            | 010001 | 00011 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: MFHC1 rt, fs
+
+  Description: GPR[rt] <- sign_extend(FPR[fs]63..32)
+    The contents of the high word of FPR fs are sign-extended and loaded into general register rt.
+    This instruction is primarily intended to support 64-bit floating point units on a 32-bit CPU,
+    but the semantics of the instruction are defined for all cases.
+  */
+op mfhc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("mfhc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100011%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    rt = sign_extend(DWORD, fs<63..32>);
+  }
+
+/*
+  MTHC1: Move Word to High Half of Floating Point Register
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
+            | COP1   | MTH   | rt    | fs    |               |
+            | 010001 | 00111 |       |       | 000 0000 0000 |
+            | 6      | 5     | 5     | 5     | 11            |
+
+  Format: MTHC1 rt, fs
+
+  Description: FPR[fs]63..32 <- GPR[rt]31..0
+    The low word in GPR rt is placed into the high word of FPR fs. This instruction is primarily
+    intended to support 64-bit floating point units on a 32-bit CPU, but the semantics of the
+    instruction are defined for all cases.
+  */
+op mthc1 (rt: R, fs: FR)
+  init = {}
+  syntax = format("mthc1 %s, %s", rt.syntax, fs.syntax)
+  image  = format("01000100111%5s%5s00000000000", rt.image, fs.image)
+  action = {
+    fs<63..32> = rt<31..0>;
+  }
+
+/*
+  MOV.fmt: Floating Point Move
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
+            | COP1   | fmt   | 0     | fs    | fd   | MOV    |
+            | 010001 |       | 00000 |       |      | 000101 |
+            | 6      | 5     | 5     | 5     | 5    | 6      |
+
+  Format: MOV.fmt
+          MOV.S fd, fs
+          MOV.D fd, fs
+          MOV.PS fd, fs
+
+  Description: FPR[fd] <- FPR[fs]
+    The value in FPR fs is placed into FPR fd. The source and destination are values in format fmt.
+    In paired-single format, both the halves of the pair are copied to fd. The move is
+    non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags fields are not
+    modified.
+*/
+op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("mov.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s000110", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    op_fmt.action;
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      fd<31> = fs<31>;
+    elif fmt_fpu == coerce(card(5), FMT_D) || fmt_fpu == coerce(card(5), FMT_PS) then
+      fd<63..0> = fs<63..0>;
+    else
+      unpredicted;
+    endif;
+  }
+
+/*
+  MOVF: Move Conditional on Floating Point False (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15 11 | 10  6 | 5    0 |
+            | SPECIAL | rs    | cc    | 0  | tf | rd    | 0     | MOVCI  |
+            | 000000  |       |       | 0  | 0  |       | 00000 | 000001 |
+            | 6       | 5     | 3     | 1  | 1  | 5     | 5     | 6      |
+
+  Format: MOVF rd, rs, cc
+
+  Description: if FPConditionCode(cc) = 0 then GPR[rd] <- GPR[rs]
+    If the floating point condition code specified by CC is zero, then the contents of GPR rs are
+    placed into GPR rd.
+
+  Operation:
+    if FPConditionCode(cc) = 0 then
+      GPR[rd] <- GPR[rs]
+    endif
+  */
+op movf (rd: R, rs: R, cc: card(3))
+  init = {}
+  syntax = format("movf %s, %s, %d", rd.syntax, rs.syntax, cc)
+  image  = format("000000%5s%3s00%5s00000000001", rs.image, cc, rd.image)
+  action = {
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, 0) then
+      rd = rs;
+    endif;
+  }
+
+/*
+  MOVF.fmt: Floating Point Move Conditional on Floating Point False (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | cc    | 0  | tf | fs    | fd    | MOVCF  |
+            | 010001  |       |       | 0  | 0  |       |       | 010001 |
+            | 6       | 5     | 3     | 1  | 1  | 5     | 5     | 6      |
+
+  Format: MOVF.fmt
+          MOVF.S fd, fs, cc
+          MOVF.D fd, fs, cc
+          MOVF.PS fd, fs, cc
+
+  Description: if FPConditionCode(cc) = 0 then FPR[fd] <- FPR[fs]
+    If the floating point condition code specified by CC is zero, then the value in FPR fs is placed
+  into FPR fd. The source and destination are values in format fmt.
+  If the condition code is not zero, then FPR fs is not copied and FPR fd retains its previous value
+  in format fmt. If fd did not contain a value either in format fmt or previously unused data from
+  a load or move-to operation that could be interpreted in format fmt, then the value of fd becomes
+  UNPREDICTABLE.
+  MOVF.PS merges the lower half of FPR fs into the lower half of FPR fd if condition code CC is
+  zero, and independently merges the upper half of FPR fs into the upper half of FPR fd if condition
+  code CC+1 is zero. The CC field must be even; if it is odd, the result of this operation
+  is UNPREDICTABLE.
+  The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+  fields are not modified.
+  */
+op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
+  init = {}
+  syntax = format("movf.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
+  image  = format("010001%5s%3s00%5s%5s010001", op_fmt.syntax, cc, fs.image, fd.image)
+  action = {
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, 0) then
+      if fmt_fpu == coerce(card(5), FMT_S) then
+        fd<31> = fs<31>;
+      elif fmt_fpu == coerce(card(5), FMT_D) then
+        fd<63..0> = fs<63..0>;
+      elif fmt_fpu == coerce(card(5), FMT_PS) then
+        if cc<0> == coerce(BIT, 0) then
+          fd<31..0> = fs<31..0>;
+          FPConditionCode(cc+1).action;
+          if FPConditionCode_value == coerce(BIT, 0) then
+            fd<63..32> = fs<63..32>;
+          endif;
+        else
+          unpredicted;
+        endif;
+      else
+        unpredicted;
+      endif;
+    endif;
+  }
+
+/*
+  MOVN.fmt: Floating Point Move Conditional on Not Zero (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | rt    | fs    | fd    | MOVN  |
+            | 010001  |       |       |       |       | 010011 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: MOVN.fmt
+          MOVN.S fd, fs, rt
+          MOVN.D fd, fs, rt
+          MOVN.PS fd, fs, rt
+
+  Description: if GPR[rt] =/= 0 then FPR[fd] <- FPR[fs]
+    If the value in GPR rt is not equal to zero, then the value in FPR fs is placed in FPR fd. The
+    source and destination are values in format fmt.
+    If GPR rt contains zero, then FPR fs is not copied and FPR fd contains its previous value in
+    format fmt. If fd did not contain a value either in format fmt or previously unused data from
+    a load or move-to operation that could be interpreted in format fmt, then the value of fd
+    becomes UNPREDICTABLE.
+    The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+    fields are not modified.
+*/
+op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
+  init = {}
+  syntax = format("movn.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
+  image  = format("010001%5s%5s%5s%5s010011", op_fmt.syntax, rt.image, fs.image, fd.image)
+  action = {
+    if rt != coerce(BIT, 0) then
+      if fmt_fpu == coerce(card(5), FMT_S) then
+        fd<31> = fs<31>;
+      elif fmt_fpu == coerce(card(5), FMT_D) || fmt_fpu == coerce(card(5), FMT_PS) then
+        fd<63..0> = fs<63..0>;
+      else
+        unpredicted;
+      endif;
+    endif;
+  }
+
+/*
+  MOVT: Move Conditional on Floating Point True (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15 11 | 10  6 | 5    0 |
+            | SPECIAL | rs    | cc    | 0  | tf | rd    | 0     | MOVCI  |
+            | 000000  |       |       | 0  | 1  |       | 00000 | 000001 |
+            | 6       | 5     | 3     | 1  | 1  | 5     | 5     | 6      |
+
+  Format: MOVT rd, rs, cc
+
+  Description: if FPConditionCode(cc) = 1 then GPR[rd] <- GPR[rs]
+    If the floating point condition code specified by CC is zero, then the contents of GPR rs are
+    placed into GPR rd.
+
+  Operation:
+    if FPConditionCode(cc) = 1 then
+      GPR[rd] <- GPR[rs]
+    endif
+  */
+op movt (rd: R, rs: R, cc: card(3))
+  init = {}
+  syntax = format("movt %s, %s, %d", rd.syntax, rs.syntax, cc)
+  image  = format("000000%5s%3s01%5s00000000001", rs.image, cc, rd.image)
+  action = {
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, 1) then
+      rd = rs;
+    endif;
+  }
+
+/*
+  MOVT.fmt: Floating Point Move Conditional on Floating Point True (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | cc    | 0  | tf | fs    | fd    | MOVCF  |
+            | 010001  |       |       | 0  | 1  |       |       | 010001 |
+            | 6       | 5     | 3     | 1  | 1  | 5     | 5     | 6      |
+
+  Format: MOVT.fmt
+          MOVT.S fd, fs, cc
+          MOVT.D fd, fs, cc
+          MOVT.PS fd, fs, cc
+
+  Description: if FPConditionCode(cc) = 1 then FPR[fd] <- FPR[fs]
+    If the floating point condition code specified by CC is one, then the value in FPR fs is placed
+    into FPR fd. The source and destination are values in format fmt.
+    If the condition code is not one, then FPR fs is not copied and FPR fd contains its previous
+    value in format fmt. If fd did not contain a value either in format fmt or previously unused
+    data from a load or move-to operation that could be interpreted in format fmt, then the value of
+    fd becomes UNPREDICTABLE.
+    MOVT.PS merges the lower half of FPR fs into the lower half of FPR fd if condition code CC is
+    one, and independently merges the upper half of FPR fs into the upper half of FPR fd if
+    condition code CC+1 is one. The CC field should be even; if it is odd, the result of this
+    operation is UNPREDICTABLE.
+    The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+    fields are not modified.
+  */
+op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
+  init = {}
+  syntax = format("movt.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
+  image  = format("010001%5s%3s01%5s%5s010001", op_fmt.syntax, cc, fs.image, fd.image)
+  action = {
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, 1) then
+      if fmt_fpu == coerce(card(5), FMT_S) then
+        fd<31> = fs<31>;
+      elif fmt_fpu == coerce(card(5), FMT_D) then
+        fd<63..0> = fs<63..0>;
+      elif fmt_fpu == coerce(card(5), FMT_PS) then
+        if cc<0> == coerce(BIT, 0) then
+          fd<31..0> = fs<31..0>;
+          FPConditionCode(cc+1).action;
+          if FPConditionCode_value == coerce(BIT, 1) then
+            fd<63..32> = fs<63..32>;
+          endif;
+        else
+          unpredicted;
+        endif;
+      else
+        unpredicted;
+      endif;
+    endif;
+  }
+
+/*
+  MOVZ.fmt: Floating Point Move Conditional on Zero (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | rt    | fs    | fd    | MOVZ   |
+            | 010001  |       |       |       |       | 010010 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: MOVZ.fmt
+          MOVZ.S fd, fs, rt
+          MOVZ.D fd, fs, rt
+          MOVZ.PS fd, fs, rt
+
+  Description: if GPR[rt] = 0 then FPR[fd] <- FPR[fs]
+    If the value in GPR rt is equal to zero then the value in FPR fs is placed in FPR fd. The source
+    and destination are values in format fmt.
+    If GPR rt is not zero, then FPR fs is not copied and FPR fd contains its previous value in
+    format fmt. If fd did not contain a value either in format fmt or previously unused data from
+    a load or move-to operation that could be interpreted in format fmt, then the value of fd
+    becomes UNPREDICTABLE.
+    The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+    fields are not modified.
+*/
+op movz_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
+  init = {}
+  syntax = format("movz.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
+  image  = format("010001%5s%5s%5s%5s010010", op_fmt.syntax, rt.image, fs.image, fd.image)
+  action = {
+    if rt == coerce(BIT, 0) then
+      if fmt_fpu == coerce(card(5), FMT_S) then
+        fd<31> = fs<31>;
+      elif fmt_fpu == coerce(card(5), FMT_D) || fmt_fpu == coerce(card(5), FMT_PS) then
+        fd<63..0> = fs<63..0>;
+      else
+        unpredicted;
+      endif;
+    endif;
+  }
+
+  op MIPS64FpuMove = cfc1
+                   | ctc1
+                   | dmfc1
+                   | dmtc1
+                   | mfc1
+                   | mtc1
+                   | mfhc1
+                   | mthc1
+                   | mov_fmt
+                   | movf
+                   | movf_fmt
+                   | movn_fmt
+                   | movt
+                   | movt_fmt
+                   | movz_fmt
+
+//--------------------------------------------------------------------------------------------------
+// FPU Convert
+//--------------------------------------------------------------------------------------------------
+
+/*
+  Instructions:
+    ALNV.PS
+    CEIL.L.fmt
+    CEIL.W.fmt
+    CVT.D.fmt
+    CVT.L.fmt
+    CVT.PS.S*
+    CVT.S.PL*
+    CVT.S.PU*
+    CVT.S.fmt
+    CVT.W.fmt
+    FLOOR.L.fmt
+    FLOOR.W.fmt
+    PLL.PS*
+    PLU.PS*
+    PUL.PS*
+    PUU.PS*
+ROUND.L.fmt
+ROUND.W.fmt
+TRUNC.L.fmt
+TRUNC.W.fmt
+*/
+
+/*
+  CVT.D.fmt: Floating Point Convert to Double Floating Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.D  |
+            | 010001  |       | 00000 |       |       | 100001 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CVT.D.fmt
+          CVT.D.S fd, fs
+          CVT.D.W fd, fs
+          CVT.D.L fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in double floating point format and
+  rounded according to the current rounding mode in FCSR. The result is placed in FPR fd. If fmt is
+  S or W, then the operation is always exact.
+
+  Operation:
+    StoreFPR (fd, D, ConvertFmt(ValueFPR(fs, fmt), fmt, D))
+*/
+op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.d.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s100001", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s<31..0> = fs<31..0>;
+      temp_fp_d = float_to_float(FLOAT64, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_W) then
+      tempI<31..0> = fs<31..0>;
+      temp_fp_d = int_to_float(FLOAT64, tempI);
+    elif fmt_fpu == coerce(card(5), FMT_L) then
+      temp64<63..0> = fs<63..0>;
+      temp_fp_d = int_to_float(FLOAT64, temp64);
+    else
+      unpredicted;
+    endif;
+
+    fd<63..0> = temp_fp_d<63..0>;
+  }
+
+/*
+  CVT.L.fmt: Floating Point Convert to Long Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.L  |
+            | 010001  |       | 00000 |       |       | 100101 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CVT.L.fmt
+          CVT.L.S fd, fs
+          CVT.L.D fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    Convert the value in format fmt in FPR fs to long fixed point format and round according to the
+    current rounding mode in FCSR. The result is placed in FPR fd.
+    When the source value is Infinity, NaN, or rounds to an integer outside the range -263 to 263-1,
+    the result cannot be represented correctly, an IEEE Invalid Operation condition exists, and the
+    Invalid Operation flag is set in the FCSR. If the Invalid Operation Enable bit is set in the
+    FCSR, no result is written to fd and an Invalid Operation exception is taken immediately.
+    Otherwise, a default result is written to fd. On cores with FCSRNAN2008=0, the default result is
+    263–1. On cores with FCSRNAN2008=1, the default result is:
+    • 0 when the input value is NaN
+    • 263–1 when the input value is + or rounds to a number larger than 263–1
+    • -263–1 when the input value is – or rounds to a number smaller than -263–1
+
+  Operation:
+    StoreFPR (fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
+*/
+op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s100101", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    if fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s<31..0> = fs<31..0>;
+      tempL = float_to_int(LONG, temp_fp_s);
+    elif fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d<63..0> = fs<63..0>;
+      tempL = float_to_int(LONG, temp_fp_d);
+    else
+      unpredicted;
+    endif;
+
+    fd<63..0> = tempL<63..0>;
+  }
+
+/*
+  CVT.PS.S Floating Point Convert Pair to Paired Single (MIPS64/MIPS32 Release 2, removed in R 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | ft    | fs    | fd    | CVT.PS |
+            | 010001  | 10000 |       |       |       | 100110 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CVT.PS.S fd, fs, ft
+
+  Description: FPR[fd] <- FPR[fs]31..0 || FPR[ft]31..0
+    The single-precision values in FPR fs and ft are written into FPR fd as a paired-single value.
+    The value in FPR fs is written into the upper half, and the value in FPR ft is written into the
+    lower half.
+*/
+op cvtps_s (fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("cvt.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
+  image  = format("01000110000%5s%5s%5s100110", ft.image, fs.image, fd.image)
+  action = {
+    fd<63..0> = fs<31..0>::ft<31..0>;
+  }
+
+/*
+  CVT.S.PL: Floating Point Convert Pair Lower to Single Floating Point
+    (MIPS64/MIPS32 Release 2, removed in R 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5      0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.S.PL |
+            | 010001  | 10110 | 00000 |       |       | 101000   |
+            | 6       | 5     | 5     | 5     | 5     | 6        |
+
+  Format: CVT.S.PL fd, fs
+
+  Description: FPR[fd] <- FPR[fs]31..0
+    The lower paired single value in FPR fs, in format PS, is converted to a value in single
+    floating point format. The result is placed in FPR fd. This instruction can be used to isolate
+    the lower half of a paired single value. The operation is non-arithmetic; it causes no IEEE 754
+    exceptions, and the FCSRCause and FCSRFlags fields are not modified.
+
+  Operation:
+    StoreFPR (fd, S, ConvertFmt(ValueFPR(fs, PS), PL, S))
+*/
+op cvts_pl (fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.s.pl %s, %s", fd.syntax, fs.syntax)
+  image  = format("0100011011000000%5s%5s101000", fs.image, fd.image)
+  action = {
+    fd<31..0> = fs<31..0>;
+  }
+
+/*
+  CVT.S.PU: Floating Point Convert Pair Upper to Single Floating Point
+    (MIPS64/MIPS32 Release 2, removed in R 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5      0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.S.PU |
+            | 010001  | 10110 | 00000 |       |       | 100000   |
+            | 6       | 5     | 5     | 5     | 5     | 6        |
+
+  Format: CVT.S.PU fd, fs
+
+  Description: FPR[fd] <- FPR[fs]63..32
+
+  Operation:
+    StoreFPR (fd, S, ConvertFmt(ValueFPR(fs, PS), PU, S))
+*/
+op cvts_pu (fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.s.pu %s, %s", fd.syntax, fs.syntax)
+  image  = format("0100011011000000%5s%5s100000", fs.image, fd.image)
+  action = {
+    fd<31..0> = fs<63..32>;
+  }
+
+/*
+  CVT.S.fmt: Floating Point Convert to Single Floating Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.S  |
+            | 010001  |       | 00000 |       |       | 100000 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CVT.S.fmt
+          CVT.S.D fd, fs
+          CVT.S.W fd, fs
+          CVT.S.L fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in single floating point format and
+    rounded according to the current rounding mode in FCSR. The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, S, ConvertFmt(ValueFPR(fs, fmt), fmt, S))
+*/
+op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s100000", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    if fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d<63..0> = fs<63..0>;
+      temp_fp_s = float_to_float(FLOAT32, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_W) then
+      tempI<31..0> = fs<31..0>;
+      temp_fp_s = int_to_float(FLOAT32, tempI);
+    elif fmt_fpu == coerce(card(5), FMT_L) then
+      temp64<63..0> = fs<63..0>;
+      temp_fp_s = int_to_float(FLOAT32, temp64);
+    else
+      unpredicted;
+    endif;
+
+    fd<31..0> = temp_fp_s<31..0>;
+  }
+
+/*
+  CVT.W.fmt: Floating Point Convert to Word Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CVT.W  |
+            | 010001  |       | 00000 |       |       | 100100 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CVT.W.fmt
+          CVT.W.S fd, fs MIPS32
+          CVT.W.D fd, fs MIPS32
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 32-bit word fixed point format
+    and rounded according to the current rounding mode in FCSR. The result is placed in FPR fd.
+    When the source value is Infinity, NaN, or rounds to an integer outside the range -231 to 231-1,
+    the result cannot be represented correctly, an IEEE Invalid Operation condition exists, and the
+    Invalid Operation flag is set in the FCSR. If the Invalid Operation Enable bit is set in the
+    FCSR, no result is written to fd and an Invalid Operation exception is taken immediately.
+    Otherwise, a default result is written to fd. On cores with FCSRNAN2008=0, the default result is
+    263–1. On cores with FCSRNAN2008=1, the default result is:
+    • 0 when the input value is NaN
+    • 263–1 when the input value is + or rounds to a number larger than 263–1
+    • -263–1 when the input value is – or rounds to a number smaller than -263–1
+
+  Operation:
+    StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
+*/
+op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("cvt.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s100100", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    if fmt_fpu == coerce(card(5), FMT_D) then
+      temp_fp_d<63..0> = fs<63..0>;
+      tempI = float_to_int(INT, temp_fp_d);
+    elif fmt_fpu == coerce(card(5), FMT_S) then
+      temp_fp_s<31..0> = fs<31..0>;
+      tempI = float_to_int(INT, temp_fp_s);
+    else
+      unpredicted;
+    endif;
+
+    fd<31..0> = tempI<31..0>;
+  }
+
+/*
+  CEIL.L.fmt: Fixed Point Ceiling Convert to Long Fixed Point (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CEIL.L |
+            | 010001  |       | 00000 |       |       | 001010 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CEIL.L.fmt
+          CEIL.L.S fd, fs
+          CEIL.L.D fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 64-bit long fixed point format
+    and rounding toward + (rounding mode 2). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
+*/
+op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("ceil.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001010", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding up
+    cvtl_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  CEIL.W.fmt: Floating Point Ceiling Convert to Word Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | 0     | fs    | fd    | CEIL.W |
+            | 010001  |       | 00000 |       |       | 001110 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: CEIL.W.fmt
+          CEIL.W.S fd, fs
+          CEIL.W.D fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 32-bit word fixed point format
+    and rounding toward + (rounding mode 2). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
+*/
+op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("ceil.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001110", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding up
+    cvtw_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  ALNV.PS: Floating Point Align Variable (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1X   | rs    | ft    | fs    | fd    | ALNV.PS |
+            | 010011  |       |       |       |       | 011110  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: ALNV.PS fd, fs, ft, rs
+
+  Description: FPR[fd] <- ByteAlign(GPR[rs]2..0, FPR[fs], FPR[ft])
+    FPR fs is concatenated with FPR ft and this value is funnel-shifted by GPR rs2..0 bytes, and
+    written into FPR fd. If GPR rs2..0 is 0, FPR fd receives FPR fs. If GPR rs2..0 is 4, the
+    operation depends on the current endianness.
+
+  Operation:
+    if GPR[rs]2..0 = 0 then
+      StoreFPR(fd, PS,ValueFPR(fs,PS))
+    else if GPR[rs]2..0 =/= 4 then
+        UNPREDICTABLE
+      else if BigEndianCPU then
+        StoreFPR(fd, PS, ValueFPR(fs, PS)31..0 || ValueFPR(ft,PS)63..32)
+      else
+        StoreFPR(fd, PS, ValueFPR(ft, PS)31..0 || ValueFPR(fs,PS)63..32)
+    endif
+*/
+op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
+  init = {}
+  syntax = format("alnv.ps %s, %s, %s, %s", fd.syntax, fs.syntax, ft.syntax, rs.syntax)
+  image  = format("010011%5s%5s%5s%5s011110", rs.syntax, ft.image, fs.image, fd.image)
+  action = {
+    if rs<2..0> == coerce(card(3), 0) then
+      fd<63..0> = fs<63..0>;
+    elif rs<2..0> != coerce(card(3), 4) then
+      unpredicted;
+    elif coerce(BIT, BigEndianCPU) == coerce(BIT, 1) then
+      fd<63..0> = fs<31..0>::ft<63..32>;
+    else
+      fd<63..0> = ft<31..0>::fs<63..32>;
+    endif;
+  }
+
+/*
+  FLOOR.L.fmt: Floating Point Floor Convert to Long Fixed Point (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | FLOOR.L |
+            | 010001  |       | 00000 |       |       | 001011  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: FLOOR.L.fmt
+          FLOOR.L.S fd, fs MIPS64, MIPS32 Release 2
+          FLOOR.L.D fd, fs MIPS64, MIPS32 Release 2
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 64-bit long fixed point format
+    and rounded toward  (rounding mode 3). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
+*/
+op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("floor.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001011", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding down
+    cvtl_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  FLOOR.W.fmt Floating Point Floor Convert to Word Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | FLOOR.W |
+            | 010001  |       | 00000 |       |       | 001111  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: FLOOR.W.fmt
+          FLOOR.W.S fd, fs
+          FLOOR.W.D fd, fs
+
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 32-bit word fixed point format
+    and rounded toward – (rounding mode 3). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
+*/
+op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("floor.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001111", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding down
+    cvtw_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  PLL.PS Pair Lower Lower (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | ft    | fs    | fd    | PLL    |
+            | 010001  | 10110 |       |       |       | 101100 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: PLL.PS fd, fs, ft
+
+  Description: FPR[fd] <- lower(FPR[fs]) || lower(FPR[ft])
+    A new paired-single value is formed by catenating the lower single of FPR fs (bits 31..0) and
+    the lower single of FPR ft (bits 31..0).
+    The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+    fields are not modified.
+
+  Operation:
+    StoreFPR(fd, PS, ValueFPR(fs, PS)31..0 || ValueFPR(ft, PS)31..0)
+*/
+op pllps_s (fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("pll.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
+  image  = format("01000110110%5s%5s%5s101100", ft.image, fs.image, fd.image)
+  action = {
+    fd<63..0> = fs<31..0>::ft<31..0>;
+  }
+
+/*
+  PLU.PS: Pair Lower Upper (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | ft    | fs    | fd    | PLU    |
+            | 010001  | 10110 |       |       |       | 101101 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: PLU.PS fd, fs, ft
+
+  Description: FPR[fd] <- lower(FPR[fs]) || upper(FPR[ft])
+    A new paired-single value is formed by catenating the lower single of FPR fs (bits 31..0) and
+    the upper single of FPR ft (bits 63..32).
+    The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
+    fields are not modified.
+
+  Operation:
+    StoreFPR(fd, PS, ValueFPR(fs, PS)31..0 || ValueFPR(ft, PS)63..32)
+*/
+op plups_s (fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("plu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
+  image  = format("01000110110%5s%5s%5s101101", ft.image, fs.image, fd.image)
+  action = {
+    fd<63..0> = fs<31..0>::ft<63..32>;
+  }
+
+/*
+  PUL.PS: Pair Upper Lower (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | ft    | fs    | fd    | PUL    |
+            | 010001  | 10110 |       |       |       | 101110 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: PUL.PS fd, fs, ft
+
+  Description: FPR[fd] <- upper(FPR[fs]) || lower(FPR[ft])
+
+  Operation:
+    StoreFPR(fd, PS, ValueFPR(fs, PS)63..32 || ValueFPR(ft, PS)31..0)
+*/
+op pulps_s (fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("pul.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
+  image  = format("01000110110%5s%5s%5s101110", ft.image, fs.image, fd.image)
+  action = {
+    fd<63..0> = fs<63..32>::ft<31..0>;
+  }
+
+/*
+  PUU.PS: Pair Upper Upper (MIPS64, MIPS32 Release 2, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5    0 |
+            | COP1    | fmt   | ft    | fs    | fd    | PUU    |
+            | 010001  | 10110 |       |       |       | 101111 |
+            | 6       | 5     | 5     | 5     | 5     | 6      |
+
+  Format: PUU.PS fd, fs, ft
+
+  Description: FPR[fd] <- upper(FPR[fs]) || upper(FPR[ft])
+
+  Operation:
+    StoreFPR(fd, PS, ValueFPR(fs, PS)63..32 || ValueFPR(ft, PS)63..32)
+*/
+op puups_s (fd: FR, fs: FR, ft: FR)
+  init = {}
+  syntax = format("puu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
+  image  = format("01000110110%5s%5s%5s101111", ft.image, fs.image, fd.image)
+  action = {
+    fd<63..0> = fs<63..32>::ft<63..32>;
+  }
+
+/*
+  ROUND.L.fmt: Floating Point Round to Long Fixed Point (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | ROUND.L |
+            | 010001  |       | 00000 |       |       | 001000  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: ROUND.L.fmt
+          ROUND.L.S fd, fs
+          ROUND.L.D fd, fs
+
+  Purpose: Floating Point Round to Long Fixed Point
+    To convert an FP value to 64-bit fixed point, rounding to nearest.
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 64-bit long fixed point format
+    and rounded to nearest/ even (rounding mode 0). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
+*/
+op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("round.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001000", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding to nearest
+    cvtl_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  ROUND.W.fmt IFloating Point Round to Word Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | ROUND.W |
+            | 010001  |       | 00000 |       |       | 001100  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: ROUND.W.fmt
+          ROUND.W.S fd, fs
+          ROUND.W.D fd, fs
+
+  Purpose: Floating Point Round to Word Fixed Point
+    To convert an FP value to 32-bit fixed point, rounding to nearest.
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 32-bit word fixed point format
+    rounding to nearest/even (rounding mode 0). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
+*/
+op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("round.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001100", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding to nearest
+    cvtw_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  TRUNC.L.fmt IFloating Point Truncate to Long Fixed Point (MIPS64, MIPS32 Release 2)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | TRUNC.L |
+            | 010001  |       | 00000 |       |       | 001001  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: TRUNC.L.fmt
+          TRUNC.L.S fd, fs
+          TRUNC.L.D fd, fs
+  Purpose: Floating Point Truncate to Long Fixed Point
+    To convert an FP value to 64-bit fixed point, rounding toward zero.
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 64-bit long-fixed point format
+    and rounded toward zero (rounding mode 1). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
+*/
+op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("trunc.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001001", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding toward zero
+    cvtl_fmt(op_fmt, fd, fs).action;
+  }
+
+/*
+  TRUNC.W.fmt Floating Point Truncate to Word Fixed Point (MIPS32)
+
+  Encoding: | 31 26   | 25 21 | 20 16 | 15 11 | 10  6 | 5     0 |
+            | COP1    | fmt   | 0     | fs    | fd    | TRUNC.W |
+            | 010001  |       | 00000 |       |       | 001101  |
+            | 6       | 5     | 5     | 5     | 5     | 6       |
+
+  Format: TRUNC.W.fmt
+          TRUNC.W.S fd, fs
+          TRUNC.W.D fd, fs
+  Purpose: Floating Point Truncate to Word Fixed Point
+    To convert an FP value to 32-bit fixed point, rounding toward zero.
+  Description: FPR[fd] <- convert_and_round(FPR[fs])
+    The value in FPR fs, in format fmt, is converted to a value in 32-bit word fixed point format
+    using rounding toward zero (rounding mode 1). The result is placed in FPR fd.
+
+  Operation:
+    StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
+*/
+op truncw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+  init = {}
+  syntax = format("trunc.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
+  image  = format("010001%5s00000%5s%5s001101", op_fmt.syntax, fs.image, fd.image)
+  action = {
+    // TODO: rounding toward zero
+    cvtw_fmt(op_fmt, fd, fs).action;
+  }
+
+  op MIPS64FpuConvert = alnvps_fmt
+                      | cvtd_fmt
+                      | cvtl_fmt
+                      | cvtps_s
+                      | cvts_pl
+                      | cvts_pu
+                      | cvts_fmt
+                      | cvtw_fmt
+                      | ceill_fmt
+                      | ceilw_fmt
+                      | floorl_fmt
+                      | floorw_fmt
+                      | pllps_s
+                      | plups_s
+                      | pulps_s
+                      | puups_s
+                      | roundl_fmt
+                      | roundw_fmt
+                      | truncl_fmt
+                      | truncw_fmt
+
+//==================================================================================================
+
+  op MIPS64FpuOp = MIPS64FpuArithmetic
+                 | MIPS64FpuBranch
+                 | MIPS64FpuMEM
+                 | MIPS64FpuMove
+                 | MIPS64FpuConvert
+
+//==================================================================================================
+// The End
+//==================================================================================================
+
+#endif

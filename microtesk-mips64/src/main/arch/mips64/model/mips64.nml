@@ -1,0 +1,458 @@
+/*
+ * MicroTESK MIPS64 Edition
+ *
+ * Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
+ * All Rights Reserved
+ *
+ * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
+ * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
+ * http://www.ispras.ru
+ */
+
+//==================================================================================================
+// Types
+//==================================================================================================
+
+// Unsigned Types
+type   BIT = card(1)
+type  BYTE = card(8)
+type HWORD = card(16)
+type  WORD = card(32)
+type DWORD = card(64)
+type QWORD = card(128)
+
+// Signed Types
+type SHORT = int(16)
+type INT   = int(32)
+type LONG  = int(64)
+
+// Floating Point Types
+type FLOAT32  = float(23, 8)
+type FLOAT64  = float(52, 11)
+
+// Special Types
+type JTLB_ENTRY = card(128)
+
+//==================================================================================================
+// Registers and Memory
+//==================================================================================================
+
+// Architecture Revision
+let ArchitectureRevision = 0x6
+
+// Are64bitOperationsEnabled: True
+let Are64bitOperationsEnabled = 0b1
+
+/*
+  Indicates whether the FPU has 32-bit or 64-bit floating point registers (FPRs).
+  If this bit is a 1, the processor operates with 32 64-bit FPRs.
+  */
+let FP32RegistersMode = 0b1
+
+// Program Counter
+let PC = "CIA"
+reg CIA [DWORD]
+
+// Branch Processing Variables
+mem BRANCH [BIT]
+mem BRANCH_INSTRUCTION [BIT]
+mem SKIPOP [BIT]
+mem NEXTPC [DWORD]
+
+// JTLB Registers (mapped to the JTLB buffer)
+reg JTLB [64, JTLB_ENTRY]
+
+// General Purpose Registers
+reg GPR [32, DWORD]
+
+mode R (i: card(5)) = GPR[i]
+  syntax = format("r%d", i)
+  image  = format("%5s", i)
+
+// HI/LO Registers
+reg HI[DWORD]
+reg LO[DWORD]
+
+// Floating Point (Coprocessor unit 1), general register. MIPS 64
+reg FPR [32, DWORD]
+
+mode FR (i: card(5)) = FPR[i]
+  syntax = format("f%d", i)
+  image  = format("%5s", i)
+
+// Coprocessor 0 Registers
+reg CPR [32 * 8, DWORD]
+
+var tempCPR[DWORD]
+mode CPRGET (i: card(8))
+  action = {
+    tempCPR = CPR[i];
+  }
+mode CPRSET (i: card(8))
+  action = {
+    CPR[i] = tempCPR;
+  }
+
+mode C0_R (r: card(5), s: card(3)) = CPR[8 * coerce(card(8), r) + coerce(card(8), s)]
+  syntax = format("$%d, %d", r, s)
+  action = {}
+
+reg C0_INDEX[DWORD]               alias = CPR[8 * 0  + 0]
+reg C0_RANDOM[DWORD]              alias = CPR[8 * 1  + 0]
+reg C0_ENTRY_LO0[DWORD]           alias = CPR[8 * 2  + 0]
+reg C0_ENTRY_LO1[DWORD]           alias = CPR[8 * 3  + 0]
+reg C0_CONTEXT[DWORD]             alias = CPR[8 * 4  + 0]
+reg C0_PAGE_MASK[DWORD]           alias = CPR[8 * 5  + 0]
+reg C0_WIRED[DWORD]               alias = CPR[8 * 6  + 0]
+reg C0_BAD_VADDR[DWORD]           alias = CPR[8 * 8  + 0]
+reg C0_COUNT[DWORD]               alias = CPR[8 * 9  + 0]
+reg C0_ENTRY_HI[DWORD]            alias = CPR[8 * 10 + 0]
+reg C0_COMPARE[DWORD]             alias = CPR[8 * 11 + 0]
+reg C0_STATUS[DWORD]              alias = CPR[8 * 12 + 0]
+reg C0_INTCTL[DWORD]              alias = CPR[8 * 12 + 1]
+reg C0_SRSCTL[DWORD]              alias = CPR[8 * 12 + 2]
+reg C0_CAUSE[DWORD]               alias = CPR[8 * 13 + 0]
+reg C0_EPC[DWORD]                 alias = CPR[8 * 14 + 0]
+reg C0_PROCESSOR_ID[DWORD]        alias = CPR[8 * 15 + 0]
+reg C0_CONFIG0[DWORD]             alias = CPR[8 * 16 + 0]
+  reg C0_CONFIG0_K0[card(3)]      alias = C0_CONFIG0<2..0>
+reg C0_CONFIG1[DWORD]             alias = CPR[8 * 16 + 1]
+reg C0_CONFIG2[DWORD]             alias = CPR[8 * 16 + 2]
+reg C0_CONFIG3[DWORD]             alias = CPR[8 * 16 + 3]
+reg C0_LOAD_LINKED_ADDRESS[DWORD] alias = CPR[8 * 17 + 0]
+reg C0_WATCH_LO[DWORD]            alias = CPR[8 * 18 + 0]
+reg C0_WATCH_HI[DWORD]            alias = CPR[8 * 19 + 0]
+reg C0_XCONTEXT[DWORD]            alias = CPR[8 * 20 + 0]
+reg C0_DEBUG[DWORD]               alias = CPR[8 * 23 + 0]
+reg C0_DEBUG_EPC[DWORD]           alias = CPR[8 * 24 + 0]
+reg C0_PERFORMANCE_COUNTER[DWORD] alias = CPR[8 * 25 + 0]
+reg C0_ERR_CTRL[DWORD]            alias = CPR[8 * 26 + 0]
+reg C0_CACHE_ERR[DWORD]           alias = CPR[8 * 27 + 0]
+reg C0_TAG_DATA_LO[DWORD]         alias = CPR[8 * 28 + 0]
+reg C0_TAG_DATA_HI[DWORD]         alias = CPR[8 * 29 + 0]
+reg C0_ERROR_EPC[DWORD]           alias = CPR[8 * 30 + 0]
+reg C0_DESAVE[DWORD]              alias = CPR[8 * 31 + 0]
+
+/*
+  The Status register is a read/write register that contains the operating mode, interrupt enabling,
+  and the diagnostic states of the processor. Fields of this register combine to create operating
+  modes for the processor.
+*/
+
+/*
+  Used to enable reverse-endian memory references while the processor is running in user mode:
+    0 User mode uses configured endianness
+    1 User mode uses reversed endianness
+  If this bit is not implemented, it must be ignored on write and read as zero.
+*/
+reg C0_STATUS_RE      [BIT] alias = C0_STATUS<25>
+
+reg C0_STATUS_BEV     [BIT] alias = C0_STATUS<22>
+
+reg C0_STATUS_UX      [BIT] alias = C0_STATUS<5>
+reg C0_STATUS_KSU [card(2)] alias = C0_STATUS<4..3>
+reg C0_STATUS_UM      [BIT] alias = C0_STATUS<4>
+reg C0_STATUS_R0      [BIT] alias = C0_STATUS<3>
+reg C0_STATUS_ERL     [BIT] alias = C0_STATUS<2>
+reg C0_STATUS_EXL     [BIT] alias = C0_STATUS<1>
+reg C0_STATUS_IE      [BIT] alias = C0_STATUS<0>
+
+/*
+  SRSCtl Register (CP0 Register 12, Select 2)
+    The SRSCtl register controls the operation of GPR shadow sets in the processor. This register
+    does not exist in implementations of the architecture prior to Release 2.
+*/
+reg C0_SRSCTL_HSS     [card(4)] alias = C0_STATUS<29..26>
+reg C0_SRSCTL_PSS     [card(4)] alias = C0_STATUS<9..6>
+reg C0_SRSCTL_CSS     [card(4)] alias = C0_STATUS<3..0>
+
+/*
+  The Config1 register is an adjunct to the Config register and encodes additional information about
+  capabilities present on the core. All fields in the Config1 register are read-only.
+
+  M         31
+  MMU Size  30:25
+  IS        24:22
+  IL        21:19
+  IA        18:16
+  DS        15:13
+  DL        12:10
+  DA        9:7
+  C2        6
+  MD        5
+  PC        4
+  WR        3
+  CA        2
+    Code compression (MIPS16e) implemented.
+        0: No MIPS16e present
+        1: MIPS16e is implemented
+  EP        1
+  FP        0
+*/
+reg C0_CONFIG1_M       [BIT]      alias = C0_CONFIG3<31>
+reg C0_CONFIG1_MMUSize [card(6)]  alias = C0_CONFIG3<30..25>
+reg C0_CONFIG1_IS      [card(3)]  alias = C0_CONFIG3<24..22>
+reg C0_CONFIG1_IL      [card(3)]  alias = C0_CONFIG3<21..19>
+reg C0_CONFIG1_IA      [card(3)]  alias = C0_CONFIG3<18..16>
+reg C0_CONFIG1_DS      [card(3)]  alias = C0_CONFIG3<15..13>
+reg C0_CONFIG1_DL      [card(3)]  alias = C0_CONFIG3<12..10>
+reg C0_CONFIG1_DA      [card(3)]  alias = C0_CONFIG3<9..7>
+reg C0_CONFIG1_C2      [BIT]      alias = C0_CONFIG3<6>
+reg C0_CONFIG1_MD      [BIT]      alias = C0_CONFIG3<5>
+reg C0_CONFIG1_PC      [BIT]      alias = C0_CONFIG3<4>
+reg C0_CONFIG1_WR      [BIT]      alias = C0_CONFIG3<3>
+reg C0_CONFIG1_CA      [BIT]      alias = C0_CONFIG3<2>
+reg C0_CONFIG1_EP      [BIT]      alias = C0_CONFIG3<1>
+reg C0_CONFIG1_FP      [BIT]      alias = C0_CONFIG3<0>
+
+/*
+  Configuration Register 3 (CP0 Register 16, Select 3)
+  The Config3 register encodes additional capabilities. All fields in the Config3 register are
+  read-only.
+
+  31 30 2 1  0
+  M  0    SM TL
+  */
+reg C0_CONFIG3_M [BIT]         alias = C0_CONFIG3<31>
+reg C0_CONFIG3_SM[BIT]         alias = C0_CONFIG3<1>
+reg C0_CONFIG3_TL[BIT]         alias = C0_CONFIG3<0>
+
+reg C0_CONFIG3_ISA[card(2)]    alias = C0_CONFIG3<15..14>
+
+/*
+  Debug Register (CP0 Register 23, Select 0)
+  Compliance Level: Required for EJTAG debug support.
+  The Debug register contains the cause of the most recent debug exception and exception in Debug
+  Mode. It also controls single stepping. This register indicates low-power and clock states on
+  debug exceptions, debug resources, and other internal states.
+
+  Only the DM bit and the EJTAGver field are valid when read from the Debug register in Non-Debug
+  Mode; the value of all other bits and fields is UNPREDICTABLE.
+  */
+reg C0_DEBUG_DBD[BIT]              alias = C0_DEBUG<31>
+reg C0_DEBUG_DM[BIT]               alias = C0_DEBUG<30>
+reg C0_DEBUG_NoDCR[BIT]            alias = C0_DEBUG<29>
+reg C0_DEBUG_IEXI[BIT]             alias = C0_DEBUG<20>
+reg C0_DEBUG_EJTAGver[card(3)]     alias = C0_DEBUG<17..15>
+reg C0_DEBUG_DSS[BIT]              alias = C0_DEBUG<0>
+
+// Coprocessor 2 Registers
+reg CP2CPR [32 * 8, DWORD]
+
+var tempCP2CPR[DWORD]
+mode CP2CPRGET (i: card(8))
+  action = {
+    tempCP2CPR = CP2CPR[i];
+  }
+mode CP2CPRSET (i: card(8))
+  action = {
+    CP2CPR[i] = tempCP2CPR;
+  }
+
+// Floating Point Control Registers (FCRs)
+reg FCR [32, WORD]
+
+/*
+var tempFCR[WORD]
+mode FCRGET (i: card(8))
+  action = {
+    tempFCR = FCR[i];
+  }
+mode FCRSET (i: card(8))
+  action = {
+    FCR[i] = tempFCR;
+  }
+  */
+
+// FIR, FP Implementation and Revision register
+reg FIR[WORD]               alias = FCR[0]
+// FCCR, FP Condition Codes register
+reg FCCR[WORD]              alias = FCR[25]
+// FEXR, FP Exceptions register
+reg FEXR[WORD]              alias = FCR[26]
+// FENR, FP Enables register
+reg FENR[WORD]              alias = FCR[28]
+// FCSR, Floating Point Control and Status Register (FCSR, CP1 Control Register 31)
+reg FCSR[WORD]              alias = FCR[31]
+
+// FCR[25]
+
+// FCR[31]
+reg FCSR_FCC_1_7 [card(7)]  alias = FCSR<31..25>
+reg FCSR_FS      [BIT]      alias = FCSR<24>
+reg FCSR_FCC_0   [BIT]      alias = FCSR<23>
+reg FCSR_Impl    [card(2)]  alias = FCSR<22..21>
+reg FCSR_Cause   [card(6)]  alias = FCSR<17..12>
+reg FCSR_Enables [card(5)]  alias = FCSR<11..7>
+reg FCSR_Flags   [card(5)]  alias = FCSR<6..2>
+reg FCSR_RM      [card(2)]  alias = FCSR<1..0>
+
+
+// Vector Coprocessor Registers
+reg VPR [32, QWORD]
+
+mode C (i: card(5)) = VPR[i]
+  syntax = format("$c%d", i)
+
+// Main Memory
+mem MEM [2 ** 33, DWORD]
+
+/*
+  The endianness for load and store instructions (0 -> Little-Endian, 1 -> Big-Endian).
+  In User mode, this endianness may be switched by setting the RE bit in the Status register.
+  Thus, BigEndianCPU may be computed as (BigEndianMem XOR ReverseEndian).
+ */
+let BigEndianCPU = 0b0
+
+let UNSIGNED = 0b0
+let SIGNED = 0b1
+
+/*
+  The hint field supplies information about the way that the data is expected to be used.
+  0 load
+  1 store
+  2 L1 LRU hint
+  3 Reserved for Implementation
+  4 load_streamed
+  5 store_streamed
+  6 load_retained
+  7 store_retained
+  8-15 L2 operation
+  16-23 L3 operation
+  (page 386 of The MIPS64 Instruction Set Reference Manual, Revision 6.04)
+*/
+var hint     [card(5)]
+
+/*
+  Bit of virtual state used to specify operation for instructions that provide atomic
+  read-modify-write. LLbit is set when a linked load occurs and is tested by the conditional store.
+  It is cleared, during other CPU operation, when a store to the location would no longer be atomic.
+  In particular, it is cleared by exception return instructions.
+*/
+reg LLbit    [BIT]
+
+/*
+  In processors that implement the MIPS16e Application Specific Extension, the ISA Mode is
+  a single-bit register that determines in which mode the processor is executing, as follows:
+  0 The processor is executing 32-bit MIPS instructions
+  1 The processor is executing MIIPS16e instructions
+*/
+reg ISAMode  [BIT]
+
+//==================================================================================================
+// Variables
+//==================================================================================================
+
+var temp_bit [BIT]
+
+var temp6    [card(6)]
+
+var temp     [WORD]
+var temp0    [WORD]
+var temp1    [WORD]
+var temp2    [WORD]
+var temp3    [WORD]
+
+var tempI    [INT]
+
+var temp64   [DWORD]
+var temp64_0 [DWORD]
+var temp64_1 [DWORD]
+var temp64_2 [DWORD]
+var temp64_3 [DWORD]
+
+var tempL    [LONG]
+
+var temp_fp_s  [FLOAT32]
+var temp_fp_s2 [FLOAT32]
+var temp_fp_d  [FLOAT64]
+var temp_fp_d2 [FLOAT64]
+
+var temp128   [QWORD]
+var temp128_0 [QWORD]
+var temp128_1 [QWORD]
+var temp128_2 [QWORD]
+
+var temp33[card(33)]
+
+var temp65[card(65)]
+
+var op_encoding [card(6)]
+
+//==================================================================================================
+// Instructions
+//==================================================================================================
+
+#include "mips64_alu.nml"
+#include "mips64_bpu.nml"
+#include "mips64_mmu.nml"
+#include "mips64_nop.nml"
+#include "mips64_sys.nml"
+#include "mips64_fpu.nml"
+
+op Op = MIPS64NopOp
+      | MIPS64AluOp
+      | MIPS64BpuOp
+      | MIPS64MmuOp
+      | MIPS64SysOp
+      | MIPS64FpuOp
+
+var is_delay_slot [BIT]
+var last_branch_instruction [BIT]
+var jump_address  [DWORD]
+
+op instruction (operation: Op)
+  syntax = operation.syntax
+  image  = operation.image
+  action = {
+    GPR[0] = coerce(DWORD, 0);
+
+    last_branch_instruction = BRANCH_INSTRUCTION;
+    is_delay_slot = BRANCH;
+    jump_address  = NEXTPC;
+
+    BRANCH_INSTRUCTION = 0;
+    BRANCH = 0;
+    NEXTPC = coerce(DWORD, 0);
+
+    if SKIPOP == 0 then
+      operation.action;
+    else
+      SKIPOP = 0; // still unpredicted for branches etc.
+    endif;
+
+    if (BRANCH_INSTRUCTION == 1) && (last_branch_instruction == 1) then
+      unpredicted;
+    endif;
+
+    /*
+    if (is_delay_slot == 1 && BRANCH == 1) then
+      unpredicted;
+    endif;*/
+
+    if (is_delay_slot == 1) then
+      CIA = jump_address;
+    else
+      CIA = CIA + 4;
+    endif;
+  }
+
+op la(rd : R, addr : DWORD)
+  init = {}
+  syntax = format("la %s, %<label>d", rd.syntax, addr)
+  image  = format("%s%s%s%s%s", lui(rd, addr<48..63>).image,
+                                ori(rd, rd, addr<32..47>).image,
+                                dsll32(rd, rd, 0).image,
+                                lui(rd, addr<16..31>).image,
+                                ori(rd, rd, addr<0..15>).image)
+  action = {
+    instruction(lui(rd, addr<48..63>)).action;
+    instruction(ori(rd, rd, addr<32..47>)).action;
+    instruction(dsll32(rd, rd, 0)).action;
+    instruction(lui(rd, addr<16..31>)).action;
+    instruction(ori(rd, rd, addr<0..15>)).action;
+  }
+
+//==================================================================================================
+// The End
+//==================================================================================================
