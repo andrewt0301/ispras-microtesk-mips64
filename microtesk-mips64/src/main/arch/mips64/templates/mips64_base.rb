@@ -54,7 +54,8 @@ class MIPS64BaseTemplate < Template
     # Simple exception handler. Continues execution from the next instruction.
     #
     exception_handler {
-      section(:org => 0x380, :exception => ['IntegerOverflow', 'SystemCall', 'Breakpoint']) {
+      section(:org => 0x380, :exception => ['IntegerOverflow', 'SystemCall', 'Breakpoint',
+                                            'TLBInvalid', 'TLBMiss']) {
         trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
         mfc0 ra, c0_epc
         addiu ra, ra, 4
