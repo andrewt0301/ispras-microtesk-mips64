@@ -8,7 +8,8 @@
 
  2016/10/11 MicroTESK MIPS64 0.0.1
 
- - Specifications: Instruction set () of MIPS64
- - Test Templates: New templates bubble_sort.rb, bubble_sort_hword.rb, bubble_sort_byte.rb
+ - Specifications: Instruction set of MIPS64
+ - Test Templates: New templates bubble_sort.rb, bubble_sort_word.rb, euclid.rb,
+                   load_store_situation.rb
                    Simple arithmetic and load/store templates
 
