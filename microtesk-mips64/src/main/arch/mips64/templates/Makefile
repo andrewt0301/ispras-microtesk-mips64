@@ -3,7 +3,6 @@ TESTS = bubble_sort\
         euclid\
         instruction_alu\
         instruction_mmu\
-        load_store\
         load_store_situation
 
 all: $(TESTS)
