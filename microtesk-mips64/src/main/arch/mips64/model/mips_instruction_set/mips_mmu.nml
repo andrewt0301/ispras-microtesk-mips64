@@ -32,7 +32,7 @@ var temp_address_2_0[card(3)]
 var load_temp64[DWORD]
 var temp_address_load[DWORD]
 var load_address_error[WORD]
-op mips64_load (load_op: card(4), signed_op: BYTE, rt: R, load_offset: SHORT, load_base: R)
+internal op mips64_load (load_op: card(4), signed_op: BYTE, rt: R, load_offset: SHORT, load_base: R)
   action = {
     temp_address_load = load_base + sign_extend(DWORD, load_offset);
 
@@ -88,7 +88,7 @@ op mips64_load (load_op: card(4), signed_op: BYTE, rt: R, load_offset: SHORT, lo
   Data Store function.
   */
 var store_address_error[WORD]
-op mips64_store (store_op: card(4), rt: R, offset: SHORT, base: R)
+internal op mips64_store (store_op: card(4), rt: R, offset: SHORT, base: R)
   action = {
     temp_address = base + sign_extend(DWORD, offset);
 
@@ -551,7 +551,6 @@ op sw (rt: R, offset: SHORT, base: R)
 op MipsMmuOp = ld
              | sd
              | lw
-             | lwu
              | sw
              | lb
              | sb

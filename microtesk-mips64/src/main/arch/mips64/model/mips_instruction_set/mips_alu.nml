@@ -23,7 +23,7 @@
 /*
   signed multiply two words
 */
-op mul_signed_words(temp_a: WORD, temp_b: WORD)
+internal op mul_signed_words(temp_a: WORD, temp_b: WORD)
   action = {
     temp64_1 = sign_extend(DWORD, temp_a<31..0>);
     temp64_2 = sign_extend(DWORD, temp_b<31..0>);
@@ -33,7 +33,7 @@ op mul_signed_words(temp_a: WORD, temp_b: WORD)
 /*
   unsigned multiply two words
 */
-op mul_unsigned_words(temp_a: WORD, temp_b: WORD)
+internal op mul_unsigned_words(temp_a: WORD, temp_b: WORD)
   action = {
     temp64_1 = zero_extend(DWORD, temp_a<31..0>);
     temp64_2 = zero_extend(DWORD, temp_b<31..0>);
@@ -320,7 +320,7 @@ op aui (rt: R, rs: R, immediate: SHORT)
 
   GPR[rd] <- temp
 */
-op clo_count_leading_ones(rs_value: WORD)
+internal op clo_count_leading_ones(rs_value: WORD)
   action = {
     temp = coerce(WORD, 0b0);
     temp = temp + coerce(WORD, rs_value<0>);
@@ -1578,9 +1578,9 @@ op Mips32LogicalOp = Mips32LogicalRRR
     return outbyte
   end function
 */
-  var temp_reverse [BYTE] // output value for reverse_bits_in_byte
+var temp_reverse [BYTE] // output value for reverse_bits_in_byte
 
-  op reverse_bits_in_byte(input_byte_value: BYTE)
+internal op reverse_bits_in_byte(input_byte_value: BYTE)
   action = {
     temp_reverse<0> = input_byte_value<7>;
     temp_reverse<1> = input_byte_value<6>;
@@ -1969,7 +1969,7 @@ op Mips32ShiftOp = Mips32ShiftRRI
 /*
   signed multiply two dwords
 */
-op mul_signed_dwords(temp_a: DWORD, temp_b: DWORD)
+internal op mul_signed_dwords(temp_a: DWORD, temp_b: DWORD)
   action = {
     temp128_1 = sign_extend(QWORD, temp_a);
     temp128_2 = sign_extend(QWORD, temp_b);
@@ -1979,7 +1979,7 @@ op mul_signed_dwords(temp_a: DWORD, temp_b: DWORD)
 /*
   unsigned multiply two dwords
 */
-op mul_unsigned_dwords(temp_a: WORD, temp_b: WORD)
+internal op mul_unsigned_dwords(temp_a: WORD, temp_b: WORD)
   action = {
     temp128_1 = zero_extend(QWORD, temp_a);
     temp128_2 = zero_extend(QWORD, temp_b);
@@ -3354,10 +3354,27 @@ op Mips64InsertsOp = ext
 // MIPS 32 Data Transfer
 //--------------------------------------------------------------------------------------------------
 
+/*
+  LUI: Load Upper Immediate (MIPS32, Assembly Idiom Release 6)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15      0 |
+            | LUI    | 0     | rt    | immediate |
+            | 001111 | 00000 |       |           |
+            | 6      | 5     | 5     | 16        |
+
+  Format: LUI rt, immediate
+
+  Description: GPR[rt] <- sign_extend(immediate || 016)
+    The 16-bit immediate is shifted left 16 bits and concatenated with 16 bits of low-order zeros.
+    The 32-bit result is signextended and placed into GPR rt.
+
+  Operation:
+    GPR[rt] <- sign_extend(immediate || 016)
+  */
 op lui (rt: R, immediate: HWORD)
   init = {}
   syntax = format("lui %s, 0x%x", rt.syntax, immediate)
-  image  = format("00000000000000000000000000000000")
+  image  = format("00111100000%5s%16s", rt.image, immediate)
   action = {
     rt = coerce(LONG, (coerce(INT, immediate) << 16));
   }

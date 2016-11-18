@@ -1242,7 +1242,7 @@ op MipsSysC0Op = di
   Format: DMFC2 rt, rd
           DMFC2 rt, rd, sel
   */
-op dmfc2 (rt: R, rd: R, sel: card(3))
+op dmfc2 (rt: R, rd: R, sel: card(16))
   init = {}
   syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%16s", rt.image, sel)
@@ -1253,7 +1253,7 @@ op dmfc2 (rt: R, rd: R, sel: card(3))
 op dmfc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmfc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
   action = {
     dmfc2(rt, rd, 0).action;
   }
@@ -1264,7 +1264,7 @@ op dmfc22 (rt: R, rd: R)
   Format: DMTC2 rt, Impl
           DMTC2 rt, Impl, sel
   */
-op dmtc2 (rt: R, rd: R, sel: card(3))
+op dmtc2 (rt: R, rd: R, sel: card(16))
   init = {}
   syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%16s", rt.image, sel)
@@ -1275,7 +1275,7 @@ op dmtc2 (rt: R, rd: R, sel: card(3))
 op dmtc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmtc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
   action = {
     dmtc2(rt, rd, 0).action;
   }
@@ -1286,7 +1286,7 @@ op dmtc22 (rt: R, rd: R)
   Format: MFC2 rt, Impl
           MFC2 rt, Impl, sel
   */
-op mfc2 (rt: R, rd: R, sel: card(3))
+op mfc2 (rt: R, rd: R, sel: card(16))
   init = {}
   syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%16s", rt.image, sel)
@@ -1297,7 +1297,7 @@ op mfc2 (rt: R, rd: R, sel: card(3))
 op mfc22 (rt: R, rd: R)
   init = {}
   syntax = format("mfc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
   action = {
     mfc2(rt, rd, 0).action;
   }
@@ -1308,7 +1308,7 @@ op mfc22 (rt: R, rd: R)
   Format: MTC2 rt, Impl
           MTC2 rt, Impl, sel
   */
-op mtc2 (rt: R, rd: R, sel: card(3))
+op mtc2 (rt: R, rd: R, sel: card(16))
   init = {}
   syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%16s", rt.image, sel)
@@ -1319,7 +1319,7 @@ op mtc2 (rt: R, rd: R, sel: card(3))
 op mtc22 (rt: R, rd: R)
   init = {}
   syntax = format("mtc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%16s", rt.image, rd.image)
+  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
   action = {
     mtc2(rt, rd, 0).action;
   }

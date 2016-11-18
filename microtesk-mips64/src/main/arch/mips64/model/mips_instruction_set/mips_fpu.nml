@@ -200,7 +200,7 @@ op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
 op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("abs.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s000101", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s000101", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -460,7 +460,7 @@ op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
 op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("neg.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s000111", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s000111", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -638,7 +638,7 @@ op nmsub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
 op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("recip.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s010101", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s010101", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     temp = coerce(WORD, 1);
@@ -681,7 +681,7 @@ op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("rsqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s010110", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s010110", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     temp = coerce(WORD, 1);
@@ -721,7 +721,7 @@ op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("sqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s000100", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s000100", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -1175,7 +1175,7 @@ op mips64_load_fpu_short (load_op: card(4), rt: FR, load_offset: SHORT, load_bas
 op ldc1 (ft: FR, offset: SHORT, base: R)
   init = {}
   syntax = format("ld %s, %d(%s)", ft.syntax, offset, base.syntax)
-  image  = format("110101%5s%5s%16s", base.image, ft.syntax, offset)
+  image  = format("110101%5s%5s%16s", base.image, ft.image, offset)
   action = {
     mips64_load_fpu_short(MEM_FPU_DWORD, ft, offset, base).action;
   }
@@ -1411,7 +1411,7 @@ op mthc1 (rt: R, fs: FR)
 op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("mov.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s000110", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s000110", op_fmt.image, fs.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -1484,7 +1484,7 @@ op movf (rd: R, rs: R, cc: card(3))
 op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
   init = {}
   syntax = format("movf.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
-  image  = format("010001%5s%3s00%5s%5s010001", op_fmt.syntax, cc, fs.image, fd.image)
+  image  = format("010001%5s%3s00%5s%5s010001", op_fmt.image, cc, fs.image, fd.image)
   action = {
     FPConditionCode(cc).action;
 
@@ -1535,7 +1535,7 @@ op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
 op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
   init = {}
   syntax = format("movn.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
-  image  = format("010001%5s%5s%5s%5s010011", op_fmt.syntax, rt.image, fs.image, fd.image)
+  image  = format("010001%5s%5s%5s%5s010011", op_fmt.image, rt.image, fs.image, fd.image)
   action = {
     if rt != coerce(BIT, 0) then
       if fmt_fpu == coerce(card(5), FMT_S) then
@@ -1609,7 +1609,7 @@ op movt (rd: R, rs: R, cc: card(3))
 op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
   init = {}
   syntax = format("movt.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
-  image  = format("010001%5s%3s01%5s%5s010001", op_fmt.syntax, cc, fs.image, fd.image)
+  image  = format("010001%5s%3s01%5s%5s010001", op_fmt.image, cc, fs.image, fd.image)
   action = {
     FPConditionCode(cc).action;
 
@@ -1660,7 +1660,7 @@ op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
 op movz_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
   init = {}
   syntax = format("movz.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
-  image  = format("010001%5s%5s%5s%5s010010", op_fmt.syntax, rt.image, fs.image, fd.image)
+  image  = format("010001%5s%5s%5s%5s010010", op_fmt.image, rt.image, fs.image, fd.image)
   action = {
     if rt == coerce(BIT, 0) then
       if fmt_fpu == coerce(card(5), FMT_S) then
@@ -1741,7 +1741,7 @@ TRUNC.W.fmt
 op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.d.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s100001", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s100001", op_fmt.image, fs.image, fd.image)
   action = {
     if fmt_fpu == coerce(card(5), FMT_S) then
       temp_fp_s<31..0> = fs<31..0>;
@@ -1790,7 +1790,7 @@ op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s100101", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s100101", op_fmt.image, fs.image, fd.image)
   action = {
     if fmt_fpu == coerce(card(5), FMT_S) then
       temp_fp_s<31..0> = fs<31..0>;
@@ -1903,7 +1903,7 @@ op cvts_pu (fd: FR, fs: FR)
 op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s100000", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s100000", op_fmt.image, fs.image, fd.image)
   action = {
     if fmt_fpu == coerce(card(5), FMT_D) then
       temp_fp_d<63..0> = fs<63..0>;
@@ -1952,7 +1952,7 @@ op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s100100", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s100100", op_fmt.image, fs.image, fd.image)
   action = {
     if fmt_fpu == coerce(card(5), FMT_D) then
       temp_fp_d<63..0> = fs<63..0>;
@@ -1989,7 +1989,7 @@ op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("ceil.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001010", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001010", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding up
     cvtl_fmt(op_fmt, fd, fs).action;
@@ -2017,7 +2017,7 @@ op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("ceil.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001110", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001110", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding up
     cvtw_fmt(op_fmt, fd, fs).action;
@@ -2052,7 +2052,7 @@ op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
   init = {}
   syntax = format("alnv.ps %s, %s, %s, %s", fd.syntax, fs.syntax, ft.syntax, rs.syntax)
-  image  = format("010011%5s%5s%5s%5s011110", rs.syntax, ft.image, fs.image, fd.image)
+  image  = format("010011%5s%5s%5s%5s011110", rs.image, ft.image, fs.image, fd.image)
   action = {
     if rs<2..0> == coerce(card(3), 0) then
       fd<63..0> = fs<63..0>;
@@ -2087,7 +2087,7 @@ op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
 op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("floor.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001011", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001011", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding down
     cvtl_fmt(op_fmt, fd, fs).action;
@@ -2115,7 +2115,7 @@ op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("floor.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001111", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001111", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding down
     cvtw_fmt(op_fmt, fd, fs).action;
@@ -2245,7 +2245,7 @@ op puups_s (fd: FR, fs: FR, ft: FR)
 op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("round.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001000", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001000", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding to nearest
     cvtl_fmt(op_fmt, fd, fs).action;
@@ -2275,7 +2275,7 @@ op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("round.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001100", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001100", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding to nearest
     cvtw_fmt(op_fmt, fd, fs).action;
@@ -2304,7 +2304,7 @@ op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("trunc.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001001", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001001", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding toward zero
     cvtl_fmt(op_fmt, fd, fs).action;
@@ -2333,7 +2333,7 @@ op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op truncw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("trunc.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
-  image  = format("010001%5s00000%5s%5s001101", op_fmt.syntax, fs.image, fd.image)
+  image  = format("010001%5s00000%5s%5s001101", op_fmt.image, fs.image, fd.image)
   action = {
     // TODO: rounding toward zero
     cvtw_fmt(op_fmt, fd, fs).action;
