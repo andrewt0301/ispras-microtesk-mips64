@@ -37,6 +37,8 @@ type JTLB_ENTRY = card(128)
 // Registers and Memory
 //==================================================================================================
 
+let BaseVirtualAddress = 0xffffffffa0002000
+
 // Architecture Revision
 let ArchitectureRevision = 0x6
 
@@ -378,6 +380,14 @@ var temp33[card(33)]
 var temp65[card(65)]
 
 var op_encoding [card(6)]
+
+// Internal Operation to Handle Exceptions
+
+internal op exception()
+action = {
+  C0_EPC = CIA;
+  CIA = BaseVirtualAddress + 0x380;
+}
 
 //==================================================================================================
 // Instructions

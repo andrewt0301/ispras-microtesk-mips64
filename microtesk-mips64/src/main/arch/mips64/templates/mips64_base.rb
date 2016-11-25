@@ -99,6 +99,16 @@ class MIPS64BaseTemplate < Template
       ori target, zero, value(0, 15)
     }
 
+    preparator(:target => 'R',
+             :mask => "'b11111111_11111111_11111111_11111111_1xxxxxxx_xxxxxxxx_00000000_00000000") {
+      lui target, value(16, 31)
+    }
+
+    preparator(:target => 'R',
+             :mask => "'b00000000_00000000_00000000_00000000_0xxxxxxx_xxxxxxxx_00000000_00000000") {
+      lui target, value(16, 31)
+    }
+
     preparator(:target => 'R', :mask => "00000000XXXX0000") {
       ori  target, zero, value(16, 31)
       dsll target, target, 16
@@ -112,6 +122,18 @@ class MIPS64BaseTemplate < Template
     preparator(:target => 'R', :mask => "XXXX000000000000") {
       ori    target, zero,   value(48, 63)
       dsll32 target, target, 16
+    }
+
+    preparator(:target => 'R',
+             :mask => "'b11111111_11111111_11111111_11111111_1xxxxxxx_xxxxxxxx_xxxxxxxx_xxxxxxxx") {
+      lui target, value(16, 31)
+      ori target, target, value(0, 15)
+    }
+
+    preparator(:target => 'R',
+             :mask => "'b00000000_00000000_00000000_00000000_0xxxxxxx_xxxxxxxx_xxxxxxxx_xxxxxxxx") {
+      lui target, value(16, 31)
+      ori target, target, value(0, 15)
     }
 
     preparator(:target => 'R', :mask => "00000000XXXXXXXX") {
