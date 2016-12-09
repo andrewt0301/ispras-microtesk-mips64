@@ -11,7 +11,7 @@
 
 require ENV['TEMPLATE']
 
-class MIPS64BaseTemplate < Template
+class Mips64BaseTemplate < Template
   def initialize
     super
     # Initialize settings here 
@@ -915,13 +915,10 @@ label :error
   end
 
   ##################################################################################################
-  # Utility method for printing data stored in memory using labels.
+  # Utility methods for printing data stored in memory using addresses/labels.
   ##################################################################################################
 
-  def trace_data(begin_label, end_label)
-    begin_addr = get_address_of(begin_label)
-    end_addr = get_address_of(end_label)
-
+  def trace_data_addr(begin_addr, end_addr)
     count = (end_addr - begin_addr) / 8
     additional_count = (end_addr - begin_addr) % 8
     if additional_count > 0
@@ -943,6 +940,13 @@ label :error
       addr = addr + 8
     }
     trace ""
+  end
+
+  def trace_data(begin_label, end_label)
+    begin_addr = get_address_of(begin_label)
+    end_addr = get_address_of(end_label)
+
+    trace_data_addr(begin_addr, end_addr)
   end
 
   ##################################################################################################

@@ -6,6 +6,9 @@
  2016/11/11 - 2016/MM/DD
 --------------------------------------------------------------------------------
 
+ 2016/12/09 MicroTESK MIPS64 0.0.3
+ - Test Templates: New (19) templates
+
  2016/11/25 MicroTESK MIPS64 0.0.2
  - Specifications: Updates exceptions in MIPS64 instructions
  - Test Templates: Updates in GPR preparators

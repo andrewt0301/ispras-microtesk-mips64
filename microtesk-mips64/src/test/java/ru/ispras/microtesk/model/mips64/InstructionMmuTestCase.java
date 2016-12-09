@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import ru.ispras.microtesk.test.Statistics;
 
-public class InstructionMmuTestCase extends MIPS64Test {
+public class InstructionMmuTestCase extends Mips64Test {
   @Test
   public void test() {
     final Statistics statistics = run("instruction_mmu.rb");

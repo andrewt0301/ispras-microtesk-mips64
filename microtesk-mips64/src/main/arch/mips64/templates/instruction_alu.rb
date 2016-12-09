@@ -17,7 +17,7 @@ require_relative 'mips64_base'
 # This small tests for ALU instructions.
 #
 
-class InstructionALU < MIPS64BaseTemplate
+class InstructionAluTemplate < Mips64BaseTemplate
 
   def run
     trace "Run ALU instruction:"

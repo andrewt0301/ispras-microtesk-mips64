@@ -20,7 +20,7 @@ require_relative 'mips64_base'
 # divisor of two 5-bit random numbers ([1..63]) by using the Euclidean 
 # algorithm.
 #
-class EuclidTemplate < MIPS64BaseTemplate
+class EuclidTemplate < Mips64BaseTemplate
 
   def run
     trace "Euclidean Algorithm (K64): Debug Output"

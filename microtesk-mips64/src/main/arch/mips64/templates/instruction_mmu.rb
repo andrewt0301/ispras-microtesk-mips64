@@ -17,7 +17,7 @@ require_relative 'mips64_base'
 # This small tests for MMU instructions.
 #
 
-class InstructionMMU < MIPS64BaseTemplate
+class InstructionMmuTemplate < Mips64BaseTemplate
 
   def run
     trace "Run MMU instruction:"

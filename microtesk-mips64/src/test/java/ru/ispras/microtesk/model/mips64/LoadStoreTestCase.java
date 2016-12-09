@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import ru.ispras.microtesk.test.Statistics;
 
-public class LoadStoreTestCase extends MIPS64Test {
+public class LoadStoreTestCase extends Mips64Test {
   @Test
   public void test() {
     final Statistics statistics = run("load_store.rb");

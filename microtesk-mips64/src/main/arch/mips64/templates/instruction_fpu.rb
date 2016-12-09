@@ -17,7 +17,7 @@ require_relative 'mips64_base'
 # This small tests for FPU instructions.
 #
 
-class InstructionFPU < MIPS64BaseTemplate
+class InstructionFpuTemplate < Mips64BaseTemplate
 
   def run
     trace "Run FPU instruction:"

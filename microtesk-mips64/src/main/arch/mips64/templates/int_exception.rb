@@ -19,7 +19,7 @@ require_relative 'mips64_base'
 # combinations of "add" and "sub" instructions with situations "IntegerOverflow" that
 # causes an exception and "normal" that causes no exceptions.
 #
-class IntExceptionTemplate < MIPS64BaseTemplate
+class IntExceptionTemplate < Mips64BaseTemplate
 
   def run
     block(:combinator => 'product', :compositor => 'random') {

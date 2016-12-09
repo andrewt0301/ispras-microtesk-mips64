@@ -17,7 +17,7 @@ require_relative 'mips64_base'
 # This test template demonstrates how to generate test cases for load/store instructions
 # using contraints on memory events.
 #
-class LoadStoreSituationTemplate < MIPS64BaseTemplate
+class LoadStoreSituationTemplate < Mips64BaseTemplate
   def initialize
     super
 

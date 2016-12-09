@@ -19,8 +19,8 @@ import org.junit.Assert;
 import ru.ispras.microtesk.Logger.EventType;
 import ru.ispras.microtesk.test.testutils.TemplateTest;
 
-public class MIPS64Test extends TemplateTest {
-  public MIPS64Test() {
+public class Mips64Test extends TemplateTest {
+  public Mips64Test() {
     super(
         "mips64",
         "src/main/arch/mips64/templates"

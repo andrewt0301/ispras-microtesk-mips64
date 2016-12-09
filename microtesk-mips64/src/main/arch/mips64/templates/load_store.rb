@@ -16,7 +16,7 @@ require_relative 'mips64_base'
 #
 # This test template demonstrates how to generate test cases for load/store instructions.
 #
-class LoadStoreTemplate < MIPS64BaseTemplate
+class LoadStoreTemplate < Mips64BaseTemplate
   def initialize
     super
 

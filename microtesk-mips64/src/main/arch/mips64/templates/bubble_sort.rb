@@ -34,7 +34,7 @@ require_relative 'mips64_base'
 #   until not swapped
 # end procedure
 #
-class BubbleSortTemplate < MIPS64BaseTemplate
+class BubbleSortTemplate < Mips64BaseTemplate
   def pre
     super
 

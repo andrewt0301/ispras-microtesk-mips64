@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import ru.ispras.microtesk.test.Statistics;
 
-public class EuclidTestCase extends MIPS64Test {
+public class EuclidTestCase extends Mips64Test {
   @Test
   public void test() {
     final Statistics statistics = run("euclid.rb");

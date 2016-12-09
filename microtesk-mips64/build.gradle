@@ -289,12 +289,12 @@ copyDistribution.dependsOn getDistribution
 compileJava.dependsOn copyDistribution
 compileTestJava.dependsOn copyDistribution
 
-task copyMIPS64(type: Copy) {
+task copyMips64(type: Copy) {
   from "${project.projectDir}/src/main/arch"
   into "${project.projectDir}/build/target/arch"
 }
 
-copyMIPS64.dependsOn copyDistribution
+copyMips64.dependsOn copyDistribution
 
 task copySettings(type: Copy) {
   from "${project.projectDir}/src/main/etc"
@@ -311,7 +311,7 @@ task copyChangeLog(type: Copy) {
 
 copyChangeLog.dependsOn copyDistribution
 
-task translateMIPS64(type: JavaExec) {
+task translateMips64(type: JavaExec) {
   classpath = files("${project.projectDir}/build/target/lib/jars/microtesk.jar")
   classpath += sourceSets.main.runtimeClasspath
   environment 'MICROTESK_HOME', "${project.projectDir}/build/target"
@@ -327,10 +327,10 @@ task translateMIPS64(type: JavaExec) {
   ]
 }
 
-translateMIPS64.dependsOn copyDistribution
-translateMIPS64.dependsOn copyMIPS64
-translateMIPS64.dependsOn copySettings
-translateMIPS64.dependsOn copyChangeLog
+translateMips64.dependsOn copyDistribution
+translateMips64.dependsOn copyMips64
+translateMips64.dependsOn copySettings
+translateMips64.dependsOn copyChangeLog
 
 task compileModels(type: JavaCompile) {
   source = fileTree(dir: 'build/generated-src/models/src', include: '**/*.java')
@@ -339,7 +339,7 @@ task compileModels(type: JavaCompile) {
   classpath += sourceSets.main.runtimeClasspath
 }
 
-compileModels.dependsOn translateMIPS64
+compileModels.dependsOn translateMips64
 
 jar {
   archiveName = 'models.jar'

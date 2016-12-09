@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import ru.ispras.microtesk.test.Statistics;
 
-public class IntExceptionTestCase extends MIPS64Test {
+public class IntExceptionTestCase extends Mips64Test {
   @Test
   public void test() {
     final Statistics statistics = run("int_exception.rb");

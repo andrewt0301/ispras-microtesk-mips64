@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import ru.ispras.microtesk.test.Statistics;
 
-public class BubbleSortWordTestCase extends MIPS64Test {
+public class BubbleSortWordTestCase extends Mips64Test {
   @Test
   public void test() {
     final Statistics statistics = run("bubble_sort_word.rb");
