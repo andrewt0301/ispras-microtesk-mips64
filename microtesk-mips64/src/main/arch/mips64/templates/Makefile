@@ -3,6 +3,7 @@ TESTS = bubble_sort\
         euclid\
         instruction_alu\
         instruction_mmu\
+        int_exception\
         load_store\
         load_store_situation
 
