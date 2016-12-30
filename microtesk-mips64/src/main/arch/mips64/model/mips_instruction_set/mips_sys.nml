@@ -16,10 +16,19 @@
 // System Instructions
 //==================================================================================================
 
+/*
+CACHE: Perform Cache Operation
+
+  Encoding: | 31    26 | 25 21 | 20 16 | 15   0 |
+            | CACHE    | base  | op    | offset |
+            | 101111   | 0     |       |        |
+            | 6        | 5     | 5     | 16     |
+*/
+// TODO:
 op cache (operation: card(5), offset: SHORT, base: R)
   init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
-  image  = format("00000000000000000000000000000000")
+  image  = format("101111%5s%5s%16s", base.image, operation, offset)
   action = {
     // Do nothing.
   }
@@ -118,10 +127,18 @@ var temp_jtlb_entry_lo0 [DWORD]
 var temp_jtlb_entry_lo1 [DWORD]
 var temp_jtlb_entry     [JTLB_ENTRY]
 
+/*
+TLBWR: Write Random TLB Entry
+
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | TLBWI  |
+            | 100000 | 1  | 000 0000 0000 0000 0000 | 000010 |
+            | 6      | 1  | 19                      | 6      |
+*/
 op tlbwi ()
   init = {}
   syntax = format("tlbwi")
-  image  = format("00000000000000000000000000000000")
+  image  = format("01000010000000000000000000000010")
   action = {
     temp_jtlb_index     = C0_INDEX;
     temp_jtlb_entry_hi  = C0_ENTRY_HI;
@@ -134,11 +151,18 @@ op tlbwi ()
 
     JTLB[temp_jtlb_index] = temp_jtlb_entry;
   }
+/*
+TLBWR: Write Random TLB Entry
 
+  Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
+            | COP0   | CO | 0                       | TLBWR  |
+            | 100000 | 1  | 000 0000 0000 0000 0000 | 000110 |
+            | 6      | 1  | 19                      | 6      |
+*/
 op tlbwr ()
   init = {}
   syntax = format("tlbwr")
-  image  = format("00000000000000000000000000000000")
+  image  = format("01000010000000000000000000000110")
   action = {
     temp_jtlb_index     = C0_RANDOM;
     temp_jtlb_entry_hi  = C0_ENTRY_HI;
@@ -295,8 +319,8 @@ op syscall ()
   */
 op teq (rs: R, rt: R)
   init = {}
-  syntax = format("teq %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110100", rs.image, rs.image)
+  syntax = format("teq %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110100", rs.image, rt.image)
   action = {
     if rs<63..0> == rt<63..0> then
       exception("Trap");
@@ -354,10 +378,11 @@ op teqi (rs: R, immediate: card(16))
       SignalException(Trap)
     endif
   */
+// TODO: The contents of the code field are ignored by hardware and may be used to encode information for system software.
 op tge (rs: R, rt: R)
   init = {}
-  syntax = format("tge %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110000", rs.image, rs.image)
+  syntax = format("tge %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110000", rs.image, rt.image)
   action = {
     if coerce(LONG, rs<63..0>) >= coerce(LONG, rt<63..0>) then
       exception("Trap");
@@ -449,8 +474,8 @@ op tgeiu (rs: R, immediate: card(16))
     */
 op tgeu (rs: R, rt: R)
   init = {}
-  syntax = format("tgeu %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110000", rs.image, rs.image)
+  syntax = format("tgeu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110001", rs.image, rt.image)
   action = {
     if rs<63..0> >= rt<63..0> then
       exception("Trap");
@@ -480,8 +505,8 @@ op tgeu (rs: R, rt: R)
   */
 op tlt (rs: R, rt: R)
   init = {}
-  syntax = format("tlt %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110010", rs.image, rs.image)
+  syntax = format("tlt %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110010", rs.image, rt.image)
   action = {
     if coerce(LONG, rs<63..0>) < coerce(LONG, rt<63..0>) then
       exception("Trap");
@@ -553,8 +578,8 @@ op tltiu (rs: R, immediate: card(16))
   TLTU: Trap if Less Than Unsigned
 
   Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
-            | SPECIAL | rs    | rt    | code | TGEU   |
-            | 000000  |       |       |      | 110001 |
+            | SPECIAL | rs    | rt    | code | TLTU   |
+            | 000000  |       |       |      | 110011 |
             | 6       | 5     | 5     | 10   | 6      |
 
   Format: TLTU rs, rt MIPS32
@@ -573,8 +598,8 @@ op tltiu (rs: R, immediate: card(16))
     */
 op tltu (rs: R, rt: R)
   init = {}
-  syntax = format("tltu %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110001", rs.image, rs.image)
+  syntax = format("tltu %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110011", rs.image, rt.image)
   action = {
     if rs<63..0> < rt<63..0> then
       exception("Trap");
@@ -604,8 +629,8 @@ op tltu (rs: R, rt: R)
   */
 op tne (rs: R, rt: R)
   init = {}
-  syntax = format("tne %s, %s", rs.syntax, rs.syntax)
-  image  = format("000000%5s%5s0000000000110110", rs.image, rs.image)
+  syntax = format("tne %s, %s", rs.syntax, rt.syntax)
+  image  = format("000000%5s%5s0000000000110110", rs.image, rt.image)
   action = {
     if rs<63..0> != rt<63..0> then
       exception("Trap");
@@ -796,7 +821,7 @@ op di (rt: R)
     C0_STATUS_IE = coerce(BIT, 0x0);
   }
 
-op di2 (bug: R) // TODO: fixed bug
+pseudo op di2 (bug: R) // TODO: fixed bug
   init = {}
   syntax = format("di")
   image  = format("01000001011000000110000000000000")
@@ -837,7 +862,7 @@ op ei (rt: R)
     C0_STATUS_IE = coerce(BIT, 0x1);
   }
 
-op ei2 (bug: R) // TODO: fixed bug
+pseudo op ei2 (bug: R) // TODO: fixed bug
   init = {}
   syntax = format("ei")
   image  = format("01000001011000000110000000100000")
@@ -946,7 +971,7 @@ op dmfc0 (rt: R, rd: card(5), sel: card(3))
     rt = tempCPR;
   }
 
-op dmfc0_2 (rt: R, rd: card(5))
+pseudo op dmfc0_2 (rt: R, rd: card(5))
   init = {}
   syntax = format("dmfc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000001%5s%5s00000000000", rt.image, rd)
@@ -992,7 +1017,7 @@ op dmtc0 (rt: R, rd: card(5), sel: card(3))
     CPRSET(coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel)).action;
   }
 
-op dmtc0_2 (rt: R, rd: card(5))
+pseudo op dmtc0_2 (rt: R, rd: card(5))
   init = {}
   syntax = format("dmtc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000101%5s%5s00000000000", rt.image, rd)
@@ -1047,7 +1072,7 @@ op mfc0 (rt: R, rd: C0_R)
     rt = rd;
   }
 
-op mfc0_2 (rt: R, rd: card(5), sel: card(3))
+pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd, sel)
@@ -1065,7 +1090,7 @@ op mfc0_2 (rt: R, rd: card(5), sel: card(3))
     // TODO:
   }
 
-op mfc0_3 (rt: R, rd: card(5))
+pseudo op mfc0_3 (rt: R, rd: card(5))
   init = {}
   syntax = format("mfc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000000%5s%5s00000000000", rt.image, rd)
@@ -1133,7 +1158,7 @@ op mtc0 (rt: R, rd: C0_R)
     rd = rt;
   }
 
-op mtc0_2 (rt: R, rd: card(5), sel: card(3))
+pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("mtc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000100%5s%5s00000000%3s", rt.image, rd, sel)
@@ -1153,7 +1178,7 @@ op mtc0_2 (rt: R, rd: card(5), sel: card(3))
     // TODO:
   }
 
-op mtc0_3 (rt: R, rd: card(5))
+pseudo op mtc0_3 (rt: R, rd: card(5))
   init = {}
   syntax = format("mtc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000100%5s%5s00000000000", rt.image, rd)
@@ -1242,15 +1267,16 @@ op MipsSysC0Op = di
   Format: DMFC2 rt, rd
           DMFC2 rt, rd, sel
   */
-op dmfc2 (rt: R, rd: R, sel: card(16))
+// TODO: op dmfc2 (rt: R, rd: R, sel: card(16))
+op dmfc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
-  image  = format("01001000001%5s%16s", rt.image, sel)
+  image  = format("01001000001%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
     // TODO:
   }
 
-op dmfc22 (rt: R, rd: R)
+pseudo op dmfc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmfc2 %s, %s", rt.syntax, rd.syntax)
   image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
@@ -1264,18 +1290,19 @@ op dmfc22 (rt: R, rd: R)
   Format: DMTC2 rt, Impl
           DMTC2 rt, Impl, sel
   */
-op dmtc2 (rt: R, rd: R, sel: card(16))
+// TODO op dmtc2 (rt: R, rd: R, sel: card(16))
+op dmtc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
-  image  = format("01001000001%5s%16s", rt.image, sel)
+  image  = format("01001000101%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
     // TODO:
   }
 
-op dmtc22 (rt: R, rd: R)
+pseudo op dmtc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmtc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
+  image  = format("01001000101%5s%5s00000000000", rt.image, rd.image)
   action = {
     dmtc2(rt, rd, 0).action;
   }
@@ -1286,18 +1313,19 @@ op dmtc22 (rt: R, rd: R)
   Format: MFC2 rt, Impl
           MFC2 rt, Impl, sel
   */
-op mfc2 (rt: R, rd: R, sel: card(16))
+// TODO op mfc2 (rt: R, rd: R, sel: card(16))
+op mfc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
-  image  = format("01001000001%5s%16s", rt.image, sel)
+  image  = format("01001000000%5s%5s%11s", rt.image, rd.image, sel)
   action = {
     // TODO:
   }
 
-op mfc22 (rt: R, rd: R)
+pseudo op mfc22 (rt: R, rd: R)
   init = {}
   syntax = format("mfc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
+  image  = format("01001000000%5s%5s00000000000", rt.image, rd.image)
   action = {
     mfc2(rt, rd, 0).action;
   }
@@ -1308,18 +1336,19 @@ op mfc22 (rt: R, rd: R)
   Format: MTC2 rt, Impl
           MTC2 rt, Impl, sel
   */
-op mtc2 (rt: R, rd: R, sel: card(16))
+//TODO op mtc2 (rt: R, rd: R, sel: card(16))
+op mtc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
-  image  = format("01001000001%5s%16s", rt.image, sel)
+  image  = format("01001000100%5s%5s%11s", rt.image, rd.image, sel)
   action = {
     // TODO:
   }
 
-op mtc22 (rt: R, rd: R)
+pseudo op mtc22 (rt: R, rd: R)
   init = {}
   syntax = format("mtc2 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
+  image  = format("01001000100%5s%5s00000000000", rt.image, rd.image)
   action = {
     mtc2(rt, rd, 0).action;
   }

@@ -323,7 +323,12 @@ let SIGNED = 0b1
   16-23 L3 operation
   (page 386 of The MIPS64 Instruction Set Reference Manual, Revision 6.04)
 */
+let HINT_LOAD   = 0
+let HINT_STORE  = 1
+let HINT_L1_LRU = 2
+
 var hint     [card(5)]
+var hint4b   [card(4)]
 
 /*
   Bit of virtual state used to specify operation for instructions that provide atomic
@@ -447,7 +452,7 @@ op instruction (operation: Op)
     endif;
   }
 
-op la(rd : R, addr : DWORD)
+pseudo op la(rd : R, addr : DWORD)
   init = {}
   syntax = format("la %s, %<label>d", rd.syntax, addr)
   image  = format("%s%s%s%s%s", lui(rd, addr<48..63>).image,

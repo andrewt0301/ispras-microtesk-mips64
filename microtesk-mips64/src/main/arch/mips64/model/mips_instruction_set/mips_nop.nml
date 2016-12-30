@@ -32,7 +32,7 @@
   Operation:
     None
  */
-op nop ()
+pseudo op nop ()
   init = {}
   syntax = format("nop")
   image  = format("00000000000000000000000000000000")
@@ -56,7 +56,7 @@ op nop ()
   Operation:
     None
  */
-op ssnop ()
+pseudo op ssnop ()
   init = {}
   syntax = format("ssnop")
   image  = format("00000000000000000000000001000000")

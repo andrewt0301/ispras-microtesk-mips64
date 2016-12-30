@@ -93,7 +93,7 @@
     I: target_offset <- sign_extend(offset || 02)
     I+1: PC <- PC + target_offset
   */
-op b (offset: SHORT)
+pseudo op b (offset: SHORT)
   init = {}
   syntax = format("b %<label>d", offset)
   image  = format("0001000000000000%16s", offset)
@@ -126,9 +126,9 @@ op b (offset: SHORT)
        GPR[31] <- PC + 8
     I+1: PC <- PC + target_offset
   */
-op bal (rs: R, offset: SHORT)
+op bal (offset: SHORT)
   init = {}
-  syntax = format("bal %s, %<label>d", rs.syntax, offset)
+  syntax = format("bal %<label>d", offset)
   image  = format("0000010000010001%16s", offset)
   action = {
     BRANCH_INSTRUCTION = 1;
@@ -163,9 +163,9 @@ op bal (rs: R, offset: SHORT)
     GPR[31] <- PC+4
     PC <- PC+4 + sign_extend(target_offset)
   */
-op balc (rs: R, offset: card(26))
+op balc (offset: card(26))
   init = {}
-  syntax = format("balc %s, %<label>d", rs.syntax, offset)
+  syntax = format("balc %<label>d", offset)
   image  = format("111010%26s", offset)
   action = {
     BRANCH_INSTRUCTION = 1;
@@ -357,7 +357,9 @@ op bgez (rs: R, offset: SHORT)
       PC <- PC + target_offset
     endif
   */
-op bgezal (rs: R, offset: SHORT)
+// TODO: This instruction has been removed in Release 6 with the exception of special case BAL
+// (unconditional Branch and Link) which was an alias for BGEZAL with rs=0.
+pseudo op bgezal (rs: R, offset: SHORT)
   init = {}
   syntax = format("bgezal %s, %<label>d", rs.syntax, offset)
   image  = format("000001%5s10001%16s", rs.image, offset)
@@ -514,7 +516,7 @@ op bltzalc (rt: R, offset: SHORT)
     endif;
   }
 
-op beqzalc (rt: R, offset: SHORT)
+pseudo op beqzalc (rt: R, offset: SHORT)
   init = {}
   syntax = format("beqzalc %s, %<label>d", rt.syntax, offset)
   image  = format("00100000000%5s%16s", rt.image, offset)
@@ -533,7 +535,7 @@ op beqzalc (rt: R, offset: SHORT)
     endif;
   }
 
-op bnezalc (rt: R, offset: SHORT)
+pseudo op bnezalc (rt: R, offset: SHORT)
   init = {}
   syntax = format("bnezalc %s, %<label>d", rt.syntax, offset)
   image  = format("01100000000%5s%16s", rt.image, offset)
@@ -830,7 +832,7 @@ op bgec (rs: R, rt: R, offset: SHORT)
   }
 
 // Alias for BGEC
-op blec (rs: R, rt: R, offset: SHORT)
+pseudo op blec (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("blec %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("010110%5s%5s%16s", rs.image, rt.image, offset)
@@ -856,7 +858,7 @@ op bltc (rs: R, rt: R, offset: SHORT)
   }
 
 // Alias for BLTC
-op bgtc (rs: R, rt: R, offset: SHORT)
+pseudo op bgtc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bgtc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("010111%5s%5s%16s", rs.image, rt.image, offset)
@@ -882,7 +884,7 @@ op bgeuc (rs: R, rt: R, offset: SHORT)
   }
 
 // Alias for BGEUC
-op bleuc (rs: R, rt: R, offset: SHORT)
+pseudo op bleuc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bleuc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("000110%5s%5s%16s", rs.image, rt.image, offset)
@@ -908,7 +910,7 @@ op bltuc (rs: R, rt: R, offset: SHORT)
   }
 
 // Alias for BLTUC
-op bgtuc (rs: R, rt: R, offset: SHORT)
+pseudo op bgtuc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bgtuc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("000111%5s%5s%16s", rs.image, rt.image, offset)
@@ -916,7 +918,7 @@ op bgtuc (rs: R, rt: R, offset: SHORT)
     bltuc(rt, rs, offset).action;
   }
 
-op beqc (rs: R, rt: R, offset: SHORT)
+pseudo op beqc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("beqc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("001000%5s%5s%16s", rs.image, rt.image, offset)
@@ -933,7 +935,7 @@ op beqc (rs: R, rt: R, offset: SHORT)
     endif;
   }
 
-op bnec (rs: R, rt: R, offset: SHORT)
+pseudo op bnec (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bnec %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("011000%5s%5s%16s", rs.image, rt.image, offset)
@@ -950,7 +952,7 @@ op bnec (rs: R, rt: R, offset: SHORT)
     endif;
   }
 
-op beqzc (rs: R, offset: card(21))
+pseudo op beqzc (rs: R, offset: card(21))
   init = {}
   syntax = format("beqzc %s, %<label>d", rs.syntax, offset)
   image  = format("110110%5s%21s", rs.image, offset)
@@ -967,7 +969,7 @@ op beqzc (rs: R, offset: card(21))
     endif;
   }
 
-op bnezc (rs: R, offset: card(21))
+pseudo op bnezc (rs: R, offset: card(21))
   init = {}
   syntax = format("bnezc %s, %<label>d", rs.syntax, offset)
   image  = format("111110%5s%21s", rs.image, offset)
@@ -1536,7 +1538,7 @@ op sum_input_overflow(temp_a: DWORD, temp_b: DWORD)
       PC <- ( PC+4 + sign_extend( offset << 2 ) )
    endif
   */
-op bovc (rs: R, rt: R, offset: SHORT)
+pseudo op bovc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bovc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("001000%5s%5s%16s", rs.image, rt.image, offset)
@@ -1551,7 +1553,7 @@ op bovc (rs: R, rt: R, offset: SHORT)
     endif;
   }
 
-op bnvc (rs: R, rt: R, offset: SHORT)
+pseudo op bnvc (rs: R, rt: R, offset: SHORT)
   init = {}
   syntax = format("bnvc %s, %s, %<label>d", rs.syntax, rt.syntax, offset)
   image  = format("011000%5s%5s%16s", rs.image, rt.image, offset)
@@ -1689,7 +1691,9 @@ op jal (instr_index: card(26))
     endif
   */
 op jalr2 (rd: R, rs: R)
-  init = {}
+  init = {
+    hint = HINT_LOAD;
+  }
   syntax = format("jalr %s, %s", rd.syntax, rs.syntax)
   image  = format("000000%5s00000%5s%5s001001", rs.image, rd.image, hint)
   action = {
@@ -1708,7 +1712,9 @@ op jalr2 (rd: R, rs: R)
   }
 
 op jalr (rs: R)
-  init = {}
+  init = {
+    hint = HINT_LOAD;
+  }
   syntax = format("jalr %s", rs.syntax)
   image  = format("000000%5s0000011111%5s001001", rs.image, hint)
   action = {
@@ -1749,18 +1755,22 @@ op jalr (rs: R)
 */
 
 op jalr_hb2 (rd: R, rs: R)
-  init = {}
+  init = {
+    hint4b = HINT_LOAD;
+  }
   syntax = format("jalr.hb %s, %s", rd.syntax, rs.syntax)
-  image  = format("000000%5s00000%5s1%4s001001", rs.image, rd.image, hint<3..0>)
+  image  = format("000000%5s00000%5s1%4s001001", rs.image, rd.image, hint4b)
   action = {
     jalr2(rd, rs).action;
     // TODO: ClearHazards()
   }
 
 op jalr_hb (rs: R)
-  init = {}
+  init = {
+    hint4b = HINT_LOAD;
+  }
   syntax = format("jalr.hb %s", rs.syntax)
-  image  = format("000000%5s00000111111%4s001001", rs.image, hint<3..0>)
+  image  = format("000000%5s00000111111%4s001001", rs.image, hint4b)
   action = {
     jalr_hb2(R(31), rs).action;
   }
@@ -1831,7 +1841,9 @@ op jalx (instr_index: card(26))
       ISAMode <- temp0
     endif
   */
-op jialc (rt: R, offset: SHORT)
+// Release 6 instructions JIALC and BNEZC differ only in the rs field, instruction bits 21-25.
+// JIALC and BNEZC occupy the same encoding as pre-Release 6 instruction encoding SDC2, which is recoded in Release 6.
+pseudo op jialc (rt: R, offset: SHORT)
   init = {}
   syntax = format("jialc %s, %<label>d", rt.syntax, offset)
   image  = format("11111000000%5s%16s", rt.image, offset)
@@ -1879,7 +1891,9 @@ op jialc (rt: R, offset: SHORT)
       ISAMode <- temp0
     endif
   */
-op jic (rt: R, offset: SHORT)
+// Release 6 instructions JIC and BEQZC differ only in the rs field. JIC and BEQZC occupy the same encoding as pre-
+// Release 6 instruction LDC2, which is recoded in Release 6.
+pseudo op jic (rt: R, offset: SHORT)
   init = {}
   syntax = format("jic %s, %<label>d", rt.syntax, offset)
   image  = format("11011000000%5s%16s", rt.image, offset)
@@ -1933,7 +1947,9 @@ op jic (rt: R, offset: SHORT)
     endif
   */
 op jr (rs: R)
-  init = {}
+  init = {
+    hint = HINT_LOAD;
+  }
   syntax = format("jr %s", rs.syntax)
   image  = format("000000%5s0000000000%5s001000", rs.image, hint)
   action = {
@@ -1985,9 +2001,11 @@ op jr (rs: R)
     ClearHazards()
   */
 op jr_hb (rs: R)
-  init = {}
+  init = {
+    hint4b = HINT_LOAD;
+  }
   syntax = format("jr.hb %s", rs.syntax)
-  image  = format("000000%5s00000000001%4s001000", rs.image, hint<3..0>)
+  image  = format("000000%5s00000000001%4s001000", rs.image, hint4b)
   action = {
     jr(rs).action;
     // TODO: ClearHazards()

@@ -2023,7 +2023,7 @@ internal op mul_unsigned_dwords(temp_a: WORD, temp_b: WORD)
   Operation:
   DAUI: GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
 */
-op daui (rt: R, rs: R, immediate: SHORT)
+pseudo op daui (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("daui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("011101%5s%5s%16s", rs.image, rt.image, immediate)
@@ -2904,7 +2904,7 @@ op dsra (rd: R, rt: R, sa: card(5))
 op dsra32 (rd: R, rt: R, sa: card(5))
   init = {}
   syntax = format("dsra32 %s, %s, %d", rd.syntax, rt.syntax, sa)
-  image  = format("00000000000%5s%5s%5s111011", rt.image, rd.image, sa)
+  image  = format("00000000000%5s%5s%5s111111", rt.image, rd.image, sa)
   action = {
     rd = rt >> (zero_extend(WORD, sa) + coerce(WORD, 32));
   }
@@ -3371,7 +3371,8 @@ op Mips64InsertsOp = ext
   Operation:
     GPR[rt] <- sign_extend(immediate || 016)
   */
-op lui (rt: R, immediate: HWORD)
+// In Release 6, LUI is an assembly idiom for AUI with rs=0.
+pseudo op lui (rt: R, immediate: HWORD)
   init = {}
   syntax = format("lui %s, 0x%x", rt.syntax, immediate)
   image  = format("00111100000%5s%16s", rt.image, immediate)

@@ -61,6 +61,38 @@ mode FMT_FORMAT = FMT_FORMAT_S
 mode FMT_FORMAT_ALL = FMT_FORMAT
                     | FMT_FORMAT_W
                     | FMT_FORMAT_L
+
+// TODO: <2..0>
+let FMT3_S  = 0 // Floating point: single
+let FMT3_D  = 1 // Floating point: double
+let FMT3_PS = 6 // Floating point: paired single
+
+var fmt3_fpu [card(3)]
+
+mode FMT3_FORMAT_S ()
+  init = { fmt3_fpu = FMT3_S; }
+  syntax = "S"
+  image  = format("%3s", fmt3_fpu)
+  action = {}
+
+mode FMT3_FORMAT_D ()
+  init = { fmt3_fpu = FMT3_D; }
+  syntax = "D"
+  image  = format("%3s", fmt3_fpu)
+  action = {}
+
+mode FMT3_FORMAT_PS ()
+  init = { fmt3_fpu = FMT3_PS; }
+  syntax = "PS"
+  image  = format("%3s", fmt3_fpu)
+  action = {}
+
+mode FMT3_FORMAT = FMT3_FORMAT_S
+                 | FMT3_FORMAT_D
+                 | FMT3_FORMAT_PS
+
+//TODO: end <2..0>
+
 //--------------------------------------------------------------------------------------------------
 // FPU Arithmetic
 //--------------------------------------------------------------------------------------------------
@@ -290,25 +322,25 @@ op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, (vfs x vft) + vfr)
   */
-op madd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = { op_fmt.init; }
+op madd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = {}
   syntax = format("madd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s100%3s", fr.image, ft.image, fs.image, fd.image,
-                                              fmt_fpu<4..2>)  //, op_fmt.image)
+                                              op_fmt.image)
   action = {
     op_fmt.action;
-    if fmt_fpu == coerce(card(5), FMT_S) then
+    if fmt3_fpu == coerce(card(3), FMT3_S) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
          int_to_float(FLOAT32, fr<31..0>);
 
       fd<31..0> = float_to_int(WORD, temp_fp_s);
-    elif fmt_fpu == coerce(card(5), FMT_D) then
+    elif fmt3_fpu == coerce(card(3), FMT3_D) then
       temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) +
          int_to_float(FLOAT64, fr<63..0>);
 
       fd<63..0> = float_to_int(DWORD, temp_fp_d);
-    elif fmt_fpu == coerce(card(5), FMT_PS) then
+    elif fmt3_fpu == coerce(card(3), FMT3_PS) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
          int_to_float(FLOAT32, fr<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
@@ -352,25 +384,25 @@ op madd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, (vfs x vft) - vfr)
   */
-op msub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = { op_fmt.init; }
+op msub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = {}
   syntax = format("msub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s101%3s", fr.image, ft.image, fs.image, fd.image,
-                                              fmt_fpu<4..2>)  //, op_fmt.image)
+                                              op_fmt.image)
   action = {
     op_fmt.action;
-    if fmt_fpu == coerce(card(5), FMT_S) then
+    if fmt3_fpu == coerce(card(3), FMT3_S) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
          int_to_float(FLOAT32, fr<31..0>);
 
       fd<31..0> = float_to_int(WORD, temp_fp_s);
-    elif fmt_fpu == coerce(card(5), FMT_D) then
+    elif fmt3_fpu == coerce(card(3), FMT3_D) then
       temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) -
          int_to_float(FLOAT64, fr<63..0>);
 
       fd<63..0> = float_to_int(DWORD, temp_fp_d);
-    elif fmt_fpu == coerce(card(5), FMT_PS) then
+    elif fmt3_fpu == coerce(card(3), FMT3_PS) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
          int_to_float(FLOAT32, fr<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
@@ -409,7 +441,7 @@ op msub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
 op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("mul.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
-  image  = format("010001%5s%5s%5s%5s000011", op_fmt.image, fs.image, ft.image, fd.image)
+  image  = format("010001%5s%5s%5s%5s000010", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -509,27 +541,27 @@ op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, -(vfr +fmt (vfs xfmt vft)))
   */
-op nmadd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = { op_fmt.init; }
+op nmadd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = {}
   syntax = format("nmadd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s110%3s", fr.image, ft.image, fs.image, fd.image,
-                                              fmt_fpu<4..2>)  //, op_fmt.image)
+                                              op_fmt.image)
   action = {
     op_fmt.action;
-    if fmt_fpu == coerce(card(5), FMT_S) then
+    if fmt3_fpu == coerce(card(3), FMT3_S) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
          int_to_float(FLOAT32, fr<31..0>);
 
       fd<31..0> = float_to_int(WORD, temp_fp_s);
       fd<31> = ~fd<31>;
-    elif fmt_fpu == coerce(card(5), FMT_D) then
+    elif fmt3_fpu == coerce(card(3), FMT3_D) then
       temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) +
          int_to_float(FLOAT64, fr<63..0>);
 
       fd<63..0> = float_to_int(DWORD, temp_fp_d);
       fd<63> = ~fd<63>;
-    elif fmt_fpu == coerce(card(5), FMT_PS) then
+    elif fmt3_fpu == coerce(card(3), FMT3_PS) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) +
          int_to_float(FLOAT32, fr<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
@@ -575,27 +607,27 @@ op nmadd_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, -((vfs xfmt vft) -fmt vfr))
   */
-op nmsub_fmt (op_fmt: FMT_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = { op_fmt.init; }
+op nmsub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
+  init = {}
   syntax = format("nmsub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s111%3s", fr.image, ft.image, fs.image, fd.image,
-                                              fmt_fpu<4..2>)  //, op_fmt.image)
+                                              op_fmt.image)
   action = {
     op_fmt.action;
-    if fmt_fpu == coerce(card(5), FMT_S) then
+    if fmt3_fpu == coerce(card(3), FMT3_S) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
          int_to_float(FLOAT32, fr<31..0>);
 
       fd<31..0> = float_to_int(WORD, temp_fp_s);
       fd<31> = ~fd<31>;
-    elif fmt_fpu == coerce(card(5), FMT_D) then
+    elif fmt3_fpu == coerce(card(3), FMT3_D) then
       temp_fp_d = (int_to_float(FLOAT64, fs<63..0>) * int_to_float(FLOAT64, ft<63..0>)) -
          int_to_float(FLOAT64, fr<63..0>);
 
       fd<63..0> = float_to_int(DWORD, temp_fp_d);
       fd<63> = ~fd<63>;
-    elif fmt_fpu == coerce(card(5), FMT_PS) then
+    elif fmt3_fpu == coerce(card(3), FMT3_PS) then
       temp_fp_s = (int_to_float(FLOAT32, fs<31..0>) * int_to_float(FLOAT32, ft<31..0>)) -
          int_to_float(FLOAT32, fr<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
@@ -760,7 +792,7 @@ op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("sub.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
-  image  = format("010001%5s%5s%5s%5s000000", op_fmt.image, fs.image, ft.image, fd.image)
+  image  = format("010001%5s%5s%5s%5s000001", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
@@ -989,15 +1021,16 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
     if is_nan(temp_fp_d) then
       trace("X");
     endif;
- //   if is_nan(temp_fp_d) || is_nan(temp_fp_d2) ||
-//       is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2)
-  //     then
+    if is_nan(temp_fp_d) || is_nan(temp_fp_d2) ||
+       is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2)
+       then
+
       // TODO: Bug #7403 ... to continue
-  //  endif;
+    endif;
   }
 
 let CC_COND2 = 0 // cc = 0
-op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
+pseudo op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
   init = {}
   syntax = format("c.%s.%s %s, %s",
                   cond_value.syntax, op_fmt.syntax, fs.syntax, ft.syntax)
