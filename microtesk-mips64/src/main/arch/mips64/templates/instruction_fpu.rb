@@ -40,13 +40,13 @@ class InstructionFpuTemplate < Mips64BaseTemplate
     div_fmt d, f1, f2, f3
     div_fmt ps, f1, f2, f3
 
-    madd_fmt s, f0, f1, f2, f3
-    madd_fmt d, f0, f1, f2, f3
-    madd_fmt ps, f0, f1, f2, f3
+    madd_fmt s_3, f0, f1, f2, f3
+    madd_fmt d_3, f0, f1, f2, f3
+    madd_fmt ps_3, f0, f1, f2, f3
 
-    msub_fmt s, f0, f1, f2, f3
-    msub_fmt d, f0, f1, f2, f3
-    msub_fmt ps, f0, f1, f2, f3
+    msub_fmt s_3, f0, f1, f2, f3
+    msub_fmt d_3, f0, f1, f2, f3
+    msub_fmt ps_3, f0, f1, f2, f3
 
     mul_fmt s, f1, f2, f3
     mul_fmt d, f1, f2, f3
@@ -56,13 +56,13 @@ class InstructionFpuTemplate < Mips64BaseTemplate
     neg_fmt d, f1, f2
     neg_fmt ps, f1, f2
 
-    nmadd_fmt s, f0, f1, f2, f3
-    nmadd_fmt d, f0, f1, f2, f3
-    nmadd_fmt ps, f0, f1, f2, f3
+    nmadd_fmt s_3, f0, f1, f2, f3
+    nmadd_fmt d_3, f0, f1, f2, f3
+    nmadd_fmt ps_3, f0, f1, f2, f3
 
-    nmsub_fmt s, f0, f1, f2, f3
-    nmsub_fmt d, f0, f1, f2, f3
-    nmsub_fmt ps, f0, f1, f2, f3
+    nmsub_fmt s_3, f0, f1, f2, f3
+    nmsub_fmt d_3, f0, f1, f2, f3
+    nmsub_fmt ps_3, f0, f1, f2, f3
 
     recip_fmt s, f1, f2
     recip_fmt d, f1, f2
