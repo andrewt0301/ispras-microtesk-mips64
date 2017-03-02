@@ -1006,6 +1006,11 @@ mode FPU_COND_TYPE = F_COND
       or (cond0 and unordered)
     SetFPConditionCode(cc, condition)
   */
+
+var c_cond_less      [BIT]
+var c_cond_equal     [BIT]
+var c_cond_unordered [BIT]
+
 op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, ft: FR)
   init = {}
   syntax = format("c.%s.%s %d, %s, %s",
@@ -1013,19 +1018,24 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
   image  = format("010001%5s%5s%5s%3s0011%4s",
                   op_fmt.image, ft.image, fs.image, cc, cond_value.image)
   action = {
-
-    // D
     temp_fp_d  = int_to_float(FLOAT64, fs<63..0>);
     temp_fp_d2 = int_to_float(FLOAT64, ft<63..0>);
 
-    if is_nan(temp_fp_d) then
-      trace("X");
-    endif;
     if is_nan(temp_fp_d) || is_nan(temp_fp_d2) ||
        is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2)
-       then
+    then
+      c_cond_less = 0;
+      c_cond_equal = 0;
+      c_cond_unordered = 1;
 
-      // TODO: Bug #7403 ... to continue
+      cond_value.action; // return fpu_cond
+      if is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2) ||
+         ((fpu_cond<3> == 1 && is_nan(temp_fp_d)) || is_nan(temp_fp_d2))
+      then
+        exception("InvalidOperation");
+      endif;
+    else
+        // TODO:
     endif;
   }
 

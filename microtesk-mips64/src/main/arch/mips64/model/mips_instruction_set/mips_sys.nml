@@ -967,7 +967,7 @@ op dmfc0 (rt: R, rd: card(5), sel: card(3))
   image  = format("01000000001%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
     // TODO:
-    CPRGET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action;
+    CPRGET(coerce(card(8), coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel))).action;
     rt = tempCPR;
   }
 
@@ -1014,7 +1014,7 @@ op dmtc0 (rt: R, rd: card(5), sel: card(3))
   action = {
     // TODO:
     tempCPR = rt;
-    CPRSET(coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel)).action;
+    CPRSET(coerce(card(8), coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel))).action;
   }
 
 pseudo op dmtc0_2 (rt: R, rd: card(5))
@@ -1077,7 +1077,7 @@ pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
   syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
-    CPRGET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action; // output: tempCPR
+    CPRGET(coerce(card(8), coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel))).action; // output: tempCPR
     if (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 2) ||
        (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 3) then
       temp64<29..0> = tempCPR<29..0>;
@@ -1174,7 +1174,7 @@ pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
       tempCPR = temp64;
     endif;
 
-    CPRSET(coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)).action; // input: tempCPR
+    CPRSET(coerce(card(8), coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel))).action; // input: tempCPR
     // TODO:
   }
 

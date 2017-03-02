@@ -1979,7 +1979,7 @@ internal op mul_signed_dwords(temp_a: DWORD, temp_b: DWORD)
 /*
   unsigned multiply two dwords
 */
-internal op mul_unsigned_dwords(temp_a: WORD, temp_b: WORD)
+internal op mul_unsigned_dwords(temp_a: DWORD, temp_b: DWORD)
   action = {
     temp128_1 = zero_extend(QWORD, temp_a);
     temp128_2 = zero_extend(QWORD, temp_b);
