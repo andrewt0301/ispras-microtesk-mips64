@@ -1,29 +1,15 @@
 /*
- * MicroTESK Komdiv64 Edition
+ * Copyright 2017 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
- * 
- * This file is a part of MicroTESK Komdiv64 Edition (identified hereinafter the "PRODUCT").
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THE PRODUCT IS PROTECTED BY NATIONAL COPYRIGHT LAWS, THE WIPO COPYRIGHT TREATY (1996), AND BY THE
- * PROVISIONS OF THE BERNE CONVENTION (1971) REFERRED TO IN ALL SUCH TREATIES, AS WELL AS OTHER
- * INTERNATIONAL COPYRIGHT AND INTELLECTUAL PROPERTY LAWS AND TREATIES. ANY UNAUTHORIZED USAGE OF
- * THE PRODUCT IN A COMMERCIAL CONTEXT IS STRICTLY PROHIBITED. IF YOU ARE NOT AUTHORIZED TO USE THE
- * PRODUCT, YOU SHOULD PROMPTLY TERMINATE ITS USAGE AND DELETE ALL THE FILES REFERRED TO IT FROM
- * YOUR COMPUTER. THE PRODUCT SOURCE CODE IS CONFIDENTIAL AND CANNOT BE PUBLISHED IN ANY FORMAT OR
- * MEDIA WITHOUT PRIOR WRITTEN CONSENT OF ISP RAS.
- *
- * THE PRODUCT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
- * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, COMPATIBILITY
- * WITH THIRD-PARTY SOFTWARE APPLICATIONS AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE PRODUCT OR THE USE OR
- * OTHER DEALINGS IN THE PRODUCT.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package ru.ispras.microtesk.mips.test.branch;
@@ -41,12 +27,12 @@ import ru.ispras.fortress.expression.NodeVariable;
 import ru.ispras.fortress.randomizer.Randomizer;
 import ru.ispras.fortress.util.InvariantChecks;
 import ru.ispras.fortress.util.Pair;
-import ru.ispras.microtesk.test.testbase.BranchDataGenerator;
 import ru.ispras.testbase.TestBaseContext;
 import ru.ispras.testbase.TestBaseQuery;
 import ru.ispras.testbase.TestData;
 import ru.ispras.testbase.TestDataProvider;
 import ru.ispras.testbase.generator.Utils;
+import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
 
 /**
  * {@link MipsBranchDataGenerator} is a base class for the MIPS branch instructions' generators.
@@ -129,7 +115,7 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
   }
 
   private static String getInstructionName(final TestBaseQuery query) {
-    return query.getContext().get(TestBaseContext.INSTRUCTION);
+    return query.getContext().get(TestBaseContext.INSTRUCTION).toString();
   }
 
   private static TestDataProvider generate(final TestBaseQuery query, final Map<String, Long> values) {
@@ -137,7 +123,7 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
     InvariantChecks.checkNotNull(values);
 
     final Map<String, Node> unknowns = Utils.extractUnknown(query);
-    final Map<String, Node> bindings = new LinkedHashMap<>();
+    final Map<String, Object> bindings = new LinkedHashMap<>();
 
     for (final Map.Entry<String, Node> entry : unknowns.entrySet()) {
       final String name = entry.getKey();

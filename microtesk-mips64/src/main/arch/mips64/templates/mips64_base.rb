@@ -24,9 +24,6 @@ class Mips64BaseTemplate < Template
 
     # Sets the token used in separator lines printed into test programs
     set_option_value 'separator-token', "="
-
-    set_option_value 'base-virtual-address', 0xffffffffa0002000
-    set_option_value 'base-physical-address', 0x0000000000002000
   end
 
   ##################################################################################################
@@ -39,7 +36,7 @@ class Mips64BaseTemplate < Template
     #
     # Information on data types to be used in data sections.
     #
-    data_config(:text => '.data', :target => 'MEM', :base_virtual_address => 0xffffffffa0082000) {
+    data_config(:target => 'MEM') {
       define_type :id => :byte,  :text => '.byte',  :type => type('card', 8)
       define_type :id => :half,  :text => '.half',  :type => type('card', 16)
       define_type :id => :word,  :text => '.word',  :type => type('card', 32)
@@ -51,11 +48,30 @@ class Mips64BaseTemplate < Template
     }
 
     #
+    # Defines .text section.
+    #
+    # pa: base physical address (used for memory allocation).
+    # va: base virtual address (used for encoding instructions that refer to labels).
+    #
+    section_text(:pa => 0x0000000000002000, :va => 0xffffffffa0002000) {}
+
+    #
+    # Defines .data section.
+    #
+    # pa: base physical address (used for memory allocation).
+    # va: base virtual address (used for encoding instructions that refer to labels).
+    #
+    section_data(:pa => 0x0000000000082000, :va => 0xffffffffa0082000) {}
+
+    #
     # Simple exception handler. Continues execution from the next instruction.
     #
     exception_handler {
-      section(:org => 0x380, :exception => ['IntegerOverflow', 'SystemCall', 'Breakpoint',
-                                            'TLBInvalid', 'TLBMiss']) {
+      entry_point(:org => 0x380, :exception => ['IntegerOverflow',
+                                                'SystemCall',
+                                                'Breakpoint',
+                                                'TLBInvalid',
+                                                'TLBMiss']) {
         trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
         mfc0 ra, c0_epc
         addiu ra, ra, 4
