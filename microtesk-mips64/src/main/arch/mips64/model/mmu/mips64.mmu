@@ -247,13 +247,31 @@ buffer MEM (pa: PA)
 // Memory Management Unit
 //==================================================================================================
 
+function get_word_from_line(wordnumber: 2, line: DATA_SIZE): 64
+{
+  if   wordnumber == 0 then return line<63..0>;
+  elif wordnumber == 1 then return line<127..64>;
+  elif wordnumber == 2 then return line<191..128>;
+  else                      return line<255..192>; endif;
+}
+
+function put_word_into_line(wordnumber: 2, line: 256, data: DATA_SIZE): 256
+var intline: 256;
+{
+  intline = line;
+  if   wordnumber == 0 then intline<63..0>    = data;
+  elif wordnumber == 1 then intline<127..64>  = data;
+  elif wordnumber == 2 then intline<191..128> = data;
+  else                      intline<255..192> = data; endif;
+  return intline;
+}
+
 mmu MMU (va: VA) = (data: 64)
   var pa: PA;
   var isCached: 1;
   var l2Bypass: 1;
+  var wordIndex: 2;
   var line: DATA_SIZE;
-  var offset: 8;
-  var bitOffset: 8;
   var l1Entry: L1.entry;
   var l2Entry: L2.entry;
   var memEntry: MEM.entry;
@@ -263,10 +281,7 @@ mmu MMU (va: VA) = (data: 64)
 
     isCached = IsCached(pa.cca);
     l2Bypass = IsSecondaryBypass(pa.cca);
-
-    offset<7..6> = 0;
-    offset<5..0> = pa.value<5..0>;
-    bitOffset = offset << 3;
+    wordIndex = pa.value<4..3>;
 
     if isCached == 1 then
       if L1(pa).hit then
@@ -298,54 +313,51 @@ mmu MMU (va: VA) = (data: 64)
       line = MEM(pa);
     endif;
 
-    data = line<(bitOffset + 63)..bitOffset>;
+    data = get_word_from_line(wordIndex, line);
   }
 
   write = {
     pa = TranslateAddress(va);
 
-    offset<7..6> = 0;
-    offset<5..0> = pa.value<5..0>;
-    bitOffset = offset << 3;
-
     isCached = IsCached(pa.cca);
     l2Bypass = IsSecondaryBypass(pa.cca);
+    wordIndex = pa.value<4..3>;
 
     if isCached == 1 then
       if L1(pa).hit then
         l1Entry = L1(pa);
-        l1Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+        l1Entry.DATA = put_word_into_line(wordIndex, l1Entry.DATA, data);
         L1(pa) = l1Entry;
       else
         if l2Bypass == 0 then
           if L2(pa).hit then
             l2Entry = L2(pa);
-            l2Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+            l2Entry.DATA = put_word_into_line(wordIndex, l2Entry.DATA, data);
             L2(pa) = l2Entry;
           else
             memEntry = MEM(pa);
-            memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+            memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
             MEM(pa) = memEntry;
 
             // Update L2.
             l2Entry.TAG = pa.value<(PA_BITS - 1)..(L2_INDEX_BITS + DATA_BITS)>;
-            l2Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+            l2Entry.DATA = put_word_into_line(wordIndex, l2Entry.DATA, data);
             L2(pa) = l2Entry;
           endif;
         else
           memEntry = MEM(pa);
-          memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+          memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
           MEM(pa) = memEntry;
         endif;
 
         // Update L1.
         l1Entry.TAG = pa.value<(PA_BITS - 1)..(L1_INDEX_BITS + DATA_BITS)>;
-        l1Entry.DATA<(bitOffset + 63)..bitOffset> = data;
+        l1Entry.DATA = put_word_into_line(wordIndex, l1Entry.DATA, data);
         L1(pa) = l1Entry;
       endif;
     else
       memEntry = MEM(pa);
-      memEntry.DATA<(bitOffset + 63)..bitOffset> = data;
+      memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
       MEM(pa) = memEntry;
     endif;
   }
