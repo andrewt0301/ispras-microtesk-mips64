@@ -247,22 +247,22 @@ buffer MEM (pa: PA)
 // Memory Management Unit
 //==================================================================================================
 
-function get_word_from_line(wordnumber: 2, line: DATA_SIZE): 64
+function getWordFromLine(wordIndex: 2, line: DATA_SIZE): 64
 {
-  if   wordnumber == 0 then return line<63..0>;
-  elif wordnumber == 1 then return line<127..64>;
-  elif wordnumber == 2 then return line<191..128>;
-  else                      return line<255..192>; endif;
+  if   wordIndex == 0 then return line<63..0>;
+  elif wordIndex == 1 then return line<127..64>;
+  elif wordIndex == 2 then return line<191..128>;
+  else                     return line<255..192>; endif;
 }
 
-function put_word_into_line(wordnumber: 2, line: 256, data: DATA_SIZE): 256
+function putWordIntoLine(wordIndex: 2, line: 256, data: DATA_SIZE): 256
 var intline: 256;
 {
   intline = line;
-  if   wordnumber == 0 then intline<63..0>    = data;
-  elif wordnumber == 1 then intline<127..64>  = data;
-  elif wordnumber == 2 then intline<191..128> = data;
-  else                      intline<255..192> = data; endif;
+  if   wordIndex == 0 then intline<63..0>    = data;
+  elif wordIndex == 1 then intline<127..64>  = data;
+  elif wordIndex == 2 then intline<191..128> = data;
+  else                     intline<255..192> = data; endif;
   return intline;
 }
 
@@ -313,7 +313,7 @@ mmu MMU (va: VA) = (data: 64)
       line = MEM(pa);
     endif;
 
-    data = get_word_from_line(wordIndex, line);
+    data = getWordFromLine(wordIndex, line);
   }
 
   write = {
@@ -326,38 +326,38 @@ mmu MMU (va: VA) = (data: 64)
     if isCached == 1 then
       if L1(pa).hit then
         l1Entry = L1(pa);
-        l1Entry.DATA = put_word_into_line(wordIndex, l1Entry.DATA, data);
+        l1Entry.DATA = putWordIntoLine(wordIndex, l1Entry.DATA, data);
         L1(pa) = l1Entry;
       else
         if l2Bypass == 0 then
           if L2(pa).hit then
             l2Entry = L2(pa);
-            l2Entry.DATA = put_word_into_line(wordIndex, l2Entry.DATA, data);
+            l2Entry.DATA = putWordIntoLine(wordIndex, l2Entry.DATA, data);
             L2(pa) = l2Entry;
           else
             memEntry = MEM(pa);
-            memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
+            memEntry.DATA = putWordIntoLine(wordIndex, memEntry.DATA, data);
             MEM(pa) = memEntry;
 
             // Update L2.
             l2Entry.TAG = pa.value<(PA_BITS - 1)..(L2_INDEX_BITS + DATA_BITS)>;
-            l2Entry.DATA = put_word_into_line(wordIndex, l2Entry.DATA, data);
+            l2Entry.DATA = putWordIntoLine(wordIndex, l2Entry.DATA, data);
             L2(pa) = l2Entry;
           endif;
         else
           memEntry = MEM(pa);
-          memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
+          memEntry.DATA = putWordIntoLine(wordIndex, memEntry.DATA, data);
           MEM(pa) = memEntry;
         endif;
 
         // Update L1.
         l1Entry.TAG = pa.value<(PA_BITS - 1)..(L1_INDEX_BITS + DATA_BITS)>;
-        l1Entry.DATA = put_word_into_line(wordIndex, l1Entry.DATA, data);
+        l1Entry.DATA = putWordIntoLine(wordIndex, l1Entry.DATA, data);
         L1(pa) = l1Entry;
       endif;
     else
       memEntry = MEM(pa);
-      memEntry.DATA = put_word_into_line(wordIndex, memEntry.DATA, data);
+      memEntry.DATA = putWordIntoLine(wordIndex, memEntry.DATA, data);
       MEM(pa) = memEntry;
     endif;
   }
