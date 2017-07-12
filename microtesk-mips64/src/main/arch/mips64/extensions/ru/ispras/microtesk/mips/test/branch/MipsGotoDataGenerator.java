@@ -16,18 +16,19 @@ package ru.ispras.microtesk.mips.test.branch;
 
 import ru.ispras.testbase.TestBaseQuery;
 import ru.ispras.testbase.TestDataProvider;
+import ru.ispras.testbase.generator.DataGenerator;
 
 /**
  * {@link MipsGotoDataGenerator} is a test data generator for unconditional branch instruction.
  */
-public final class MipsGotoDataGenerator extends MipsBranchDataGenerator {
+public final class MipsGotoDataGenerator implements DataGenerator {
   @Override
-  public TestDataProvider generateThen(final TestBaseQuery query) {
-    throw new UnsupportedOperationException();
+  public boolean isSuitable(final TestBaseQuery query) {
+    return true;
   }
 
   @Override
-  public TestDataProvider generateElse(final TestBaseQuery query) {
-    throw new UnsupportedOperationException();
+  public TestDataProvider generate(final TestBaseQuery query) {
+    return TestDataProvider.empty();
   }
 }

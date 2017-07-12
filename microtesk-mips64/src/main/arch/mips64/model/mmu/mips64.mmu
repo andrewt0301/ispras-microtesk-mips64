@@ -255,7 +255,7 @@ function getWordFromLine(wordIndex: 2, line: DATA_SIZE): 64
   else                     return line<255..192>; endif;
 }
 
-function putWordIntoLine(wordIndex: 2, line: 256, data: DATA_SIZE): 256
+function putWordIntoLine(wordIndex: 2, line: DATA_SIZE, data: 64): 256
 var intline: 256;
 {
   intline = line;
