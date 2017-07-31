@@ -17,7 +17,7 @@ require_relative 'mips64_base'
 # This test template demonstrates how to generate test cases with branch instructions
 # including instruction with two parameters such as beq and bne. Currently, there is 
 # a limitation: only one parameter is stored and loaded from the stream. Consequently,
-# the second parameter must be a register with a predefied value such as $zero.
+# the second parameter must be a register with a predefined value such as $zero.
 #
 class BranchGeneration1Template < Mips64BaseTemplate
 
