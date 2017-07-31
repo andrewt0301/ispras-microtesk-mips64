@@ -33,6 +33,7 @@ import ru.ispras.testbase.TestData;
 import ru.ispras.testbase.TestDataProvider;
 import ru.ispras.testbase.generator.Utils;
 import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
+import ru.ispras.microtesk.test.engine.branch.BranchEngine;
 
 /**
  * {@link MipsBranchDataGenerator} is a base class for the MIPS branch instructions' generators.
@@ -137,6 +138,6 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
       }
     }
 
-    return TestDataProvider.singleton(new TestData(bindings));
+    return TestDataProvider.singleton(new TestData(BranchEngine.ID, bindings));
   }
 }
