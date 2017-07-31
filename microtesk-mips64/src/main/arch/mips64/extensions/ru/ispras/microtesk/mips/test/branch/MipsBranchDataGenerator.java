@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ru.ispras.fortress.data.DataType;
 import ru.ispras.fortress.data.types.bitvector.BitVector;
+import ru.ispras.fortress.expression.ExprUtils;
 import ru.ispras.fortress.expression.Node;
 import ru.ispras.fortress.expression.NodeValue;
 import ru.ispras.fortress.expression.NodeVariable;
@@ -91,13 +92,20 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
   protected static Long getValue(final String name, final TestBaseQuery query) {
     final String op = getInstructionName(query);
     final Node node = query.getBindings().get(op + "." + name);
-    InvariantChecks.checkNotNull(node);
-    InvariantChecks.checkTrue(node.getKind() == Node.Kind.VARIABLE);
+
+    InvariantChecks.checkNotNull(node, name);
+    InvariantChecks.checkTrue(ExprUtils.isVariable(node) || ExprUtils.isValue(node), name);
+
+    if (ExprUtils.isValue(node)) {
+      final NodeValue value = (NodeValue) node;
+      return value.getBitVector().longValue();
+    }
 
     final NodeVariable var = (NodeVariable) node;
     if (var.getData().hasValue()) {
       return var.getData().getValue(BitVector.class).longValue();
     }
+
     return null;
   }
 
