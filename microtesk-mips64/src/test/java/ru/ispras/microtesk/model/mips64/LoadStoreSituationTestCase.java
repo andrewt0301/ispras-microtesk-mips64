@@ -20,6 +20,12 @@ import org.junit.Test;
 import ru.ispras.microtesk.test.Statistics;
 
 public class LoadStoreSituationTestCase extends Mips64Test {
+  @Override
+  protected boolean isExpectedError(final String message) {
+    return super.isExpectedError(message)
+        || message.contains("No data was generated for the query");
+  }
+
   @Test
   public void test() {
     final Statistics statistics = run("load_store_situation.rb");
