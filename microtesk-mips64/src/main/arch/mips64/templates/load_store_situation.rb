@@ -56,7 +56,7 @@ class LoadStoreSituationTemplate < Mips64BaseTemplate
       label :m
 
       ld a0, 0x0, s0 do situation(
-        'address',
+        'memory',
         :base => 'ld.base',
         :path => constraints(
            hit('JTLB'),       # Hit in JTLB
@@ -68,7 +68,7 @@ class LoadStoreSituationTemplate < Mips64BaseTemplate
       end
 
       sd a1, 0x0, s1 do situation(
-        'address',
+        'memory',
         :base => 'sd.base',
         :path => constraints(
            hit('JTLB'),       # Hit in JTLB
