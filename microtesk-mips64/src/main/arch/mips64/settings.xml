@@ -11,7 +11,7 @@
       <access segment="XKPHYS"/>
     </region>
 
-    <region type="data" name="hi" start="5020_0000" end="5fff_ffff" mode="rw----">
+    <region type="data" name="hi" start="5020_0000" end="fffff_ffff" mode="rw----">
       <access segment="USEG"/>
       <access segment="XKPHYS"/>
     </region>
