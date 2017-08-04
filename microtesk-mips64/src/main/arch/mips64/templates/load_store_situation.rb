@@ -52,7 +52,10 @@ class LoadStoreSituationTemplate < Mips64BaseTemplate
     end
 
     # Generate pairs of LD/ST instructions.
-    sequence(:engine => 'memory', :classifier => 'event-based', :page_mask => 0x0fff) {
+    sequence(
+        :engines => {
+            :memory => {:classifier => 'event-based',
+                        :page_mask => 0x0fff}}) {
       label :m
 
       ld a0, 0x0, s0 do situation(
