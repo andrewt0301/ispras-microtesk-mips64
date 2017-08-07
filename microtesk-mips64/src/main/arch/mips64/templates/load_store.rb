@@ -59,8 +59,8 @@ class LoadStoreTemplate < Mips64BaseTemplate
             :memory => {:classifier => 'event-based',
                         :page_mask => 0x0fff}}) {
       label :m
-      ld a0, 0x0, s0 do situation('memory', :base => 'ld.base') end
-      sd a1, 0x0, s1 do situation('memory', :base => 'sd.base') end
+      ld a0, 0x0, s0 do situation('memory', :engine => :memory, :base => 'ld.base') end
+      sd a1, 0x0, s1 do situation('memory', :engine => :memory, :base => 'sd.base') end
     }.run
   end
 end
