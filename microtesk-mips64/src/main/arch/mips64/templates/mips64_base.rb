@@ -311,10 +311,6 @@ class Mips64BaseTemplate < Template
       lb   t0, 0, t0
     }
 
-    buffer_preparator(:target => 'MEM') {
-      # Do nothing.
-    }
-
     ################################################################################################
 
     # The code below specifies a comparator sequence to be used in self-checking tests
