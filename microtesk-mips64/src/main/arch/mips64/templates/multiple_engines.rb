@@ -117,8 +117,8 @@ class MultipleEnginesTemplate < Mips64BaseTemplate
 
       label :normal
         add t0, t3, t4 do situation('normal') end
-        ld a0, 0x0, s0 do situation('memory', :engine => :memory, :base => 'ld.base') end
-        sd a1, 0x0, s1 do situation('memory', :engine => :memory, :base => 'sd.base') end
+        ld a0, 0x0, s4 do situation('memory', :engine => :memory, :base => 'ld.base') end
+        sd a1, 0x0, s5 do situation('memory', :engine => :memory, :base => 'sd.base') end
 
       label :finish
         nop
