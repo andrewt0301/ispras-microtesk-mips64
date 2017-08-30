@@ -186,6 +186,7 @@ op StoreFPR(fpu_reg_number: card(5), fmt_value: card(5), value: card (64))
   Operation:
   StoreFPR (fd, fmt, ValueFPR(fs, fmt) + fmt ValueFPR(ft, fmt))
 */
+//@rev(MIPS32)
 op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("add.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
@@ -198,11 +199,13 @@ op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
     elif fmt_fpu == coerce(card(5), FMT_D) then
       temp_fp_d = int_to_float(FLOAT64, fs<63..0>) + int_to_float(FLOAT64, ft<63..0>);
       fd = float_to_int(DWORD, temp_fp_d);
+//#ifdef MIPS64
     elif fmt_fpu == coerce(card(5), FMT_PS) then
       temp_fp_s = int_to_float(FLOAT32, fs<31..0>) + int_to_float(FLOAT32, ft<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
       temp_fp_s = int_to_float(FLOAT32, fs<63..32>) + int_to_float(FLOAT32, ft<63..32>);
       fd<63..32> = float_to_int(WORD, temp_fp_s);
+//#endif
     else
       unpredicted;
     endif;
