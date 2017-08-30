@@ -323,7 +323,9 @@ task translateMips64(type: JavaExec) {
     '-od',
     "${project.projectDir}/build/generated-src/models",
     '-ed',
-    "${project.projectDir}/build/target/arch/mips64/extensions"
+    "${project.projectDir}/build/target/arch/mips64/extensions",
+    '-ri',
+    "${specRevision}"
   ]
 }
 
