@@ -1,4 +1,5 @@
 #
+#
 # MicroTESK MIPS64 Edition
 #
 # Copyright (c) 2016 Institute for System Programming of the Russian Academy of Sciences
@@ -36,7 +37,11 @@ class InstructionAluTemplate < Mips64BaseTemplate
     addu t1, t0, t0
     trace "(addu): t1 = %x", gpr_observer(9)
 
-    addi t3, zero, 0xdead
+    if mips64_r6 == true then
+      addi t3, zero, 0xdead
+    end
+    #TODO: rev versions
+
     clo t2, t3
     trace "(clo): t2 = %d", gpr_observer(10)
     clz t2, t3

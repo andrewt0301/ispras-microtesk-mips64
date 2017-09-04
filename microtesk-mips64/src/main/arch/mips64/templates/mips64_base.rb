@@ -63,6 +63,22 @@ class Mips64BaseTemplate < Template
     #
     section_data(:pa => 0x0000000000082000, :va => 0xffffffffa0082000) {}
 
+    def mips64_r5
+      if get_option_value('rev-id') == 'MIPS64_R5' then
+        true
+      else
+        false
+      end
+    end
+
+    def mips64_r6
+      if get_option_value('rev-id') == 'MIPS64_R6' || get_option_value('rev-id') == 'MIPS64' then
+        true
+      else
+        false
+      end
+    end
+
     #
     # Simple exception handler. Continues execution from the next instruction.
     #

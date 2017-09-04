@@ -23,10 +23,10 @@ var todo_alu [QWORD] // TODO: Bug #7218
 op MIPS64AluOp = MipsAluOp
 
 // Special for templates
-op Mips64TArithmeticRRR = add
-                        | addu
-                        | sub
-                        | subu
+op Mips64TArithmeticRRR = @rev(MIPS32_R1) add |
+                          @rev(MIPS32_R1) addu |
+                          @rev(MIPS32_R1) sub |
+                          @rev(MIPS32_R1) subu
 
 op Mips64AluOpRR = Mips64TArithmeticRRR
                  | Mips32LogicalRRR

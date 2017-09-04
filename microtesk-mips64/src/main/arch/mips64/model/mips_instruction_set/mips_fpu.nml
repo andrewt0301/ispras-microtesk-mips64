@@ -820,8 +820,8 @@ op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
                            | rsqrt_fmt
                            | sqrt_fmt
 
-  op MIPS64FpuArithmeticRRR = add_fmt
-                            | div_fmt
+  op MIPS64FpuArithmeticRRR = @rev(MIPS32) add_fmt |
+                              div_fmt
                             | mul_fmt
                             | sub_fmt
 

@@ -20,6 +20,25 @@
 // MIPS 32 Arithmetic
 //--------------------------------------------------------------------------------------------------
 
+op check_sign_extend_value(rs: R)
+  action = {
+#ifdef MIPS64_R1
+    if sign_extend(WORD, rs<31>) != rs<63..32> then
+      unpredicted;
+    endif;
+#endif
+  }
+
+op check_sign_extend_values(rs: R, rt: R)
+  action = {
+#ifdef MIPS64_R1
+    if sign_extend(WORD, rs<31>) != rs<63..32> ||
+       sign_extend(WORD, rt<31>) != rt<63..32> then
+      unpredicted;
+    endif;
+#endif
+  }
+
 /*
   signed multiply two words
 */
@@ -96,15 +115,13 @@ internal op mul_unsigned_words(temp_a: WORD, temp_b: WORD)
  *   GPR[rd] <- sign_extend(temp<31..0>)
  * endif
  */
+@rev(MIPS32_R1)
 op add (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("add %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100000", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp33 = rs<31>::rs<31..0> + rt<31>::rt<31..0>;
     if temp33<32> != temp33<31> then
@@ -140,14 +157,15 @@ op add (rd: R, rs: R, rt: R)
  *   GPR[rt] <- sign_extend(temp<31..0>)
  * endif
  */
+// TODO:
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op addi (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("addi %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("001000%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rs).action;
 
     temp33 = rs<31>::rs<31..0> + sign_extend(card(33), immediate);
     if temp33<32> != temp33<31> then
@@ -157,6 +175,7 @@ op addi (rt: R, rs: R, immediate: SHORT)
       rt = sign_extend(DWORD, temp33<31..0>);
     endif;
   }
+#endif
 
 /*
  * Instruction: ADDIU (MIPS32)
@@ -180,14 +199,13 @@ op addi (rt: R, rs: R, immediate: SHORT)
  * temp <- GPR[rs] + sign_extend(immediate)
  * GPR[rt] <- sign_extend(temp<31..0>)
  */
+@rev(MIPS32_R1)
 op addiu (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("addiu %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("001001%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rs).action;
 
     temp64 = rs + sign_extend(DWORD, immediate);
     rt = sign_extend(DWORD, temp64<31..0>);
@@ -216,15 +234,13 @@ op addiu (rt: R, rs: R, immediate: SHORT)
  * temp <- GPR[rs] + GPR[rt]
  * GPR[rd] <- sign_extend(temp<31..0>)
  */
+@rev(MIPS32_R1)
 op addu (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("addu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100001", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp64 = rs + rt;
     rd = sign_extend(DWORD, temp64<31..0>);
@@ -252,6 +268,7 @@ op addu (rd: R, rs: R, rt: R)
  *
  * GPR[rs] <- ( PC + sign_extend( immediate << 2 ) )
  */
+@rev(MIPS32_R6)
 op addiupc(rs: R, immediate: card(19))
   init = {}
   syntax = format("addiupc %s, %x", rs.syntax, immediate)
@@ -274,6 +291,7 @@ op addiupc(rs: R, immediate: card(19))
   Operation:
   AUI: GPR[rt] <- sign_extend.32( GPR[rs] + sign_extend(immediate << 16) )
 */
+@rev(MIPS32_R6)
 op aui (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("aui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -357,14 +375,19 @@ internal op clo_count_leading_ones(rs_value: WORD)
     temp = temp + coerce(WORD, rs_value<31>);
   }
 
+@rev(MIPS32_R1)
 op clo (rd: R, rs: R)
   init = {}
   syntax = format("clo %s, %s", rd.syntax, rs.syntax)
-  image  = format("000000%5s00000%5s00001010001", rs.image, rd.image)
+  @rev(MIPS32_R6) image = format("000000%5s00000%5s00001010001", rs.image, rd.image)
+  #ifndef MIPS32_R6
+    #ifdef MIPS32_R1
+      // TODO: @rev(MIPS32_REM_R6)
+      image = format("011100%5s%5s%5s00000100001", rs.image, rd.image, rd.image)
+    #endif
+  #endif
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rs).action;
 
     clo_count_leading_ones(coerce(WORD, rs<31..0>)).action; // return temp
     rd = zero_extend(DWORD, temp);
@@ -407,14 +430,20 @@ op clo (rd: R, rs: R)
   endfor
   GPR[rd] <- temp
 */
+@rev(MIPS32_R1)
 op clz (rd: R, rs: R)
   init = {}
   syntax = format("clz %s, %s", rd.syntax, rs.syntax)
-  image  = format("000000%5s00000%5s00001010000", rs.image, rd.image)
+  @rev(MIPS32_R6) image  = format("000000%5s00000%5s00001010000", rs.image, rd.image)
+  #ifndef MIPS32_R6
+    #ifdef MIPS32_R1
+      // TODO: @rev(MIPS32_REM_R6)
+      // pre-Release 6
+      image = format("011100%5s%5s%5s00000100000", rs.image, rd.image, rd.image)
+    #endif
+  #endif
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rs).action;
 
     clo_count_leading_ones(coerce(WORD, rs<31..0>)).action; // return temp
     rd = zero_extend(DWORD, (coerce(WORD, 32) - temp));
@@ -476,15 +505,13 @@ op clz (rd: R, rs: R)
   DIVU: GPR[rd] <- sign_extend.32( quotient )
   MODU: GPR[rd] <- sign_extend.32( remainder )
   */
+@rev(MIPS32_R6)
 op div_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("div %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011010", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp1 = cast(INT, rs<31..0>);
     temp2 = cast(INT, rt<31..0>);
@@ -493,15 +520,13 @@ op div_reg (rd: R, rs: R, rt: R)
     rd = sign_extend(DWORD, temp);
   }
 
+@rev(MIPS32_R6)
 op mod_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("mod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011010", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp1 = cast(INT, rs<31..0>);
     temp2 = cast(INT, rt<31..0>);
@@ -510,15 +535,13 @@ op mod_reg (rd: R, rs: R, rt: R)
     rd = sign_extend(DWORD, temp);
   }
 
+@rev(MIPS32_R6)
 op divu_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("divu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011011", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp1 = cast(WORD, rs<31..0>);
     temp2 = cast(WORD, rt<31..0>);
@@ -527,15 +550,13 @@ op divu_reg (rd: R, rs: R, rt: R)
     rd = sign_extend(DWORD, temp);
   }
 
+@rev(MIPS32_R6)
 op modu_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("modu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011011", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp1 = cast(WORD, rs<31..0>);
     temp2 = cast(WORD, rt<31..0>);
@@ -575,14 +596,18 @@ op modu_reg (rd: R, rs: R, rt: R)
   r <- GPR[rs]31..0 mod GPR[rt]31..0
   HI <- sign_extend(r31..0)
   */
+
+// TODO:
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op div (rs: R, rt: R)
   init = {}
   syntax = format("div %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011010", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> ||
-       rt == coerce(DWORD, 0) then
+    check_sign_extend_values(rs, rt).action;
+
+    if rt == coerce(DWORD, 0) then
       unpredicted;
     endif;
 
@@ -591,7 +616,7 @@ op div (rs: R, rt: R)
     temp = cast(WORD, (coerce(INT, rs<31..0>)) % (coerce(INT, rt<31..0>)));
     HI = sign_extend(DWORD, temp);
   }
-
+#endif
 /*
   DIVU Divide Unsigned Word (MIPS32, removed in Release 6)
 
@@ -623,14 +648,17 @@ op div (rs: R, rt: R)
   LO <- sign_extend(q31..0)
   HI <- sign_extend(r31..0)
   */
+// TODO:
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op divu (rs: R, rt: R)
   init = {}
   syntax = format("divu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011011", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> ||
-       rt == coerce(DWORD, 0) then
+    check_sign_extend_values(rs, rt).action;
+
+    if rt == coerce(DWORD, 0) then
       unpredicted;
     endif;
 
@@ -639,7 +667,7 @@ op divu (rs: R, rt: R)
     temp = coerce(WORD, (rs<31..0>) % (rt<31..0>));
     HI = sign_extend(DWORD, temp);
   }
-
+#endif
 /*
   MADD: Multiply and Add Word to Hi, Lo (MIPS32, removed in Release 6)
 
@@ -671,15 +699,15 @@ op divu (rs: R, rt: R)
   HI <- sign_extend(temp63..32)
   LO <- sign_extend(temp31..0)
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op madd (rs: R, rt: R)
   init = {}
   syntax = format("madd %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000000", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -688,6 +716,7 @@ op madd (rs: R, rt: R)
     HI = sign_extend(DWORD, temp64<63..32>);
     LO = sign_extend(DWORD, temp64<31..0>);
   }
+#endif
 
 /*
   MADDU: Multiply and Add Unsigned Word to Hi,Lo (MIPS32, removed in Release 6)
@@ -725,15 +754,15 @@ op madd (rs: R, rt: R)
   This may reduce the latency of the instruction on those processors which implement data-dependent
   instruction latencies.
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op maddu (rs: R, rt: R)
   init = {}
   syntax = format("maddu %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000001", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -742,6 +771,7 @@ op maddu (rs: R, rt: R)
     HI = sign_extend(DWORD, temp64<63..32>);
     LO = sign_extend(DWORD, temp64<31..0>);
   }
+#endif
 
 /*
   MSUB: Multiply and Subtract Word to Hi, Lo (MIPS32, removed in Release 6)
@@ -762,15 +792,15 @@ op maddu (rs: R, rt: R)
   HI <- sign_extend(temp63..32)
   LO <- sign_extend(temp31..0)
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op msub (rs: R, rt: R)
   init = {}
   syntax = format("msub %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000100", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -779,6 +809,7 @@ op msub (rs: R, rt: R)
     HI = sign_extend(DWORD, temp64<63..32>);
     LO = sign_extend(DWORD, temp64<31..0>);
   }
+#endif
 
 /*
   MSUBU: Multiply and Subtract Word to Hi,Lo (MIPS32, removed in Release 6)
@@ -799,15 +830,15 @@ op msub (rs: R, rt: R)
   HI <- sign_extend(temp63..32)
   LO <- sign_extend(temp31..0)
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op msubu (rs: R, rt: R)
   init = {}
   syntax = format("msubu %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000101", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -816,6 +847,7 @@ op msubu (rs: R, rt: R)
     HI = sign_extend(DWORD, temp64<63..32>);
     LO = sign_extend(DWORD, temp64<31..0>);
   }
+#endif
 
 /*
   MUL: Multiply Word to GPR (MIPS32, removed in Release 6)
@@ -837,15 +869,15 @@ op msubu (rs: R, rt: R)
   HI <- UNPREDICTABLE
   LO <- UNPREDICTABLE
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op mul (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00000000010", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -855,6 +887,7 @@ op mul (rd: R, rs: R, rt: R)
     LO = sign_extend(DWORD, temp64<31..0>);
     HI = sign_extend(DWORD, temp64<63..32>);
   }
+#endif
 
 /*
   MUL MUH MULU MUHU: Multiply Integers (with result to GPR) (MIPS32 Release 6)
@@ -897,60 +930,52 @@ op mul (rd: R, rs: R, rt: R)
     MULU: GPR[rd] <- sign_extend.32( lo_word( product ) )
     MUHU: GPR[rd] <- sign_extend.32( hi_word( product ) )
   */
+@rev(MIPS32_R6)
 op mul_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011000", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
     rd = sign_extend(DWORD, temp64<31..0>);
   }
 
+@rev(MIPS32_R6)
 op muh_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("muh %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011000", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
     rd = sign_extend(DWORD, temp64<63..32>);
   }
 
+@rev(MIPS32_R6)
 op mulu_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("mulu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011001", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
     rd = sign_extend(DWORD, temp64<31..0>);
   }
 
+@rev(MIPS32_R6)
 op muhu_reg (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("muhu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011001", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
@@ -976,21 +1001,22 @@ op muhu_reg (rd: R, rs: R, rt: R)
   LO <- sign_extend(prod31..0)
   HI <- sign_extend(prod63..32)
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op mult (rs: R, rt: R)
   init = {}
   syntax = format("mult %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011000", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_signed_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
     LO = sign_extend(DWORD, temp64<31..0>);
     HI = sign_extend(DWORD, temp64<63..32>);
   }
+#endif
 
 /*
   MULTU: Multiply Unsigned Word (MIPS32, removed in Release 6)
@@ -1011,21 +1037,22 @@ op mult (rs: R, rt: R)
   LO <- sign_extend(prod31..0)
   HI <- sign_extend(prod63..32)
   */
+// TODO
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op multu (rs: R, rt: R)
   init = {}
   syntax = format("multu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011001", rs.image, rt.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     mul_unsigned_words(rs<31..0>, rt<31..0>).action; // Returns temp64
 
     LO = sign_extend(DWORD, temp64<31..0>);
     HI = sign_extend(DWORD, temp64<63..32>);
   }
+#endif
 
 /*
  * Instruction: SUB (MIPS32)
@@ -1053,15 +1080,13 @@ op multu (rs: R, rt: R)
  *   GPR[rd] <- sign_extend(temp<31..0>)
  * endif
  */
+@rev(MIPS32_R1)
 op sub (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("sub %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100010", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp33 = rs<31>::rs<31..0> - rt<31>::rt<31..0>;
     if temp33<32> != temp33<31> then
@@ -1094,53 +1119,62 @@ op sub (rd: R, rs: R, rt: R)
  * temp <- GPR[rs] - GPR[rt]
  * GPR[rd] <- sign_extend(temp)
  */
+@rev(MIPS32_R1)
 op subu (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("subu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100011", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     temp = rs<31..0> - rt<31..0>;
     rd = sign_extend(DWORD, temp);
   }
 
-op Mips32ArithmeticRR = clo
-                      | clz
-                      | div
-                      | divu
-                      | madd
-                      | maddu
-                      | multu
-                      | mult
-                      | msub
-                      | msubu
+@rev(MIPS32_R1)
+op Mips32ArithmeticRR = @rev(MIPS32_R1) clo |
+                        @rev(MIPS32_R1) clz |
+#ifndef MIPS32_R6
+                        @rev(MIPS32_REM_R6) div |
+                        @rev(MIPS32_REM_R6) divu |
+                        @rev(MIPS32_REM_R6) madd |
+                        @rev(MIPS32_REM_R6) maddu |
+                        @rev(MIPS32_REM_R6) msub |
+                        @rev(MIPS32_REM_R6) msubu |
+                        @rev(MIPS32_REM_R6) multu |
+                        @rev(MIPS32_REM_R6) mult
+#endif
 
-op Mips32ArithmeticRRR = add
-                       | addu
-                       | div_reg
-                       | mod_reg
-                       | divu_reg
-                       | modu_reg
-                       | sub
-                       | subu
-                       | mul
-                       | mul_reg
-                       | muh_reg
-                       | muhu_reg
-                       | mulu_reg
+@rev(MIPS32_R1)
+op Mips32ArithmeticRRR = @rev(MIPS32_R1) add |
+                         @rev(MIPS32_R1) addu |
+                         @rev(MIPS32_R6) div_reg |
+                         @rev(MIPS32_R6) mod_reg |
+                         @rev(MIPS32_R6) divu_reg |
+                         @rev(MIPS32_R6) modu_reg |
+                         @rev(MIPS32_R1) sub |
+                         @rev(MIPS32_R1) subu |
+#ifndef MIPS32_R6
+                         @rev(MIPS32_REM_R6) mul |
+#endif
+                         @rev(MIPS32_R6) mul_reg |
+                         @rev(MIPS32_R6) muh_reg |
+                         @rev(MIPS32_R6) muhu_reg |
+                         @rev(MIPS32_R6) mulu_reg
 
-op Mips32ArithmeticRRI = addi
-                       | addiu
-                       | aui
+@rev(MIPS32_R1)
+op Mips32ArithmeticRRI =
+#ifndef MIPS32_R6
+                         @rev(MIPS32_REM_R6) addi |
+#endif
+                         @rev(MIPS32_R1) addiu |
+                         @rev(MIPS32_R6) aui
 
-op Mips32ArithmeticOp = Mips32ArithmeticRRR
-                      | Mips32ArithmeticRR
-                      | Mips32ArithmeticRRI
-                      | addiupc
+@rev(MIPS32_R1)
+op Mips32ArithmeticOp = @rev(MIPS32_R1) Mips32ArithmeticRRR |
+                        @rev(MIPS32_R1) Mips32ArithmeticRR |
+                        @rev(MIPS32_R1) Mips32ArithmeticRRI |
+                        @rev(MIPS32_R6) addiupc
 
 //--------------------------------------------------------------------------------------------------
 // MIPS 32 Condition Testing
@@ -1177,6 +1211,7 @@ op Mips32ArithmeticOp = Mips32ArithmeticRRR
  *   GPR[rd] <- 0(GPRLEN)
  * endif
  */
+@rev(MIPS32_R1)
 op slt (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("slt %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1352,15 +1387,16 @@ op movz (rd: R, rs: R, rt: R)
     endif;
   }
 
-op Mips32ConditionTestingRRR = slt
-                             | sltu
-                             | movn
-                             | movz
+@rev(MIPS32_R1)
+op Mips32ConditionTestingRRR = @rev(MIPS32_R1) slt |
+                               sltu |
+                               movn |
+                               movz
 
-op Mips32ConditionTestingRRI = slti
-                             | sltiu
+op Mips32ConditionTestingRRI = slti |
+                               sltiu
 
-op Mips32ConditionTestingOp = Mips32ConditionTestingRRR
+op Mips32ConditionTestingOp = @rev(MIPS32_R1) Mips32ConditionTestingRRR
                             | Mips32ConditionTestingRRI
 
 //--------------------------------------------------------------------------------------------------
