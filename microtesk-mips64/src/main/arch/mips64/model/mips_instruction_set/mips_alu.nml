@@ -1248,6 +1248,7 @@ op slt (rd: R, rs: R, rt: R)
     GPR[rt] <- 0(GPRLEN)
   endif
   */
+@rev(MIPS32_R1)
 op slti (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("slti %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -1286,6 +1287,7 @@ op slti (rt: R, rs: R, immediate: SHORT)
     GPR[rt] <- 0(GPRLEN)
   endif
   */
+@rev(MIPS32_R1)
 op sltiu (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("sltiu %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -1321,6 +1323,7 @@ op sltiu (rt: R, rs: R, immediate: SHORT)
     GPR[rt] <- 0(GPRLEN)
   endif
   */
+@rev(MIPS32_R1)
 op sltu (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("sltu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1350,6 +1353,8 @@ op sltu (rd: R, rs: R, rt: R)
     if GPR[rt] =/= 0 then
       GPR[rd] <- GPR[rs]
     endif  */
+#ifndef MIPS32_R6
+@rev(MIPS32_REM_R6)
 op movn (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("movn %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1359,6 +1364,7 @@ op movn (rd: R, rs: R, rt: R)
       rd = rs;
     endif;
   }
+#endif
 
 /*
   MOVZ Move Conditional on Zero (MIPS32, removed in Release 6)
@@ -1377,6 +1383,7 @@ op movn (rd: R, rs: R, rt: R)
     if GPR[rt] = 0 then
       GPR[rd] <- GPR[rs]
     endif  */
+@rev(MIPS32_REM_R6)
 op movz (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("movz %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1389,13 +1396,17 @@ op movz (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R1)
 op Mips32ConditionTestingRRR = @rev(MIPS32_R1) slt |
-                               sltu |
-                               movn |
-                               movz
+                               @rev(MIPS32_R1) sltu |
+#ifndef MIPS32_R6
+                               @rev(MIPS32_REM_R6) movn |
+                               @rev(MIPS32_REM_R6) movz
+#endif
 
-op Mips32ConditionTestingRRI = slti |
-                               sltiu
+@rev(MIPS32_R1)
+op Mips32ConditionTestingRRI = @rev(MIPS32_R1) slti |
+                               @rev(MIPS32_R1) sltiu
 
+@rev(MIPS32_R1)
 op Mips32ConditionTestingOp = @rev(MIPS32_R1) Mips32ConditionTestingRRR
                             | Mips32ConditionTestingRRI
 
@@ -1429,6 +1440,7 @@ op Mips32ConditionTestingOp = @rev(MIPS32_R1) Mips32ConditionTestingRRR
  * The contents of GPR rs are combined with the contents of GPR rt in a bitwise
  * logical AND operation. The result is placed into GPR rd.
  */
+@rev(MIPS32_R1)
 op and (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("and %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1452,6 +1464,7 @@ op and (rd: R, rs: R, rt: R)
  * The 16-bit immediate is zero-extended to the left and combined with the contents
  * of GPR rs in a bitwise logical AND operation. The result is placed into GPR rt.
  */
+@rev(MIPS32_R1)
 op andi (rt: R, rs: R, immediate: HWORD)
   init = {}
   syntax = format("andi %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -1475,6 +1488,7 @@ op andi (rt: R, rs: R, immediate: HWORD)
   Operation:
   GPR[rd] <- GPR[rs] nor GPR[rt]
 */
+@rev(MIPS32_R1)
 op nor (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("nor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1496,7 +1510,8 @@ op nor (rd: R, rs: R, rt: R)
 
   The contents of GPR rs are combined with the contents of GPR rt in a bitwise logical OR operation.
   The result is placed into GPR rd.
-  */
+*/
+@rev(MIPS32_R1)
 op or (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("or %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1520,6 +1535,7 @@ op or (rd: R, rs: R, rt: R)
   The 16-bit immediate is zero-extended to the left and combined with the contents of GPR rs in
   a bitwise logical OR operation. The result is placed into GPR rt.
   */
+@rev(MIPS32_R1)
 op ori (rt: R, rs: R, immediate: HWORD)
   init = {}
   syntax = format("ori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -1542,6 +1558,7 @@ op ori (rt: R, rs: R, immediate: HWORD)
   Combine the contents of GPR rs and GPR rt in a bitwise logical Exclusive OR operation and place
   the result into GPR rd.
  */
+@rev(MIPS32_R1)
 op xor (rd: R, rs: R, rt: R)
   init = {}
   syntax = format("xor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
@@ -1565,6 +1582,7 @@ op xor (rd: R, rs: R, rt: R)
   Combine the contents of GPR rs and the 16-bit zero-extended immediate in a bitwise logical
   Exclusive OR operation and place the result into GPR rt.
  */
+@rev(MIPS32_R1)
 op xori (rt: R, rs: R, immediate: SHORT)
   init = {}
   syntax = format("xori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
@@ -1573,17 +1591,20 @@ op xori (rt: R, rs: R, immediate: SHORT)
     rt = rs ^ zero_extend(DWORD, immediate);
   }
 
-op Mips32LogicalRRR = and
-                    | nor
-                    | or
-                    | xor
+@rev(MIPS32_R1)
+op Mips32LogicalRRR = @rev(MIPS32_R1) and |
+                      @rev(MIPS32_R1) nor |
+                      @rev(MIPS32_R1) or |
+                      @rev(MIPS32_R1) xor
 
-op Mips32LogicalRRI = andi
-                    | ori
-                    | xori
+@rev(MIPS32_R1)
+op Mips32LogicalRRI = @rev(MIPS32_R1) andi |
+                      @rev(MIPS32_R1) ori |
+                      @rev(MIPS32_R1) xori
 
-op Mips32LogicalOp = Mips32LogicalRRR
-                   | Mips32LogicalRRI
+@rev(MIPS32_R1)
+op Mips32LogicalOp = @rev(MIPS32_R1) Mips32LogicalRRR |
+                     @rev(MIPS32_R1) Mips32LogicalRRI
 
 //--------------------------------------------------------------------------------------------------
 // MIPS 32 Shift
