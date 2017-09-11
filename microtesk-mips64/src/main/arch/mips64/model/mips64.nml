@@ -452,6 +452,7 @@ op instruction (operation: Op)
     endif;
   }
 
+@rev(MIPS64_REM_R6)
 pseudo op la(rd : R, addr : DWORD)
   init = {}
   syntax = format("la %s, %<label>d", rd.syntax, addr)

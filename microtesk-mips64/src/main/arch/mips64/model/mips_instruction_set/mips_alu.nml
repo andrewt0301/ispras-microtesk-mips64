@@ -596,9 +596,6 @@ op modu_reg (rd: R, rs: R, rt: R)
   r <- GPR[rs]31..0 mod GPR[rt]31..0
   HI <- sign_extend(r31..0)
   */
-
-// TODO:
-#ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op div (rs: R, rt: R)
   init = {}
@@ -616,7 +613,7 @@ op div (rs: R, rt: R)
     temp = cast(WORD, (coerce(INT, rs<31..0>)) % (coerce(INT, rt<31..0>)));
     HI = sign_extend(DWORD, temp);
   }
-#endif
+
 /*
   DIVU Divide Unsigned Word (MIPS32, removed in Release 6)
 
@@ -648,8 +645,6 @@ op div (rs: R, rt: R)
   LO <- sign_extend(q31..0)
   HI <- sign_extend(r31..0)
   */
-// TODO:
-#ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op divu (rs: R, rt: R)
   init = {}
@@ -667,7 +662,7 @@ op divu (rs: R, rt: R)
     temp = coerce(WORD, (rs<31..0>) % (rt<31..0>));
     HI = sign_extend(DWORD, temp);
   }
-#endif
+
 /*
   MADD: Multiply and Add Word to Hi, Lo (MIPS32, removed in Release 6)
 
@@ -1132,49 +1127,46 @@ op subu (rd: R, rs: R, rt: R)
   }
 
 @rev(MIPS32_R1)
-op Mips32ArithmeticRR = @rev(MIPS32_R1) clo |
-                        @rev(MIPS32_R1) clz |
-#ifndef MIPS32_R6
-                        @rev(MIPS32_REM_R6) div |
-                        @rev(MIPS32_REM_R6) divu |
-                        @rev(MIPS32_REM_R6) madd |
-                        @rev(MIPS32_REM_R6) maddu |
-                        @rev(MIPS32_REM_R6) msub |
-                        @rev(MIPS32_REM_R6) msubu |
-                        @rev(MIPS32_REM_R6) multu |
-                        @rev(MIPS32_REM_R6) mult
-#endif
+op Mips32ArithmeticRR = @rev(MIPS32_R1) clo
+                      | @rev(MIPS32_R1) clz |
+                        @rev(MIPS32_REM_R6) div
+                      | @rev(MIPS32_REM_R6) divu
+                      | @rev(MIPS32_REM_R6) madd
+                      | @rev(MIPS32_REM_R6) maddu
+                      | @rev(MIPS32_REM_R6) msub
+                      | @rev(MIPS32_REM_R6) msubu
+                      | @rev(MIPS32_REM_R6) multu
+                      | @rev(MIPS32_REM_R6) mult
 
 @rev(MIPS32_R1)
-op Mips32ArithmeticRRR = @rev(MIPS32_R1) add |
-                         @rev(MIPS32_R1) addu |
-                         @rev(MIPS32_R6) div_reg |
-                         @rev(MIPS32_R6) mod_reg |
-                         @rev(MIPS32_R6) divu_reg |
-                         @rev(MIPS32_R6) modu_reg |
-                         @rev(MIPS32_R1) sub |
-                         @rev(MIPS32_R1) subu |
+op Mips32ArithmeticRRR = @rev(MIPS32_R1) add
+                       | @rev(MIPS32_R1) addu
+                       | @rev(MIPS32_R6) div_reg
+                       | @rev(MIPS32_R6) mod_reg
+                       | @rev(MIPS32_R6) divu_reg
+                       | @rev(MIPS32_R6) modu_reg
+                       | @rev(MIPS32_R1) sub
+                       | @rev(MIPS32_R1) subu
 #ifndef MIPS32_R6
-                         @rev(MIPS32_REM_R6) mul |
+                       | @rev(MIPS32_REM_R6) mul
 #endif
-                         @rev(MIPS32_R6) mul_reg |
-                         @rev(MIPS32_R6) muh_reg |
-                         @rev(MIPS32_R6) muhu_reg |
-                         @rev(MIPS32_R6) mulu_reg
+                       | @rev(MIPS32_R6) mul_reg
+                       | @rev(MIPS32_R6) muh_reg
+                       | @rev(MIPS32_R6) muhu_reg
+                       | @rev(MIPS32_R6) mulu_reg
 
 @rev(MIPS32_R1)
-op Mips32ArithmeticRRI =
+op Mips32ArithmeticRRI = @rev(MIPS32_R6) aui
 #ifndef MIPS32_R6
-                         @rev(MIPS32_REM_R6) addi |
+                       | @rev(MIPS32_REM_R6) addi
 #endif
-                         @rev(MIPS32_R1) addiu |
-                         @rev(MIPS32_R6) aui
+                       | @rev(MIPS32_R1) addiu
 
 @rev(MIPS32_R1)
-op Mips32ArithmeticOp = @rev(MIPS32_R1) Mips32ArithmeticRRR |
-                        @rev(MIPS32_R1) Mips32ArithmeticRR |
-                        @rev(MIPS32_R1) Mips32ArithmeticRRI |
-                        @rev(MIPS32_R6) addiupc
+op Mips32ArithmeticOp = @rev(MIPS32_R1) Mips32ArithmeticRRR
+                      | @rev(MIPS32_R1) Mips32ArithmeticRR
+                      | @rev(MIPS32_R1) Mips32ArithmeticRRI
+                      | @rev(MIPS32_R6) addiupc
 
 //--------------------------------------------------------------------------------------------------
 // MIPS 32 Condition Testing
@@ -1395,20 +1387,20 @@ op movz (rd: R, rs: R, rt: R)
   }
 
 @rev(MIPS32_R1)
-op Mips32ConditionTestingRRR = @rev(MIPS32_R1) slt |
-                               @rev(MIPS32_R1) sltu |
+op Mips32ConditionTestingRRR = @rev(MIPS32_R1) slt
+                             | @rev(MIPS32_R1) sltu
 #ifndef MIPS32_R6
-                               @rev(MIPS32_REM_R6) movn |
-                               @rev(MIPS32_REM_R6) movz
+                             | @rev(MIPS32_REM_R6) movn
+                             | @rev(MIPS32_REM_R6) movz
 #endif
 
 @rev(MIPS32_R1)
-op Mips32ConditionTestingRRI = @rev(MIPS32_R1) slti |
-                               @rev(MIPS32_R1) sltiu
+op Mips32ConditionTestingRRI = @rev(MIPS32_R1) slti
+                             | @rev(MIPS32_R1) sltiu
 
 @rev(MIPS32_R1)
 op Mips32ConditionTestingOp = @rev(MIPS32_R1) Mips32ConditionTestingRRR
-                            | Mips32ConditionTestingRRI
+                            | @rev(MIPS32_R1) Mips32ConditionTestingRRI
 
 //--------------------------------------------------------------------------------------------------
 // MIPS 32 Logical
@@ -2717,7 +2709,7 @@ op Mips64ArithmeticRRI =
                          @rev(MIPS64_REM_R6) daddi |
 #endif
                          @rev(MIPS64_R1) daddiu |
-                         @rev(MIPS64_R6) dauidaui
+                         @rev(MIPS64_R6) daui
 
 #ifndef MIPS64_R6
 @rev(MIPS64_REM_R6)
