@@ -186,7 +186,7 @@ op StoreFPR(fpu_reg_number: card(5), fmt_value: card(5), value: card (64))
   Operation:
   StoreFPR (fd, fmt, ValueFPR(fs, fmt) + fmt ValueFPR(ft, fmt))
 */
-@rev(MIPS32)
+@rev(MIPS32_R1)
 op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("add.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
@@ -199,7 +199,7 @@ op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
     elif fmt_fpu == coerce(card(5), FMT_D) then
       temp_fp_d = int_to_float(FLOAT64, fs<63..0>) + int_to_float(FLOAT64, ft<63..0>);
       fd = float_to_int(DWORD, temp_fp_d);
-#ifdef MIPS64
+#ifdef MIPS64_R1
     elif fmt_fpu == coerce(card(5), FMT_PS) then
       temp_fp_s = int_to_float(FLOAT32, fs<31..0>) + int_to_float(FLOAT32, ft<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
@@ -232,6 +232,7 @@ op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, fmt, AbsoluteValue(ValueFPR(fs, fmt)))
 */
+@rev(MIPS32_R1)
 op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("abs.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -273,6 +274,7 @@ op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR (fd, fmt, ValueFPR(fs, fmt) / ValueFPR(ft, fmt))
 */
+@rev(MIPS32_R1)
 op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("div.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
@@ -325,6 +327,7 @@ op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, (vfs x vft) + vfr)
   */
+@rev(MIPS32_R2_REM_R6)
 op madd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("madd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
@@ -387,6 +390,7 @@ op madd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, (vfs x vft) - vfr)
   */
+@rev(MIPS32_R2_REM_R6)
 op msub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("msub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
@@ -441,6 +445,7 @@ op msub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR (fd, fmt, ValueFPR(fs, fmt) x ValueFPR(ft, fmt))
 */
+@rev(MIPS32_R1)
 op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("mul.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
@@ -492,6 +497,7 @@ op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, fmt, Negate(ValueFPR(fs, fmt)))
 */
+@rev(MIPS32_R1)
 op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("neg.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -544,6 +550,7 @@ op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, -(vfr +fmt (vfs xfmt vft)))
   */
+@rev(MIPS32_R2_REM_R6)
 op nmadd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("nmadd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
@@ -610,6 +617,7 @@ op nmadd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
     vft <- ValueFPR(ft, fmt)
     StoreFPR(fd, fmt, -((vfs xfmt vft) -fmt vfr))
   */
+@rev(MIPS32_R2_REM_R6)
 op nmsub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("nmsub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
@@ -670,6 +678,7 @@ op nmsub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, fmt, 1.0 / valueFPR(fs, fmt))
 */
+@rev(MIPS32_R2)
 op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("recip.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -713,6 +722,7 @@ op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, fmt, 1.0 / SquareRoot(valueFPR(fs, fmt)))
 */
+@rev(MIPS32_R2)
 op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("rsqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -753,6 +763,7 @@ op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, fmt, 1.0 / SquareRoot(valueFPR(fs, fmt)))
 */
+@rev(MIPS32_R1)
 op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("sqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -792,6 +803,7 @@ op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR (fd, fmt, ValueFPR(fs, fmt) - fmt ValueFPR(ft, fmt))
 */
+@rev(MIPS32_R1)
 op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("sub.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
@@ -814,25 +826,29 @@ op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
     endif;
   }
 
-  op MIPS64FpuArithmeticRR = abs_fmt
-                           | neg_fmt
-                           | recip_fmt
-                           | rsqrt_fmt
-                           | sqrt_fmt
+@rev(MIPS32_R1)
+op MIPS64FpuArithmeticRR = @rev(MIPS32_R1) abs_fmt
+                         | @rev(MIPS32_R1) neg_fmt  // TODO
+                         | @rev(MIPS32_R2) recip_fmt
+                         | @rev(MIPS32_R2) rsqrt_fmt
+                         | @rev(MIPS32_R1) sqrt_fmt
 
-  op MIPS64FpuArithmeticRRR = @rev(MIPS32) add_fmt |
-                              div_fmt
-                            | mul_fmt
-                            | sub_fmt
+@rev(MIPS32_R1)
+op MIPS64FpuArithmeticRRR = @rev(MIPS32_R1) add_fmt // TODO
+                          | @rev(MIPS32_R1) div_fmt
+                          | @rev(MIPS32_R1) mul_fmt // TODO
+                          | @rev(MIPS32_R1) sub_fmt // TODO
 
-  op MIPS64FpuArithmeticRRRR = madd_fmt
-                             | msub_fmt
-                             | nmadd_fmt
-                             | nmsub_fmt
+@rev(MIPS32_R2_REM_R6)
+op MIPS64FpuArithmeticRRRR = @rev(MIPS32_R2_REM_R6) madd_fmt
+                           | @rev(MIPS32_R2_REM_R6) msub_fmt
+                           | @rev(MIPS32_R2_REM_R6) nmadd_fmt
+                           | @rev(MIPS32_R2_REM_R6) nmsub_fmt
 
-  op MIPS64FpuArithmetic = MIPS64FpuArithmeticRR
-                         | MIPS64FpuArithmeticRRR
-                         | MIPS64FpuArithmeticRRRR
+@rev(MIPS32_R1)
+op MIPS64FpuArithmetic = @rev(MIPS32_R1) MIPS64FpuArithmeticRR
+                       | @rev(MIPS32_R1) MIPS64FpuArithmeticRRR
+                       | @rev(MIPS32_R2_REM_R6) MIPS64FpuArithmeticRRRR
 
 //--------------------------------------------------------------------------------------------------
 // FPU Branch
@@ -1014,6 +1030,7 @@ var c_cond_less      [BIT]
 var c_cond_equal     [BIT]
 var c_cond_unordered [BIT]
 
+@rev(MIPS32_REM_R6)
 op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, ft: FR)
   init = {}
   syntax = format("c.%s.%s %d, %s, %s",
@@ -1042,6 +1059,7 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
     endif;
   }
 
+@rev(MIPS32_REM_R6)
 let CC_COND2 = 0 // cc = 0
 pseudo op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
   init = {}
@@ -1105,6 +1123,7 @@ op FPConditionCode (cc: card(3))
       PC <- PC + target_offset
     endif
   */
+@rev(MIPS32_REM_R6)
 op bc1f (cc: card(3), offset: SHORT)
   init = {}
   syntax = format("bc1f %d, %<label>d", cc, offset)
@@ -1119,13 +1138,16 @@ op bc1f (cc: card(3), offset: SHORT)
     endif;
   }
 
-  op MIPS64FpuBranchOp = bc1f
+@rev(MIPS32_REM_R6)
+op MIPS64FpuBranchOp = @rev(MIPS32_REM_R6) bc1f
 
-  op MIPS64FpuBranchCond = C_cond
-                         | C_cond2
+@rev(MIPS32_REM_R6)
+op MIPS64FpuBranchCond = @rev(MIPS32_REM_R6) C_cond
+                       | @rev(MIPS32_REM_R6) C_cond2
 
-  op MIPS64FpuBranch = MIPS64FpuBranchCond
-                     | MIPS64FpuBranchOp
+@rev(MIPS32_REM_R6)
+op MIPS64FpuBranch = MIPS64FpuBranchCond
+                   | MIPS64FpuBranchOp
 
 //--------------------------------------------------------------------------------------------------
 // FPU Load/Store
@@ -1218,6 +1240,7 @@ op mips64_load_fpu_short (load_op: card(4), rt: FR, load_offset: SHORT, load_bas
     memdoubleword <- memmsw || memlsw
     StoreFPR(ft, UNINTERPRETED_DOUBLEWORD, memdoubleword)
 */
+@rev(MIPS32_R1)
 op ldc1 (ft: FR, offset: SHORT, base: R)
   init = {}
   syntax = format("ld %s, %d(%s)", ft.syntax, offset, base.syntax)
@@ -1236,8 +1259,9 @@ op ldxc1 (fd: FR, index: R, base: R)
 
 /**/
 
-  op MIPS64FpuMEM = ldc1
-                  | ldxc1
+@rev(MIPS32_R1)
+op MIPS64FpuMEM = @rev(MIPS32_R1) ldc1
+                | ldxc1
 
 //--------------------------------------------------------------------------------------------------
 // FPU Move
@@ -1274,6 +1298,7 @@ MOVZ.fmt
     Copy the 32-bit word from FP (coprocessor 1) control register fs into GPR rt, sign-extending it
     to 64 bits.
 */
+@rev(MIPS32_R1)
 op cfc1 (rt: R, fs: FR)
   init = {}
   syntax = format("cfc1 %s, %s", rt.syntax, fs.syntax)
@@ -1296,6 +1321,7 @@ op cfc1 (rt: R, fs: FR)
   Description: FP_Control[fs] <- GPR[rt]
     Copy the low word from GPR rt into the FP (coprocessor 1) control register indicated by fs.
   */
+@rev(MIPS32_R1)
 op ctc1 (rt: R, fs: FR)
   init = {}
   syntax = format("ctc1 %s, %s", rt.syntax, fs.syntax)
@@ -1318,6 +1344,7 @@ op ctc1 (rt: R, fs: FR)
   Description: GPR[rt] <- FPR[fs]
   The contents of FPR fs are loaded into GPR rt.
   */
+@rev(MIPS64_R1)
 op dmfc1 (rt: R, fs: FR)
   init = {}
   syntax = format("dmfc1 %s, %s", rt.syntax, fs.syntax)
@@ -1338,6 +1365,7 @@ op dmfc1 (rt: R, fs: FR)
   Description: FPR[fs] <- GPR[rt]
     The doubleword contents of GPR rt are placed into FPR fs.
   */
+@rev(MIPS64_R1)
 op dmtc1 (rt: R, fs: FR)
   init = {}
   syntax = format("dmtc1 %s, %s", rt.syntax, fs.syntax)
@@ -1359,6 +1387,7 @@ op dmtc1 (rt: R, fs: FR)
   Description: GPR[rt] <- FPR[fs]
     The contents of FPR fs are sign-extended and loaded into general register rt.
   */
+@rev(MIPS32_R1)
 op mfc1 (rt: R, fs: FR)
   init = {}
   syntax = format("mfc1 %s, %s", rt.syntax, fs.syntax)
@@ -1381,6 +1410,7 @@ op mfc1 (rt: R, fs: FR)
     The low word in GPR rt is placed into the low word of FPR fs. If FPRs are 64 bits wide, bits
     63..32 of FPR fs become UNPREDICTABLE.
   */
+@rev(MIPS32_R1)
 op mtc1 (rt: R, fs: FR)
   init = {}
   syntax = format("mtc1 %s, %s", rt.syntax, fs.syntax)
@@ -1404,6 +1434,7 @@ op mtc1 (rt: R, fs: FR)
     This instruction is primarily intended to support 64-bit floating point units on a 32-bit CPU,
     but the semantics of the instruction are defined for all cases.
   */
+@rev(MIPS32_R2)
 op mfhc1 (rt: R, fs: FR)
   init = {}
   syntax = format("mfhc1 %s, %s", rt.syntax, fs.syntax)
@@ -1413,7 +1444,7 @@ op mfhc1 (rt: R, fs: FR)
   }
 
 /*
-  MTHC1: Move Word to High Half of Floating Point Register
+  MTHC1: Move Word to High Half of Floating Point Register (MIPS32 Release 2)
 
   Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10          0 |
             | COP1   | MTH   | rt    | fs    |               |
@@ -1427,6 +1458,7 @@ op mfhc1 (rt: R, fs: FR)
     intended to support 64-bit floating point units on a 32-bit CPU, but the semantics of the
     instruction are defined for all cases.
   */
+@rev(MIPS32_R2)
 op mthc1 (rt: R, fs: FR)
   init = {}
   syntax = format("mthc1 %s, %s", rt.syntax, fs.syntax)
@@ -1454,6 +1486,7 @@ op mthc1 (rt: R, fs: FR)
     non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags fields are not
     modified.
 */
+@rev(MIPS32_R1)
 op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("mov.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -1488,6 +1521,7 @@ op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
       GPR[rd] <- GPR[rs]
     endif
   */
+@rev(MIPS32_REM_R6)
 op movf (rd: R, rs: R, cc: card(3))
   init = {}
   syntax = format("movf %s, %s, %d", rd.syntax, rs.syntax, cc)
@@ -1527,6 +1561,7 @@ op movf (rd: R, rs: R, cc: card(3))
   The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
   fields are not modified.
   */
+@rev(MIPS32_REM_R6)
 op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
   init = {}
   syntax = format("movf.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
@@ -1578,6 +1613,7 @@ op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
     The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
     fields are not modified.
 */
+@rev(MIPS32_REM_R6)
 op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
   init = {}
   syntax = format("movn.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
@@ -1613,6 +1649,7 @@ op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
       GPR[rd] <- GPR[rs]
     endif
   */
+@rev(MIPS32_REM_R6)
 op movt (rd: R, rs: R, cc: card(3))
   init = {}
   syntax = format("movt %s, %s, %d", rd.syntax, rs.syntax, cc)
@@ -1652,6 +1689,7 @@ op movt (rd: R, rs: R, cc: card(3))
     The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
     fields are not modified.
   */
+@rev(MIPS32_REM_R6)
 op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
   init = {}
   syntax = format("movt.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
@@ -1703,6 +1741,7 @@ op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
     The move is non-arithmetic; it causes no IEEE 754 exceptions, and the FCSRCause and FCSRFlags
     fields are not modified.
 */
+@rev(MIPS32_REM_R6)
 op movz_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
   init = {}
   syntax = format("movz.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
@@ -1719,21 +1758,24 @@ op movz_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
     endif;
   }
 
-  op MIPS64FpuMove = cfc1
-                   | ctc1
-                   | dmfc1
-                   | dmtc1
-                   | mfc1
-                   | mtc1
-                   | mfhc1
-                   | mthc1
-                   | mov_fmt
-                   | movf
-                   | movf_fmt
-                   | movn_fmt
-                   | movt
-                   | movt_fmt
-                   | movz_fmt
+@rev(MIPS32_R1)
+op MIPS32FpuMove = @rev(MIPS32_R1) cfc1
+                 | @rev(MIPS32_R1) ctc1
+                 | @rev(MIPS32_R1) mfc1
+                 | @rev(MIPS32_R1) mtc1
+                 | @rev(MIPS32_R2) mfhc1
+                 | @rev(MIPS32_R2) mthc1
+                 | @rev(MIPS32_R1) mov_fmt // TODO
+                 | @rev(MIPS32_REM_R6) movf
+                 | @rev(MIPS32_REM_R6) movf_fmt
+                 | @rev(MIPS32_REM_R6) movn_fmt
+                 | @rev(MIPS32_REM_R6) movt
+                 | @rev(MIPS32_REM_R6) movt_fmt
+                 | @rev(MIPS32_REM_R6) movz_fmt
+
+@rev(MIPS64_R1)
+op MIPS64FpuMove = @rev(MIPS64_R1) dmfc1
+                 | @rev(MIPS64_R1) dmtc1
 
 //--------------------------------------------------------------------------------------------------
 // FPU Convert
@@ -1784,6 +1826,7 @@ TRUNC.W.fmt
   Operation:
     StoreFPR (fd, D, ConvertFmt(ValueFPR(fs, fmt), fmt, D))
 */
+@rev(MIPS32_R1)
 op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.d.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -1833,6 +1876,7 @@ op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR (fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
 */
+@rev(MIPS32_R1)
 op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -1866,6 +1910,7 @@ op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
     The value in FPR fs is written into the upper half, and the value in FPR ft is written into the
     lower half.
 */
+@rev(MIPS32_R2_REM_R6)
 op cvtps_s (fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("cvt.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
@@ -1894,6 +1939,7 @@ op cvtps_s (fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR (fd, S, ConvertFmt(ValueFPR(fs, PS), PL, S))
 */
+@rev(MIPS32_R2_REM_R6)
 op cvts_pl (fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.s.pl %s, %s", fd.syntax, fs.syntax)
@@ -1918,6 +1964,7 @@ op cvts_pl (fd: FR, fs: FR)
   Operation:
     StoreFPR (fd, S, ConvertFmt(ValueFPR(fs, PS), PU, S))
 */
+@rev(MIPS32_R2_REM_R6)
 op cvts_pu (fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.s.pu %s, %s", fd.syntax, fs.syntax)
@@ -1946,6 +1993,7 @@ op cvts_pu (fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, S, ConvertFmt(ValueFPR(fs, fmt), fmt, S))
 */
+@rev(MIPS32_R1)
 op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -1995,6 +2043,7 @@ op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
 */
+@rev(MIPS32_R1)
 op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2032,6 +2081,7 @@ op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
 */
+@rev(MIPS32_R2)
 op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("ceil.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2060,6 +2110,7 @@ op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
 */
+@rev(MIPS32_R1)
 op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("ceil.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2095,6 +2146,7 @@ op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
         StoreFPR(fd, PS, ValueFPR(ft, PS)31..0 || ValueFPR(fs,PS)63..32)
     endif
 */
+@rev(MIPS32_R2_REM_R6)
 op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
   init = {}
   syntax = format("alnv.ps %s, %s, %s, %s", fd.syntax, fs.syntax, ft.syntax, rs.syntax)
@@ -2130,6 +2182,7 @@ op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
   Operation:
     StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
 */
+@rev(MIPS32_R2)
 op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("floor.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2158,6 +2211,7 @@ op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
 */
+@rev(MIPS32_R1)
 op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("floor.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2186,6 +2240,7 @@ op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, PS, ValueFPR(fs, PS)31..0 || ValueFPR(ft, PS)31..0)
 */
+@rev(MIPS32_R2_REM_R6)
 op pllps_s (fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("pll.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
@@ -2213,6 +2268,7 @@ op pllps_s (fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, PS, ValueFPR(fs, PS)31..0 || ValueFPR(ft, PS)63..32)
 */
+@rev(MIPS32_R2_REM_R6)
 op plups_s (fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("plu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
@@ -2236,6 +2292,7 @@ op plups_s (fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, PS, ValueFPR(fs, PS)63..32 || ValueFPR(ft, PS)31..0)
 */
+@rev(MIPS32_R2_REM_R6)
 op pulps_s (fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("pul.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
@@ -2259,6 +2316,7 @@ op pulps_s (fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, PS, ValueFPR(fs, PS)63..32 || ValueFPR(ft, PS)63..32)
 */
+@rev(MIPS32_R2_REM_R6)
 op puups_s (fd: FR, fs: FR, ft: FR)
   init = {}
   syntax = format("puu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
@@ -2288,6 +2346,7 @@ op puups_s (fd: FR, fs: FR, ft: FR)
   Operation:
     StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
 */
+@rev(MIPS32_R2)
 op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("round.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2318,6 +2377,7 @@ op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
 */
+@rev(MIPS32_R1)
 op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("round.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2347,6 +2407,7 @@ op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, L, ConvertFmt(ValueFPR(fs, fmt), fmt, L))
 */
+@rev(MIPS32_R2)
 op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("trunc.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2376,6 +2437,7 @@ op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   Operation:
     StoreFPR(fd, W, ConvertFmt(ValueFPR(fs, fmt), fmt, W))
 */
+@rev(MIPS32_R1)
 op truncw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   init = {}
   syntax = format("trunc.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
@@ -2385,34 +2447,37 @@ op truncw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
     cvtw_fmt(op_fmt, fd, fs).action;
   }
 
-  op MIPS64FpuConvert = alnvps_fmt
-                      | cvtd_fmt
-                      | cvtl_fmt
-                      | cvtps_s
-                      | cvts_pl
-                      | cvts_pu
-                      | cvts_fmt
-                      | cvtw_fmt
-                      | ceill_fmt
-                      | ceilw_fmt
-                      | floorl_fmt
-                      | floorw_fmt
-                      | pllps_s
-                      | plups_s
-                      | pulps_s
-                      | puups_s
-                      | roundl_fmt
-                      | roundw_fmt
-                      | truncl_fmt
-                      | truncw_fmt
+@rev(MIPS32_R1)
+op MIPS64FpuConvert = @rev(MIPS32_R2_REM_R6) alnvps_fmt
+                    | @rev(MIPS32_R1) cvtd_fmt
+                    | @rev(MIPS32_R1) cvtl_fmt
+                    | @rev(MIPS32_R2_REM_R6) cvtps_s
+                    | @rev(MIPS32_R2_REM_R6) cvts_pl
+                    | @rev(MIPS32_R2_REM_R6) cvts_pu
+                    | @rev(MIPS32_R1) cvts_fmt
+                    | @rev(MIPS32_R1) cvtw_fmt
+                    | @rev(MIPS32_R2) ceill_fmt
+                    | @rev(MIPS32_R1) ceilw_fmt
+                    | @rev(MIPS32_R2) floorl_fmt
+                    | @rev(MIPS32_R1) floorw_fmt
+                    | @rev(MIPS32_R2_REM_R6) pllps_s
+                    | @rev(MIPS32_R2_REM_R6) plups_s
+                    | @rev(MIPS32_R2_REM_R6) pulps_s
+                    | @rev(MIPS32_R2_REM_R6) puups_s
+                    | @rev(MIPS32_R2) roundl_fmt
+                    | @rev(MIPS32_R1) roundw_fmt
+                    | @rev(MIPS32_R2) truncl_fmt
+                    | @rev(MIPS32_R1) truncw_fmt
 
 //==================================================================================================
 
-  op MIPS64FpuOp = MIPS64FpuArithmetic
-                 | MIPS64FpuBranch
-                 | MIPS64FpuMEM
-                 | MIPS64FpuMove
-                 | MIPS64FpuConvert
+@rev(MIPS32_R1)
+op MIPS64FpuOp = @rev(MIPS32_R1) MIPS64FpuArithmetic
+               | @rev(MIPS32_REM_R6) MIPS64FpuBranch
+               | @rev(MIPS64_R1) MIPS64FpuMEM
+               | @rev(MIPS64_R1) MIPS32FpuMove
+               | @rev(MIPS64_R1) MIPS64FpuMove
+               | @rev(MIPS32_R1) MIPS64FpuConvert
 
 //==================================================================================================
 // The End
