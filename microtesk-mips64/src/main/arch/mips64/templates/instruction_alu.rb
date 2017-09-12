@@ -52,13 +52,15 @@ class InstructionAluTemplate < Mips64BaseTemplate
 
     addi t6, zero, 5
     addi t7, zero, 3
+    if mips64_r6 then
     div_reg t8, t6, t7
     mod_reg t9, t6, t7
     trace "(div_reg, mod_reg) t8 = %x, t9 = %x", gpr_observer(24), gpr_observer(25)
     divu_reg t8, t6, t7
     modu_reg t9, t6, t7
     trace "(divu_reg, modu_reg) t8 = %x, t9 = %x", gpr_observer(24), gpr_observer(25)
-    
+    end
+
     div t6, t7
     mflo t8
     mfhi t9
@@ -101,8 +103,10 @@ class InstructionAluTemplate < Mips64BaseTemplate
     mfhi t9
     trace "(msubu) t8 = %x, t9 = %x", gpr_observer(24), gpr_observer(25)
 
+    if mips64_r6 then
     mul_reg t1, t2, t3
     muh_reg t1, t2, t3
+    end
 
     trace "\nMIPS 32 Logical:\n"
 
@@ -168,6 +172,7 @@ class InstructionAluTemplate < Mips64BaseTemplate
     #dati t2, 0xAB
     trace "(dati): t2 = %x", gpr_observer(10)
 
+    if mips64_r6 then
     addi t6, zero, 5
     addi t7, zero, 3
     ddiv_reg t8, t6, t7
@@ -176,6 +181,7 @@ class InstructionAluTemplate < Mips64BaseTemplate
     ddivu_reg t8, t6, t7
     dmodu_reg t9, t6, t7
     trace "(ddivu_reg, dmodu_reg) t8 = %x, t9 = %x", gpr_observer(24), gpr_observer(25)
+    end
 
     trace "\nMIPS 32/64 Insert:\n"
     la t1, 0xffffffffffffffff

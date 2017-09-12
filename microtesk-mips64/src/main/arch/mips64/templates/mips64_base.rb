@@ -987,8 +987,8 @@ label :error
   end
 
   def trace_data(begin_label, end_label)
-    begin_addr = get_address_of(begin_label)
-    end_addr = get_address_of(end_label)
+    begin_addr = 0x0000000000082000 + get_address_of(begin_label) - 0xffffffffa0082000
+    end_addr = 0x0000000000082000 + get_address_of(end_label) - 0xffffffffa0082000
 
     trace_data_addr(begin_addr, end_addr)
   end
