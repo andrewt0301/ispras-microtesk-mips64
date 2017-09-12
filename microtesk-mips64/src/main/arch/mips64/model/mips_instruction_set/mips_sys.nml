@@ -17,7 +17,7 @@
 //==================================================================================================
 
 /*
-CACHE: Perform Cache Operation
+CACHE: Perform Cache Operation (MIPS32)
 
   Encoding: | 31    26 | 25 21 | 20 16 | 15   0 |
             | CACHE    | base  | op    | offset |
@@ -25,10 +25,12 @@ CACHE: Perform Cache Operation
             | 6        | 5     | 5     | 16     |
 */
 // TODO:
+@rev(MIPS32_R1)
 op cache (operation: card(5), offset: SHORT, base: R)
   init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
-  image  = format("101111%5s%5s%16s", base.image, operation, offset)
+  @rev(MIPS32_REM_R6) image  = format("101111%5s%5s%16s", base.image, operation, offset)
+  //TODO: @rev(MIPS32_R6) image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
   action = {
     // Do nothing.
   }
@@ -48,6 +50,7 @@ op cache (operation: card(5), offset: SHORT, base: R)
   Operation:
   GPR[rd] <- HI
 */
+@rev(MIPS32_REM_R6)
 op mfhi (rd: R)
   init = {}
   syntax = format("mfhi %s", rd.syntax)
@@ -69,6 +72,7 @@ op mfhi (rd: R)
   Operation:
   GPR[rd] <- LO
 */
+@rev(MIPS32_REM_R6)
 op mflo (rd: R)
   init = {}
   syntax = format("mflo %s", rd.syntax)
@@ -91,6 +95,7 @@ op mflo (rd: R)
 
   Description: HI <- GPR[rs]
   */
+@rev(MIPS32_REM_R6)
 op mthi (rs: R)
   init = {}
   syntax = format("mthi %s", rs.syntax)
@@ -113,6 +118,7 @@ op mthi (rs: R)
 
   Description: HI <- GPR[rs]
   */
+@rev(MIPS32_REM_R6)
 op mtlo (rs: R)
   init = {}
   syntax = format("mtlo %s", rs.syntax)
@@ -135,6 +141,7 @@ TLBWR: Write Random TLB Entry
             | 100000 | 1  | 000 0000 0000 0000 0000 | 000010 |
             | 6      | 1  | 19                      | 6      |
 */
+@rev(MIPS32_R1)
 op tlbwi ()
   init = {}
   syntax = format("tlbwi")
@@ -159,6 +166,7 @@ TLBWR: Write Random TLB Entry
             | 100000 | 1  | 000 0000 0000 0000 0000 | 000110 |
             | 6      | 1  | 19                      | 6      |
 */
+@rev(MIPS32_R1)
 op tlbwr ()
   init = {}
   syntax = format("tlbwr")
@@ -185,6 +193,7 @@ op tlbwr ()
 
   Format: WAIT
   */
+@rev(MIPS32_R1)
 op wait (code: card(19))
   init = {}
   syntax = format("wait 0x%x", code)
@@ -209,6 +218,7 @@ op wait (code: card(19))
   Operation:
     ClearExecutionHazards()
  */
+@rev(MIPS32_R1)
 op ehb ()
   init = {}
   syntax = format("ehb")
@@ -257,6 +267,7 @@ op ehb ()
   Operation:
     SignalException(Breakpoint)
   */
+@rev(MIPS32_R1)
 op break_ins ()
   init = {}
   syntax = format("break")
@@ -284,6 +295,7 @@ op break_ins ()
   Operation:
     SignalException(SystemCall)
   */
+@rev(MIPS32_R1)
 op syscall ()
   init = {}
   syntax = format("syscall")
@@ -317,6 +329,7 @@ op syscall ()
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_R1)
 op teq (rs: R, rt: R)
   init = {}
   syntax = format("teq %s, %s", rs.syntax, rt.syntax)
@@ -346,6 +359,7 @@ op teq (rs: R, rt: R)
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op teqi (rs: R, immediate: card(16))
   init = {}
   syntax = format("teqi %s, %d", rs.syntax, immediate)
@@ -379,6 +393,7 @@ op teqi (rs: R, immediate: card(16))
     endif
   */
 // TODO: The contents of the code field are ignored by hardware and may be used to encode information for system software.
+@rev(MIPS32_R1)
 op tge (rs: R, rt: R)
   init = {}
   syntax = format("tge %s, %s", rs.syntax, rt.syntax)
@@ -408,6 +423,7 @@ op tge (rs: R, rt: R)
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op tgei (rs: R, immediate: card(16))
   init = {}
   syntax = format("tgei %s, %d", rs.syntax, immediate)
@@ -440,6 +456,7 @@ op tgei (rs: R, immediate: card(16))
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op tgeiu (rs: R, immediate: card(16))
   init = {}
   syntax = format("tgeiu %s, %d", rs.syntax, immediate)
@@ -451,7 +468,7 @@ op tgeiu (rs: R, immediate: card(16))
   }
 
 /*
-  TGEU: Trap if Greater or Equal Unsigned
+  TGEU: Trap if Greater or Equal Unsigned (MIPS32)
 
   Encoding: | 31   26 | 25 21 | 20 16 | 15 6 | 5    0 |
             | SPECIAL | rs    | rt    | code | TGEU   |
@@ -471,7 +488,8 @@ op tgeiu (rs: R, immediate: card(16))
     if (0 || GPR[rs]) <= (0 || GPR[rt]) then
       SignalException(Trap)
     endif
-    */
+*/
+@rev(MIPS32_R1)
 op tgeu (rs: R, rt: R)
   init = {}
   syntax = format("tgeu %s, %s", rs.syntax, rt.syntax)
@@ -503,6 +521,7 @@ op tgeu (rs: R, rt: R)
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_R1)
 op tlt (rs: R, rt: R)
   init = {}
   syntax = format("tlt %s, %s", rs.syntax, rt.syntax)
@@ -532,6 +551,7 @@ op tlt (rs: R, rt: R)
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op tlti (rs: R, immediate: card(16))
   init = {}
   syntax = format("tlti %s, %d", rs.syntax, immediate)
@@ -564,6 +584,7 @@ op tlti (rs: R, immediate: card(16))
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op tltiu (rs: R, immediate: card(16))
   init = {}
   syntax = format("tltiu %s, %d", rs.syntax, immediate)
@@ -595,7 +616,8 @@ op tltiu (rs: R, immediate: card(16))
     if (0 || GPR[rs]) < (0 || GPR[rt]) then
       SignalException(Trap)
     endif
-    */
+*/
+@rev(MIPS32_R1)
 op tltu (rs: R, rt: R)
   init = {}
   syntax = format("tltu %s, %s", rs.syntax, rt.syntax)
@@ -626,7 +648,8 @@ op tltu (rs: R, rt: R)
     if GPR[rs] ≠ GPR[rt] then
       SignalException(Trap)
     endif
-  */
+*/
+@rev(MIPS32_R1)
 op tne (rs: R, rt: R)
   init = {}
   syntax = format("tne %s, %s", rs.syntax, rt.syntax)
@@ -656,6 +679,7 @@ op tne (rs: R, rt: R)
       SignalException(Trap)
     endif
   */
+@rev(MIPS32_REM_R6)
 op tnei (rs: R, immediate: card(16))
   init = {}
   syntax = format("tnei %s, %d", rs.syntax, immediate)
@@ -666,19 +690,21 @@ op tnei (rs: R, immediate: card(16))
     endif;
   }
 
-op MipsSysTrapOp = break_ins
-                 | teq
-                 | teqi
-                 | tge
-                 | tgei
-                 | tgeiu
-                 | tgeu
-                 | tlt
-                 | tlti
-                 | tltiu
-                 | tltu
-                 | tne
-                 | tnei
+@rev(MIPS32_R1)
+op MipsSysTrapOp = @rev(MIPS32_R1) break_ins
+                 | @rev(MIPS32_R1) syscall
+                 | @rev(MIPS32_R1) teq
+                 | @rev(MIPS32_REM_R6) teqi
+                 | @rev(MIPS32_R1) tge
+                 | @rev(MIPS32_REM_R6) tgei
+                 | @rev(MIPS32_REM_R6) tgeiu
+                 | @rev(MIPS32_R1) tgeu
+                 | @rev(MIPS32_R1) tlt
+                 | @rev(MIPS32_REM_R6) tlti
+                 | @rev(MIPS32_REM_R6) tltiu
+                 | @rev(MIPS32_R1) tltu
+                 | @rev(MIPS32_R1) tne
+                 | @rev(MIPS32_REM_R6) tnei
 
 //--------------------------------------------------------------------------------------------------
 // MIPS Debug
@@ -690,7 +716,7 @@ op MipsSysTrapOp = break_ins
 */
 
 /*
-  DERET: Debug Exception Return
+  DERET: Debug Exception Return (EJTAG)
 
   Encoding: | 31  26 | 25 | 24                    6 | 5    0 |
             | COP0   | CO | 0                       | DERET  |
@@ -811,6 +837,7 @@ op MipsSysDebugOp = deret
     GPR[rt] <- sign_extend(data)
     StatusIE <- 0
   */
+@rev(MIPS32_R2)
 op di (rt: R)
   init = {}
   syntax = format("di %s", rt.syntax)
@@ -821,6 +848,7 @@ op di (rt: R)
     C0_STATUS_IE = coerce(BIT, 0x0);
   }
 
+@rev(MIPS32_R2)
 pseudo op di2 (bug: R) // TODO: fixed bug
   init = {}
   syntax = format("di")
@@ -852,6 +880,7 @@ pseudo op di2 (bug: R) // TODO: fixed bug
     GPR[rt] <- sign_extend(data)
     StatusIE <- 1
   */
+@rev(MIPS32_R2)
 op ei (rt: R)
   init = {}
   syntax = format("ei %s", rt.syntax)
@@ -862,6 +891,7 @@ op ei (rt: R)
     C0_STATUS_IE = coerce(BIT, 0x1);
   }
 
+@rev(MIPS32_R2)
 pseudo op ei2 (bug: R) // TODO: fixed bug
   init = {}
   syntax = format("ei")
@@ -906,6 +936,7 @@ pseudo op ei2 (bug: R) // TODO: fixed bug
       LLbit <- 0
       ClearHazards()
   */
+@rev(MIPS32_R1)
 op eret ()
   init = {}
   syntax = format("eret")
@@ -961,6 +992,7 @@ op eret ()
       GPR[rt] <- datadoubleword
     endif
   */
+@rev(MIPS64_R1)
 op dmfc0 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("dmfc0 %s, $%d, %d", rt.syntax, rd, sel)
@@ -971,6 +1003,7 @@ op dmfc0 (rt: R, rd: card(5), sel: card(3))
     rt = tempCPR;
   }
 
+@rev(MIPS64_R1)
 pseudo op dmfc0_2 (rt: R, rd: card(5))
   init = {}
   syntax = format("dmfc0 %s, $%d", rt.syntax, rd)
@@ -1007,6 +1040,7 @@ pseudo op dmfc0_2 (rt: R, rd: card(5))
       CPR[0,rd,sel] <- datadoubleword
     endif
   */
+@rev(MIPS64_R1)
 op dmtc0 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("dmtc0 %s, $%d, %d", rt.syntax, rd, sel)
@@ -1017,6 +1051,7 @@ op dmtc0 (rt: R, rd: card(5), sel: card(3))
     CPRSET(coerce(card(8), coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel))).action;
   }
 
+@rev(MIPS64_R1)
 pseudo op dmtc0_2 (rt: R, rd: card(5))
   init = {}
   syntax = format("dmtc0 %s, $%d", rt.syntax, rd)
@@ -1064,6 +1099,7 @@ pseudo op dmtc0_2 (rt: R, rd: card(5))
       endif
     endif
   */
+@rev(MIPS32_R1)
 op mfc0 (rt: R, rd: C0_R)
   init = {}
   syntax = format("mfc0 %s, %s", rt.syntax, rd.syntax)
@@ -1072,6 +1108,7 @@ op mfc0 (rt: R, rd: C0_R)
     rt = rd;
   }
 
+@rev(MIPS32_R1)
 pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
@@ -1090,6 +1127,7 @@ pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
     // TODO:
   }
 
+@rev(MIPS32_R1)
 pseudo op mfc0_3 (rt: R, rd: card(5))
   init = {}
   syntax = format("mfc0 %s, $%d", rt.syntax, rd)
@@ -1150,6 +1188,7 @@ pseudo op mfc0_3 (rt: R, rd: card(5))
       endif
     endif
   */
+@rev(MIPS32_R1)
 op mtc0 (rt: R, rd: C0_R)
   init = {}
   syntax = format("mtc0 %s, %s", rt.syntax, rd.syntax)
@@ -1158,6 +1197,7 @@ op mtc0 (rt: R, rd: C0_R)
     rd = rt;
   }
 
+@rev(MIPS32_R1)
 pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
   init = {}
   syntax = format("mtc0 %s, $%d, %d", rt.syntax, rd, sel)
@@ -1178,6 +1218,7 @@ pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
     // TODO:
   }
 
+@rev(MIPS32_R1)
 pseudo op mtc0_3 (rt: R, rd: card(5))
   init = {}
   syntax = format("mtc0 %s, $%d", rt.syntax, rd)
@@ -1185,7 +1226,6 @@ pseudo op mtc0_3 (rt: R, rd: card(5))
   action = {
     mtc0_2(rt, rd, 0).action;
   }
-
 
 /*
   TLBP: Probe TLB for Matching Entry (MIPS32)
@@ -1201,6 +1241,7 @@ pseudo op mtc0_3 (rt: R, rd: card(5))
     The Index register is loaded with the address of the TLB entry whose contents match the contents
   of the EntryHi register. If no TLB entry matches, the high-order bit of the Index register is set.
   */
+@rev(MIPS32_R1)
 op tlbp ()
   init = {}
   syntax = format("tlbp")
@@ -1223,6 +1264,7 @@ op tlbp ()
     The Index register is loaded with the address of the TLB entry whose contents match the contents
   of the EntryHi register. If no TLB entry matches, the high-order bit of the Index register is set.
   */
+@rev(MIPS32_R1)
 op tlbr ()
   init = {}
   syntax = format("tlbr")
@@ -1231,24 +1273,23 @@ op tlbr ()
     //TODO:
   }
 
-op MipsSysC0Op = di
-               | di2
-               | ei
-               | ei2
-               | eret
-               | dmfc0
-               | dmfc0_2
-               | dmtc0
-               | dmtc0_2
-               | mfc0
-               | mfc0_2
-               | mfc0_3
-               | mtc0
-               | mtc0_2
-               | mtc0_3
-               | tlbwr
-               | tlbp
-               | tlbr
+op MipsSysC0Op = @rev(MIPS32_R2) di
+               | @rev(MIPS32_R2) di2
+               | @rev(MIPS32_R2) ei
+               | @rev(MIPS32_R2) ei2
+               | @rev(MIPS32_R1) eret
+               | @rev(MIPS64_R1) dmfc0
+               | @rev(MIPS64_R1) dmfc0_2
+               | @rev(MIPS64_R1) dmtc0
+               | @rev(MIPS64_R1) dmtc0_2
+               | @rev(MIPS32_R1) mfc0
+               | @rev(MIPS32_R1) mfc0_2
+               | @rev(MIPS32_R1) mfc0_3
+               | @rev(MIPS32_R1) mtc0
+               | @rev(MIPS32_R1) mtc0_2
+               | @rev(MIPS32_R1) mtc0_3
+               | @rev(MIPS32_R1) tlbp
+               | @rev(MIPS32_R1) tlbr
 
 //--------------------------------------------------------------------------------------------------
 // MIPS Coprocessor 2
@@ -1268,6 +1309,7 @@ op MipsSysC0Op = di
           DMFC2 rt, rd, sel
   */
 // TODO: op dmfc2 (rt: R, rd: R, sel: card(16))
+@rev(MIPS64_R1)
 op dmfc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
@@ -1276,6 +1318,7 @@ op dmfc2 (rt: R, rd: R, sel: card(11))
     // TODO:
   }
 
+@rev(MIPS64_R1)
 pseudo op dmfc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmfc2 %s, %s", rt.syntax, rd.syntax)
@@ -1291,6 +1334,7 @@ pseudo op dmfc22 (rt: R, rd: R)
           DMTC2 rt, Impl, sel
   */
 // TODO op dmtc2 (rt: R, rd: R, sel: card(16))
+@rev(MIPS64_R1)
 op dmtc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
@@ -1299,6 +1343,7 @@ op dmtc2 (rt: R, rd: R, sel: card(11))
     // TODO:
   }
 
+@rev(MIPS64_R1)
 pseudo op dmtc22 (rt: R, rd: R)
   init = {}
   syntax = format("dmtc2 %s, %s", rt.syntax, rd.syntax)
@@ -1314,6 +1359,7 @@ pseudo op dmtc22 (rt: R, rd: R)
           MFC2 rt, Impl, sel
   */
 // TODO op mfc2 (rt: R, rd: R, sel: card(16))
+@rev(MIPS64_R1)
 op mfc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
@@ -1322,6 +1368,7 @@ op mfc2 (rt: R, rd: R, sel: card(11))
     // TODO:
   }
 
+@rev(MIPS64_R1)
 pseudo op mfc22 (rt: R, rd: R)
   init = {}
   syntax = format("mfc2 %s, %s", rt.syntax, rd.syntax)
@@ -1337,6 +1384,7 @@ pseudo op mfc22 (rt: R, rd: R)
           MTC2 rt, Impl, sel
   */
 //TODO op mtc2 (rt: R, rd: R, sel: card(16))
+@rev(MIPS64_R1)
 op mtc2 (rt: R, rd: R, sel: card(11))
   init = {}
   syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
@@ -1345,6 +1393,7 @@ op mtc2 (rt: R, rd: R, sel: card(11))
     // TODO:
   }
 
+@rev(MIPS64_R1)
 pseudo op mtc22 (rt: R, rd: R)
   init = {}
   syntax = format("mtc2 %s, %s", rt.syntax, rd.syntax)
@@ -1353,14 +1402,14 @@ pseudo op mtc22 (rt: R, rd: R)
     mtc2(rt, rd, 0).action;
   }
 
-op MipsSysC2Op = dmfc2
-               | dmfc22
-               | dmtc2
-               | dmtc22
-               | mfc2
-               | mfc22
-               | mtc2
-               | mtc22
+op MipsSysC2Op = @rev(MIPS64_R1) dmfc2
+               | @rev(MIPS64_R1) dmfc22
+               | @rev(MIPS64_R1) dmtc2
+               | @rev(MIPS64_R1) dmtc22
+               | @rev(MIPS64_R1) mfc2
+               | @rev(MIPS64_R1) mfc22
+               | @rev(MIPS64_R1) mtc2
+               | @rev(MIPS64_R1) mtc22
 
 //--------------------------------------------------------------------------------------------------
 // MIPS Load/Store Coprocessor 2
@@ -1381,6 +1430,7 @@ op MipsSysC2Op = dmfc2
 
   Format: LDC2 rt, offset(base)
 */
+@rev(MIPS32_R1)
 op ldc2 (rt: R, offset: card(11), base: R)
   init = {}
   syntax = format("ldc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -1399,6 +1449,7 @@ op ldc2 (rt: R, offset: card(11), base: R)
 
   Format: LWC2 rt, offset(base)
 */
+@rev(MIPS32_R1)
 op lwc2 (rt: R, offset: card(11), base: R)
   init = {}
   syntax = format("lwc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -1407,22 +1458,25 @@ op lwc2 (rt: R, offset: card(11), base: R)
     // TODO:
   }
 
-op MipsSysLSOp = ldc2
-               | lwc2
+@rev(MIPS32_R1)
+op MipsSysLSOp = @rev(MIPS32_R1) ldc2
+               | @rev(MIPS32_R1) lwc2
 
+@rev(MIPS32_R1)
 op MipsSysOp = MipsSysTrapOp
              | MipsSysDebugOp
              | MipsSysC0Op
              | MipsSysC2Op
              | MipsSysLSOp
-             | cache
-             | mfhi
-             | mflo
-             | mthi
-             | mtlo
-             | tlbwi
-             | wait
-             | ehb
+             | @rev(MIPS32_R1)cache
+             | @rev(MIPS32_REM_R6) mfhi
+             | @rev(MIPS32_REM_R6) mflo
+             | @rev(MIPS32_REM_R6) mthi
+             | @rev(MIPS32_REM_R6) mtlo
+             | @rev(MIPS32_R1) tlbwi
+             | @rev(MIPS32_R1) tlbwr
+             | @rev(MIPS32_R1) wait
+             | @rev(MIPS32_R1) ehb
 
 //==================================================================================================
 // The End

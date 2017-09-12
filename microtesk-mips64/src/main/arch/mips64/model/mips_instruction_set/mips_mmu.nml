@@ -174,6 +174,7 @@ Data Transfer
   byte <- vAddr2..0 xor BigEndianCPU3
   GPR[rt] <- sign_extend(memdoubleword7+8*byte..8*byte)
 */
+@rev(MIPS32_R1)
 op lb (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lb %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -205,6 +206,7 @@ op lb (rt: R, offset: SHORT, base: R)
     byte <- vAddr2..0 xor BigEndianCPU3
     GPR[rt] <- zero_extend(memdoubleword7+8*byte..8*byte)
   */
+@rev(MIPS32_R1)
 op lbu (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lbu %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -237,6 +239,7 @@ op lbu (rt: R, offset: SHORT, base: R)
   datadoubleword <- GPR[rt]63–8*bytesel..0 || 08*bytesel
   StoreMemory (CCA, BYTE, datadoubleword, pAddr, vAddr, DATA)
 */
+@rev(MIPS32_R1)
 op sb (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("sb %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -281,6 +284,7 @@ op sb (rt: R, offset: SHORT, base: R)
   memdoubleword <- LoadMemory (CCA, DOUBLEWORD, pAddr, vAddr, DATA)
   GPR[rt]       <- memdoubleword
 */
+@rev(MIPS64_R1)
 op ld (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("ld %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -323,6 +327,7 @@ op ld (rt: R, offset: SHORT, base: R)
   datadoubleword <- GPR[rt]
   StoreMemory (CCA, DOUBLEWORD, datadoubleword, pAddr, vAddr, DATA)
 */
+@rev(MIPS64_R1)
 op sd (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("sd %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -354,6 +359,7 @@ op sd (rt: R, offset: SHORT, base: R)
     byte <- vAddr2..0 xor (BigEndianCPU2 || 0)
     GPR[rt] <- sign_extend(memdoubleword15+8*byte..8*byte)
   */
+@rev(MIPS32_R1)
 op lh (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lh %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -385,6 +391,7 @@ op lh (rt: R, offset: SHORT, base: R)
     byte <- vAddr2..0 xor (BigEndianCPU2 || 0)
     GPR[rt] <- zero_extend(memdoubleword15+8*byte..8*byte)
   */
+@rev(MIPS32_R1)
 op lhu (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lhu %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -416,6 +423,7 @@ op lhu (rt: R, offset: SHORT, base: R)
     datadoubleword <- GPR[rt]63-8*bytesel..0 || 08*bytesel
     StoreMemory (CCA, HALFWORD, datadoubleword, pAddr, vAddr, DATA)
   */
+@rev(MIPS32_R1)
 op sh (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("sh %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -463,6 +471,7 @@ op sh (rt: R, offset: SHORT, base: R)
   byte   <- vAddr2..0 xor (BigEndianCPU || 02)
   GPR[rt] <- sign_extend(memdoubleword31+8*byte..8*byte)
 */
+@rev(MIPS32_R1)
 op lw (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lw %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -494,6 +503,7 @@ op lw (rt: R, offset: SHORT, base: R)
     byte <- vAddr2..0 xor (BigEndianCPU || 02)
     GPR[rt] <- 0_32 || memdoubleword31+8*byte..8*byte
   */
+@rev(MIPS64_R1)
 op lwu (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("lwu %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -540,6 +550,7 @@ op lwu (rt: R, offset: SHORT, base: R)
   datadoubleword <- GPR[rt]63-8*bytesel..0 || 08*bytesel
   StoreMemory (CCA, WORD, datadoubleword, pAddr, vAddr, DATA)
 */
+@rev(MIPS32_R1)
 op sw (rt: R, offset: SHORT, base: R)
   init = {}
   syntax = format("sw %s, %d(%s)", rt.syntax, offset, base.syntax)
@@ -548,14 +559,23 @@ op sw (rt: R, offset: SHORT, base: R)
     mips64_store(MEM_WORD, rt, offset, base).action;
   }
 
-op MipsMmuOp = ld
-             | sd
-             | lw
-             | sw
-             | lb
-             | sb
-             | lh
-             | sh
+@rev(MIPS32_R1)
+op MipsMmuOp = @rev(MIPS32_R1) ld
+             | @rev(MIPS64_R1) sd
+             | @rev(MIPS32_R1) lw
+             | @rev(MIPS32_R1) sw
+             | @rev(MIPS32_R1) lb
+             | @rev(MIPS32_R1) sb
+             | @rev(MIPS32_R1) lh
+             | @rev(MIPS32_R1) sh
+
+@rev(MIPS32_R1)
+op MipsMmuOp32 = @rev(MIPS32_R1) lbu
+               | @rev(MIPS32_R1) lhu
+
+@rev(MIPS64_R1)
+op MipsMmuOp64 = @rev(MIPS64_R1) ld
+               | @rev(MIPS64_R1) lwu
 
 //==================================================================================================
 // The End

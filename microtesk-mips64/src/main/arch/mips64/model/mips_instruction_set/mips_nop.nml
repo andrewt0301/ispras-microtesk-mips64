@@ -56,6 +56,7 @@ pseudo op nop ()
   Operation:
     None
  */
+@rev(MIPS32_R1)
 pseudo op ssnop ()
   init = {}
   syntax = format("ssnop")
@@ -65,7 +66,7 @@ pseudo op ssnop ()
   }
 
 op MipsNopOp = nop
-             | ssnop
+             | @rev(MIPS32_R1) ssnop
 
 //==================================================================================================
 // The End

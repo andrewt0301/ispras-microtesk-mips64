@@ -380,12 +380,7 @@ op clo (rd: R, rs: R)
   init = {}
   syntax = format("clo %s, %s", rd.syntax, rs.syntax)
   @rev(MIPS32_R6) image = format("000000%5s00000%5s00001010001", rs.image, rd.image)
-  #ifndef MIPS32_R6
-    #ifdef MIPS32_R1
-      // TODO: @rev(MIPS32_REM_R6)
-      image = format("011100%5s%5s%5s00000100001", rs.image, rd.image, rd.image)
-    #endif
-  #endif
+  @rev(MIPS32_REM_R6) image = format("011100%5s%5s%5s00000100001", rs.image, rd.image, rd.image)
   action = {
     check_sign_extend_value(rs).action;
 
