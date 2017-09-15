@@ -3,11 +3,13 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
- 2016/11/11 - 2016/MM/DD
+ 2016/11/11 - 2017/MM/DD
 --------------------------------------------------------------------------------
 
- 2016/12/09 MicroTESK MIPS64 0.0.3
- - Test Templates: New (19) templates
+ 2017/09/15 MicroTESK MIPS64 0.0.3
+ - Specifications: Support for revisions (MIPS32, MIPS64 : Revision 1-6)
+ - Test Templates: 19 new test templates were added
+ - Tool Functions: Updated MicroTESK core
 
  2016/11/25 MicroTESK MIPS64 0.0.2
  - Specifications: Updates exceptions in MIPS64 instructions
@@ -15,9 +17,7 @@
  - Test Templates: New templates load_store.rb
 
  2016/11/11 MicroTESK MIPS64 0.0.1
-
  - Specifications: Instruction set of MIPS64
  - Test Templates: New templates bubble_sort.rb, bubble_sort_word.rb, euclid.rb,
                    load_store_situation.rb
                    Simple arithmetic and load/store templates
-
