@@ -1,7 +1,7 @@
 /*
  * MicroTESK MIPS Edition
  *
- * Copyright (c) 2015-2016 Institute for System Programming of the Russian Academy of Sciences
+ * Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
  * All Rights Reserved
  *
  * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
@@ -24,13 +24,12 @@ CACHE: Perform Cache Operation (MIPS32)
             | 101111   | 0     |       |        |
             | 6        | 5     | 5     | 16     |
 */
-// TODO:
 @rev(MIPS32_R1)
 op cache (operation: card(5), offset: SHORT, base: R)
   init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
   @rev(MIPS32_REM_R6) image  = format("101111%5s%5s%16s", base.image, operation, offset)
-  //TODO: @rev(MIPS32_R6) image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
+  @rev(MIPS32_R6) image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
   action = {
     // Do nothing.
   }
