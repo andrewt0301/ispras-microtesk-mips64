@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <revisions>
- <revision name="MIPS32_REM_R6">
- </revision>
- <revision name="MIPS32_R2_REM_R6">
- </revision>
- <revision name="MIPS32_R3_REM_R6">
- </revision>
+ <revision name="MIPS32_REM_R6"/>
+ <revision name="MIPS32_R2_REM_R6"/>
+ <revision name="MIPS32_R3_REM_R6"/>
  <revision name="MIPS32_R1">
   <includes name="MIPS32_REM_R6"/>
  </revision>
@@ -32,8 +29,7 @@
  <revision name="MIPS32">
   <includes name="MIPS32_R6"/>
  </revision>
- <revision name="MIPS64_REM_R6">
- </revision>
+ <revision name="MIPS64_REM_R6"/>
  <revision name="MIPS64_R1">
   <includes name="MIPS64_REM_R6"/>
   <includes name="MIPS32_R1"/>
