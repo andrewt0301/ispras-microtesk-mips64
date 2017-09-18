@@ -6,6 +6,9 @@
  2016/11/11 - 2017/MM/DD
 --------------------------------------------------------------------------------
 
+ 2017/09/18 MicroTESK MIPS64 0.0.4
+ - Tool Functions: Bug fix in MicroTESK core
+
  2017/09/15 MicroTESK MIPS64 0.0.3
  - Specifications: Support for revisions (MIPS32, MIPS64 : Revision 1-6)
  - Test Templates: 19 new test templates were added
