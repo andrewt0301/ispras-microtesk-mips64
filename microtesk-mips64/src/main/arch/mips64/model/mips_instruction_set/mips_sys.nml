@@ -24,12 +24,20 @@ CACHE: Perform Cache Operation (MIPS32)
             | 101111   | 0     |       |        |
             | 6        | 5     | 5     | 16     |
 */
-@rev(MIPS32_R1)
+@rev(MIPS32_REM_R6)
 op cache (operation: card(5), offset: SHORT, base: R)
   init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
-  @rev(MIPS32_REM_R6) image  = format("101111%5s%5s%16s", base.image, operation, offset)
-  @rev(MIPS32_R6) image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
+  image  = format("101111%5s%5s%16s", base.image, operation, offset)
+  action = {
+    // Do nothing.
+  }
+
+@rev(MIPS32_R6)
+op cache (operation: card(5), offset: card(9), base: R)
+  init = {}
+  syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
+  image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
   action = {
     // Do nothing.
   }

@@ -854,6 +854,9 @@ op MIPS64FpuArithmetic = @rev(MIPS32_R1) MIPS64FpuArithmeticRR
 // FPU Branch
 //--------------------------------------------------------------------------------------------------
 
+var encoding_tf[BIT]
+var encoding_nd[BIT]
+
 /*
   Instructions:
     C.cond.fmt
@@ -1024,7 +1027,7 @@ mode FPU_COND_TYPE = F_COND
     condition <- (cond2 and less) or (cond1 and equal)
       or (cond0 and unordered)
     SetFPConditionCode(cc, condition)
-  */
+*/
 
 var c_cond_less      [BIT]
 var c_cond_equal     [BIT]
@@ -1059,8 +1062,8 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
     endif;
   }
 
-@rev(MIPS32_REM_R6)
 let CC_COND2 = 0 // cc = 0
+@rev(MIPS32_REM_R6)
 pseudo op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
   init = {}
   syntax = format("c.%s.%s %s, %s",
@@ -1125,29 +1128,201 @@ op FPConditionCode (cc: card(3))
   */
 @rev(MIPS32_REM_R6)
 op bc1f (cc: card(3), offset: SHORT)
-  init = {}
+  init = {
+    encoding_nd = 0;
+    encoding_tf = 0;
+  }
   syntax = format("bc1f %d, %<label>d", cc, offset)
-  image  = format("01000101000%3s00%16s", cc, offset)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
   action = {
     BRANCH_INSTRUCTION = 1;
     FPConditionCode(cc).action;
 
-    if FPConditionCode_value == coerce(BIT, 0) then
+    if FPConditionCode_value == coerce(BIT, encoding_tf) then
       BRANCH = 1;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
 
 @rev(MIPS32_REM_R6)
-op MIPS64FpuBranchOp = @rev(MIPS32_REM_R6) bc1f
+pseudo op bc1f2 (offset: SHORT)
+  init = {}
+  syntax = format("bc1f %<label>d", offset)
+  image  = format("%32s", bc1f(0, offset).image)
+  action = {
+    bc1f(0, offset).action;
+  }
+
+/*
+  BC1FL IBranch on FP False Likely (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15   0 |
+            | COP1    | BC    | cc    | nd | tf | offset |
+            | 010001  | 01000 | 3     | 1  | 0  |        |
+            | 6       | 5     | 3     | 1  | 1  | 16     |
+
+  Format: BC1FL offset (cc = 0 implied)
+          BC1FL cc, offset
+  */
+@rev(MIPS32_REM_R6)
+op bc1fl (cc: card(3), offset: SHORT)
+  init = {
+    encoding_nd = 1;
+    encoding_tf = 0;
+  }
+  syntax = format("bc1fl %d, %<label>d", cc, offset)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, encoding_tf) then
+      BRANCH = 1;
+      NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
+    else
+      NullifyCurrentInstruction().action;
+    endif;
+  }
 
 @rev(MIPS32_REM_R6)
-op MIPS64FpuBranchCond = @rev(MIPS32_REM_R6) C_cond
+pseudo op bc1fl2 (offset: SHORT)
+  init = {}
+  syntax = format("bc1fl %<label>d", offset)
+  image  = format("%32s", bc1fl(0, offset).image)
+  action = {
+    bc1fl(0, offset).action;
+  }
+
+/*
+  BC1T IBranch on FP True (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15   0 |
+            | COP1    | BC    | cc    | nd | tf | offset |
+            | 010001  | 01000 | 3     | 0  | 1  |        |
+            | 6       | 5     | 3     | 1  | 1  | 16     |
+
+  Format: BC1T offset (cc = 0 implied)
+          BC1T cc, offset
+  */
+@rev(MIPS32_REM_R6)
+op bc1t (cc: card(3), offset: SHORT)
+  init = {
+    encoding_nd = 0;
+    encoding_tf = 1;
+  }
+  syntax = format("bc1t %d, %<label>d", cc, offset)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, encoding_tf) then
+      BRANCH = 1;
+      NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
+    endif;
+  }
+
+@rev(MIPS32_REM_R6)
+pseudo op bc1t2 (offset: SHORT)
+  init = {}
+  syntax = format("bc1t %<label>d", offset)
+  image  = format("%32s", bc1t(0, offset).image)
+  action = {
+    bc1t(0, offset).action;
+  }
+
+/*
+  BC1TL IBranch on FP True Likely (MIPS32, removed in Release 6)
+
+  Encoding: | 31 26   | 25 21 | 20 18 | 17 | 16 | 15   0 |
+            | COP1    | BC    | cc    | nd | tf | offset |
+            | 010001  | 01000 | 3     | 1  | 1  |        |
+            | 6       | 5     | 3     | 1  | 1  | 16     |
+
+  Format: BC1TL offset (cc = 0 implied)
+          BC1TL cc, offset
+  */
+@rev(MIPS32_REM_R6)
+op bc1tl (cc: card(3), offset: SHORT)
+  init = {
+    encoding_nd = 1;
+    encoding_tf = 1;
+  }
+  syntax = format("bc1tl %d, %<label>d", cc, offset)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    FPConditionCode(cc).action;
+
+    if FPConditionCode_value == coerce(BIT, encoding_tf) then
+      BRANCH = 1;
+      NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
+    else
+      NullifyCurrentInstruction().action;
+    endif;
+  }
+
+@rev(MIPS32_REM_R6)
+pseudo op bc1tl2 (offset: SHORT)
+  init = {}
+  syntax = format("bc1tl %<label>d", offset)
+  image  = format("%32s", bc1tl(0, offset).image)
+  action = {
+    bc1tl(0, offset).action;
+  }
+
+/*
+  BC1EQZ BC1NEZ IBranch if Coprocessor 1 (FPU) Register Bit 0 Equal/Not Equal to Zero (MIPS32 Release 6)
+*/
+@rev(MIPS32_R6)
+op bc1eqz(rt: FR, offset: SHORT)
+  init = {}
+  syntax = format("bc1eqz %s, %<label>d", rt.syntax, offset)
+  image  = format("01000101001%5s%16s", rt.image, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    temp64<63..0> = rt<63..0>;
+    if temp64 & sign_extend(DWORD, 0b1) == 0 then
+      BRANCH = 1;
+      NEXTPC = CIA + 4 + (sign_extend(DWORD, offset) << 2);
+    endif;
+  }
+
+@rev(MIPS32_R6)
+op bc1nez(rt: FR, offset: SHORT)
+  init = {}
+  syntax = format("bc1nez %s, %<label>d", rt.syntax, offset)
+  image  = format("01000101101%5s%16s", rt.image, offset)
+  action = {
+    BRANCH_INSTRUCTION = 1;
+    temp64<63..0> = rt<63..0>;
+    if temp64 & sign_extend(DWORD, 0b1) != 0 then
+      BRANCH = 1;
+      NEXTPC = CIA + 4 + (sign_extend(DWORD, offset) << 2);
+    endif;
+  }
+
+@rev(MIPS32_REM_R6)
+op MIPS32FpuBranchOp = @rev(MIPS32_REM_R6) bc1f
+                     | @rev(MIPS32_REM_R6) bc1f2
+                     | @rev(MIPS32_REM_R6) bc1fl
+                     | @rev(MIPS32_REM_R6) bc1fl2
+                     | @rev(MIPS32_REM_R6) bc1t
+                     | @rev(MIPS32_REM_R6) bc1t2
+                     | @rev(MIPS32_REM_R6) bc1tl
+                     | @rev(MIPS32_REM_R6) bc1tl2
+
+@rev(MIPS32_REM_R6)
+op MIPS32FpuBranchCond = @rev(MIPS32_REM_R6) C_cond
                        | @rev(MIPS32_REM_R6) C_cond2
 
 @rev(MIPS32_REM_R6)
-op MIPS64FpuBranch = MIPS64FpuBranchCond
-                   | MIPS64FpuBranchOp
+op MIPS32FpuBranch = MIPS32FpuBranchCond
+                   | MIPS32FpuBranchOp
+
+@rev(MIPS32_R6)
+op MIPS32FpuBranch = @rev(MIPS32_R6) bc1eqz
+                   | @rev(MIPS32_R6) bc1nez
 
 //--------------------------------------------------------------------------------------------------
 // FPU Load/Store
@@ -2473,7 +2648,8 @@ op MIPS64FpuConvert = @rev(MIPS32_R2_REM_R6) alnvps_fmt
 
 @rev(MIPS32_R1)
 op MIPS64FpuOp = @rev(MIPS32_R1) MIPS64FpuArithmetic
-               | @rev(MIPS32_REM_R6) MIPS64FpuBranch
+               | @rev(MIPS32_REM_R6) MIPS32FpuBranch
+               | @rev(MIPS32_R6) MIPS32FpuBranch
                | @rev(MIPS64_R1) MIPS64FpuMEM
                | @rev(MIPS64_R1) MIPS32FpuMove
                | @rev(MIPS64_R1) MIPS64FpuMove

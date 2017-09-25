@@ -1708,8 +1708,9 @@ op rotr (rd: R, rt: R, sa: card(5))
   syntax = format("rotr %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000001%5s%5s%5s000010", rt.image, rd.image, sa)
   action = {
-    if (sign_extend(WORD, rt<31>) != rt<63..32>) || ((C0_CONFIG3_SM == coerce(BIT, 0b0))
-     && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2))) then
+    check_sign_extend_value(rt).action;
+
+    if (C0_CONFIG3_SM == coerce(BIT, 0b0)) && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2)) then
       unpredicted;
     endif;
 
@@ -1752,8 +1753,9 @@ op rotrv (rd: R, rt: R, rs: R)
   syntax = format("rotrv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00001000110", rs.image, rt.image, rd.image)
   action = {
-    if (sign_extend(WORD, rt<31>) != rt<63..32>) || ((C0_CONFIG3_SM == coerce(BIT, 0b0))
-     && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2))) then
+    check_sign_extend_value(rt).action;
+
+    if (C0_CONFIG3_SM == coerce(BIT, 0b0)) && (coerce(card(6), ArchitectureRevision) < coerce(card(6), 0x2)) then
       unpredicted;
     endif;
 
@@ -1866,9 +1868,7 @@ op sra (rd: R, rt: R, sa: card(5))
   syntax = format("sra %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s000011", rt.image, rd.image, sa)
   action = {
-    if (sign_extend(WORD, rt<31>) != rt<63..32>) then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rt).action;
 
     temp64 = rt >> zero_extend(WORD, sa);
     rd = sign_extend(DWORD, temp64<31..0>);
@@ -1908,9 +1908,7 @@ op srav (rd: R, rt: R, rs: R)
   syntax = format("srav %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000000111", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rt).action;
 
     temp64 = rt >> zero_extend(WORD, rs<4..0>);
     rd = sign_extend(DWORD, temp64<31..0>);
@@ -1951,9 +1949,7 @@ op srl (rd: R, rt: R, sa: card(5))
   syntax = format("srl %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s000010", rt.image, rd.image, sa)
   action = {
-    if sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rt).action;
 
     temp64 = coerce(DWORD, rt<31..0>) >> zero_extend(WORD, sa);
     rd = sign_extend(DWORD, temp64<31..0>);
@@ -1993,9 +1989,7 @@ op srlv (rd: R, rt: R, rs: R)
   syntax = format("srlv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000000110", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rt).action;
 
     temp64 = coerce(DWORD, rt<31..0>) >> zero_extend(WORD, rs<4..0>);
     rd = sign_extend(DWORD, temp64<31..0>);
@@ -2385,10 +2379,7 @@ op ddiv_reg (rd: R, rs: R, rt: R)
   syntax = format("ddiv %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011110", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
       trace ("SignalException(ReservedInstruction)");
@@ -2407,10 +2398,7 @@ op dmod_reg (rd: R, rs: R, rt: R)
   syntax = format("dmod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011110", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
       trace ("SignalException(ReservedInstruction)");
@@ -2429,10 +2417,7 @@ op ddivu_reg (rd: R, rs: R, rt: R)
   syntax = format("ddivu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011111", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
       trace ("SignalException(ReservedInstruction)");
@@ -2451,10 +2436,7 @@ op dmodu_reg (rd: R, rs: R, rt: R)
   syntax = format("dmodu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011111", rs.image, rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_values(rs, rt).action;
 
     if coerce(BIT, Are64bitOperationsEnabled) != coerce(BIT, 1) then
       trace ("SignalException(ReservedInstruction)");
@@ -3195,7 +3177,9 @@ op ext (rt: R, rs: R, pos: card(5), size: card(5))
   syntax = format("ext %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000000", rs.image, rt.image, size-1, pos)
   action = {
-    if (pos+size-1) > 31 || sign_extend(WORD, rs<31>) != rs<63..32> then
+    check_sign_extend_value(rs).action;
+
+    if (pos+size-1) > 31 then
       unpredicted;
     endif;
 
@@ -3246,9 +3230,9 @@ op ins (rt: R, rs: R, pos: card(5), size: card(5))
   syntax = format("ins %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000100", rs.image, rt.image, pos+size-1, pos)
   action = {
-    if pos > (pos+size-1) ||
-       sign_extend(WORD, rs<31>) != rs<63..32> ||
-       sign_extend(WORD, rt<31>) != rt<63..32> then
+    check_sign_extend_values(rs, rt).action;
+
+    if pos > (pos+size-1) then
       unpredicted;
     endif;
 
@@ -3452,9 +3436,7 @@ op wsbh (rd: R, rt: R)
   syntax = format("wsbh %s, %s", rd.syntax, rt.syntax)
   image  = format("01111100000%5s%5s00010000000", rt.image, rd.image)
   action = {
-    if sign_extend(WORD, rt<31>) != rt<63..32> then
-      unpredicted;
-    endif;
+    check_sign_extend_value(rt).action;
 
     temp0 = rt<23..16>::rt<31..24>::rt<7..0>::rt<15..8>;
 
