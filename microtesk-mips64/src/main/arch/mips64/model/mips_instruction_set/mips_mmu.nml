@@ -559,8 +559,302 @@ op sw (rt: R, offset: SHORT, base: R)
     mips64_store(MEM_WORD, rt, offset, base).action;
   }
 
+/*
+  LL Load Linked Word (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | LW     | base  | rt    | offset |
+            | 110000 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: LL rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op ll (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("ll %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("110000%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_WORD, SIGNED, rt, offset, base).action;
+    LLbit = 0b1;
+  }
+
+@rev(MIPS32_R6)
+op ll (rt: R, offset: card(9), base: R)
+  init = {}
+  syntax = format("ll %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("011111%5s%5s%9s0110110", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_WORD, SIGNED, rt, sign_extend(SHORT, offset), base).action;
+    LLbit = 0b1;
+  }
+
+/*
+  LDL Load Doubleword Left (MIPS64, removed in Release 6)
+
+  Format: LDL rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op ldl (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("ldl %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("011010%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  LDR Load Doubleword Right (MIPS64, removed in Release 6)
+
+  Format: LDR rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op ldr (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("ldr %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("011011%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  LWL Load Word Left (MIPS64, removed in Release 6)
+
+  Format: LWL rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op lwl (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lwl %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100010%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  LWR Load Word Right (MIPS64, removed in Release 6)
+
+  Format: LWR rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op lwr (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lwr %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("100110%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  LLD ILoad Linked Doubleword (MIPS64)
+
+  Encoding: | 31   26 | 25 21 | 20 16 | 15   0 |
+            | LLD     | base  | rt    | offset |
+            | 110100  |       |       |        |
+            | 6       | 5     | 5     | 16     |
+
+  Format: LLD rt, offset(base)
+*/
+@rev(MIPS64_R1)
+op lld (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("lld %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("110100%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    mips64_load(MEM_DWORD, SIGNED, rt, offset, base).action;
+    LLbit = 0b1;
+  }
+
+/*
+  PREF Prefetch (MIPS32)
+
+  Encoding: | 31  26 | 25 21 | 20 16 | 15   0 |
+            | PREF   | base  | hint  | offset |
+            | 110011 |       |       |        |
+            | 6      | 5     | 5     | 16     |
+
+  Format: PREF hint,offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op pref (hint_op: card(5), offset: SHORT, base: R)
+  init = {}
+  syntax = format("pref %d, %d(%s)", hint_op, offset, base.syntax)
+  image  = format("110011%5s%5s%16s", base.image, hint_op, offset)
+  action = {
+    // TODO
+  }
+
+@rev(MIPS32_R6)
+op pref (hint_op: card(5), offset: card(9), base: R)
+  init = {}
+  syntax = format("pref %d, %d(%s)", hint_op, offset, base.syntax)
+  image  = format("011111%5s%5s%9s0110101", base.image, hint_op, offset)
+  action = {
+    // TODO
+  }
+
+/*
+  SC Store Conditional Word (MIPS32)
+
+  Format: SC rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op sc (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sc %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("111000%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    if LLbit == 0b1 then
+      mips64_store(MEM_WORD, rt, offset, base).action;
+    endif;
+    rt = 0;
+    rt<1> = LLbit;
+    LLbit = 0b0;
+  }
+
+@rev(MIPS32_R6)
+op sc (rt: R, offset: card(9), base: R)
+  init = {}
+  syntax = format("sc %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("011111%5s%5s%9s0100110", base.image, rt.image, offset)
+  action = {
+    if LLbit == 0b1 then
+      mips64_store(MEM_WORD, rt, sign_extend(SHORT, offset), base).action;
+    endif;
+    rt = 0;
+    rt<1> = LLbit;
+    LLbit = 0b0;
+  }
+
+/*
+  SCD Store Conditional Doubleword (MIPS64)
+
+  Format: SCD rt, offset(base)
+*/
+@rev(MIPS64_REM_R6)
+op scd (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("scd %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("111100%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    if LLbit == 0b1 then
+      mips64_store(MEM_DWORD, rt, offset, base).action;
+    endif;
+    rt = 0;
+    rt<1> = LLbit;
+    LLbit = 0b0;
+  }
+
+@rev(MIPS64_R6)
+op scd (rt: R, offset: card(9), base: R)
+  init = {}
+  syntax = format("scd %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("011111%5s%5s%9s0100111", base.image, rt.image, offset)
+  action = {
+    if LLbit == 0b1 then
+      mips64_store(MEM_DWORD, rt, sign_extend(SHORT, offset), base).action;
+    endif;
+    rt = 0;
+    rt<1> = LLbit;
+    LLbit = 0b0;
+  }
+
+/*
+  SDL Store Doubleword Left (MIPS64, removed in Release 6)
+
+  Format: SDL rt, offset(base)
+*/
+@rev(MIPS64_REM_R6)
+op sdl (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sdl %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101100%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  SDR Store Doubleword Right (MIPS64, removed in Release 6)
+
+  Format: SDR rt, offset(base)
+*/
+@rev(MIPS64_REM_R6)
+op sdr (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("sdr %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101101%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  SWL Store Word Left (MIPS64, removed in Release 6)
+
+  Format: SWL rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op swl (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("swl %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101010%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  SWR Store Word Right (MIPS64, removed in Release 6)
+
+  Format: SWR rt, offset(base)
+*/
+@rev(MIPS32_REM_R6)
+op swr (rt: R, offset: SHORT, base: R)
+  init = {}
+  syntax = format("swr %s, %d(%s)", rt.syntax, offset, base.syntax)
+  image  = format("101110%5s%5s%16s", base.image, rt.image, offset)
+  action = {
+    // TODO:
+  }
+
+/*
+  SYNC Synchronize Shared Memory (MIPS32)
+
+  Format: SYNC (stype = 0 implied)
+          SYNC stype
+*/
 @rev(MIPS32_R1)
-op MipsMmuOp = @rev(MIPS32_R1) ld
+op sync (stype: card(5))
+  init = {}
+  syntax = format("sync %d", stype)
+  image  = format("000000000000000000000%5s001111", stype)
+  action = {
+    // TODO
+  }
+
+@rev(MIPS32_R1)
+pseudo op sync0 ()
+  init = {}
+  syntax = format("%s", sync(0).syntax)
+  image  = format("%32s", sync(0).image)
+  action = {
+    sync(0).action;
+  }
+
+/*
+  SYNCI Synchronize Caches to Make Instruction Writes Effective (MIPS32 Release 2)
+
+  Format: SYNCI offset(base)
+*/
+@rev(MIPS32_R2)
+op synci (offset: SHORT, base: R)
+  init = {}
+  syntax = format("synci %d(%s)", offset, base.syntax)
+  image  = format("000001%5s11111%16s", base.image, offset)
+  action = {
+    // TODO
+  }
+
+@rev(MIPS32_R1)
+op MipsMmuOp = @rev(MIPS64_R1) ld
              | @rev(MIPS64_R1) sd
              | @rev(MIPS32_R1) lw
              | @rev(MIPS32_R1) sw
@@ -568,6 +862,26 @@ op MipsMmuOp = @rev(MIPS32_R1) ld
              | @rev(MIPS32_R1) sb
              | @rev(MIPS32_R1) lh
              | @rev(MIPS32_R1) sh
+             | @rev(MIPS32_REM_R6) ll
+             | @rev(MIPS32_R6) ll
+             | @rev(MIPS32_REM_R6) ldl
+             | @rev(MIPS32_REM_R6) ldr
+             | @rev(MIPS32_REM_R6) lwl
+             | @rev(MIPS32_REM_R6) lwr
+             | @rev(MIPS64_R1) lld
+             | @rev(MIPS32_R6) pref
+             | @rev(MIPS32_REM_R6) pref
+             | @rev(MIPS32_R6) sc
+             | @rev(MIPS32_REM_R6) sc
+             | @rev(MIPS64_R6) scd
+             | @rev(MIPS64_REM_R6) scd
+             | @rev(MIPS64_REM_R6) sdl
+             | @rev(MIPS64_REM_R6) sdr
+             | @rev(MIPS32_REM_R6) swl
+             | @rev(MIPS32_REM_R6) swr
+             | @rev(MIPS32_R1) sync
+             | @rev(MIPS32_R1) sync0
+             | @rev(MIPS32_R2) synci
 
 @rev(MIPS32_R1)
 op MipsMmuOp32 = @rev(MIPS32_R1) lbu
