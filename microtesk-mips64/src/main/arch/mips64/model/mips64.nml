@@ -147,6 +147,10 @@ reg C0_DESAVE[DWORD]              alias = CPR[8 * 31 + 0]
     1 User mode uses reversed endianness
   If this bit is not implemented, it must be ignored on write and read as zero.
 */
+reg C0_STATUS_CU3     [BIT] alias = C0_STATUS<31>
+reg C0_STATUS_CU2     [BIT] alias = C0_STATUS<30>
+reg C0_STATUS_CU1     [BIT] alias = C0_STATUS<29>
+reg C0_STATUS_CU0     [BIT] alias = C0_STATUS<28>
 reg C0_STATUS_RE      [BIT] alias = C0_STATUS<25>
 
 reg C0_STATUS_BEV     [BIT] alias = C0_STATUS<22>
@@ -413,6 +417,65 @@ op NullifyCurrentInstruction()
 //==================================================================================================
 
 let SPECIAL3 = 0b011111
+
+//==================================================================================================
+// Exceptions of operation
+//==================================================================================================
+/*
+6.2: Exceptions
+6.2.1: Exception Priority
+6.2.2: Exception Vector Locations
+6.2.3: General Exception Processing
+6.2.4: EJTAG Debug Exception
+6.2.5: Reset Exception
+6.2.6: Soft Reset Exception
+6.2.7: Non Maskable Interrupt (NMI) Exception
+6.2.8: Machine Check Exception
+6.2.9: Address Error Exception
+6.2.10: TLB Refill and XTLB Refill Exceptions
+6.2.11: Execute-Inhibit Exception
+6.2.12: Read-Inhibit Exception
+6.2.13: TLB Invalid Exception
+6.2.14: TLB Modified Exception
+6.2.15: Cache Error Exception
+6.2.16: Bus Error Exception
+6.2.17: Integer Overflow Exception
+6.2.18: Trap Exception
+6.2.19: System Call Exception
+6.2.20: Breakpoint Exception
+6.2.21: Reserved Instruction Exception
+6.2.22: Coprocessor Unusable Exception
+6.2.23: MDMX Unusable Exception
+6.2.24: Floating Point Exception
+6.2.25: Coprocessor 2 Exception
+6.2.26: Watch Exception
+6.2.27: Interrupt Exception
+*/
+let Coprocessor_Unusable_0 = 0x00
+let Coprocessor_Unusable_1 = 0x01
+let Coprocessor_Unusable_2 = 0x02
+
+op add_exception(excep: card(8))
+  init = {}
+  action = {
+    // Coprocessor Unusable Exception
+    if (excep == Coprocessor_Unusable_0) then
+      if C0_STATUS_CU0 == 0 && ((C0_DEBUG_DM == 0) && (C0_STATUS_KSU == 0b00
+        || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1)) then
+        exception("Coprocessor Unusable: CU0");
+      endif;
+    endif;
+
+    if (excep == Coprocessor_Unusable_1 && C0_STATUS_CU1 == 0) then
+      exception("Coprocessor Unusable: CU1");
+    endif;
+
+    if (excep == Coprocessor_Unusable_2 && C0_STATUS_CU2 == 0) then
+      exception("Coprocessor Unusable: CU2");
+    endif;
+
+    // TODO:
+  }
 
 //==================================================================================================
 // Instructions

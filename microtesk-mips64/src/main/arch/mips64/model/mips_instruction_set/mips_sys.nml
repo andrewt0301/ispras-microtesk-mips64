@@ -154,6 +154,8 @@ op tlbwi ()
   syntax = format("tlbwi")
   image  = format("01000010000000000000000000000010")
   action = {
+    add_exception(Coprocessor_Unusable_0).action;
+
     temp_jtlb_index     = C0_INDEX;
     temp_jtlb_entry_hi  = C0_ENTRY_HI;
     temp_jtlb_entry_lo0 = C0_ENTRY_LO0;
