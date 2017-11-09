@@ -30,6 +30,7 @@ op cache (operation: card(5), offset: SHORT, base: R)
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
   image  = format("101111%5s%5s%16s", base.image, operation, offset)
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // Do nothing.
   }
 
@@ -39,6 +40,7 @@ op cache (operation: card(5), offset: card(9), base: R)
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
   image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // Do nothing.
   }
 
@@ -154,7 +156,8 @@ op tlbwi ()
   syntax = format("tlbwi")
   image  = format("01000010000000000000000000000010")
   action = {
-    add_exception(Coprocessor_Unusable_0).action;
+    add_exception(CoprocessorUnusable0).action;
+    add_exception(MachineCheck).action;
 
     temp_jtlb_index     = C0_INDEX;
     temp_jtlb_entry_hi  = C0_ENTRY_HI;

@@ -451,26 +451,28 @@ let SPECIAL3 = 0b011111
 6.2.26: Watch Exception
 6.2.27: Interrupt Exception
 */
-let Coprocessor_Unusable_0 = 0x00
-let Coprocessor_Unusable_1 = 0x01
-let Coprocessor_Unusable_2 = 0x02
+let CoprocessorUnusable0 = 0x00
+let CoprocessorUnusable1 = 0x01
+let CoprocessorUnusable2 = 0x02
+let MachineCheck         = 0x03
+let ReservedInstruction  = 0x04
 
 op add_exception(excep: card(8))
   init = {}
   action = {
-    // Coprocessor Unusable Exception
-    if (excep == Coprocessor_Unusable_0) then
+    // If access to Coprocessor 0 is not enabled, a Coprocessor Unusable Exception is signaled.
+    if (excep == CoprocessorUnusable0) then
       if C0_STATUS_CU0 == 0 && ((C0_DEBUG_DM == 0) && (C0_STATUS_KSU == 0b00
         || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1)) then
         exception("Coprocessor Unusable: CU0");
       endif;
     endif;
 
-    if (excep == Coprocessor_Unusable_1 && C0_STATUS_CU1 == 0) then
+    if (excep == CoprocessorUnusable1 && C0_STATUS_CU1 == 0) then
       exception("Coprocessor Unusable: CU1");
     endif;
 
-    if (excep == Coprocessor_Unusable_2 && C0_STATUS_CU2 == 0) then
+    if (excep == CoprocessorUnusable2 && C0_STATUS_CU2 == 0) then
       exception("Coprocessor Unusable: CU2");
     endif;
 
