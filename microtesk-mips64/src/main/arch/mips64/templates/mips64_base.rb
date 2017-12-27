@@ -340,7 +340,7 @@ class Mips64BaseTemplate < Template
     #
     comparator(:target => 'R') {
       lui at, value(16, 31)
-      ori at, target, value(0, 15)
+      ori at, at, value(0, 15)
 
       bne at, target, :check_failed
       nop
