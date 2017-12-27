@@ -282,7 +282,7 @@ op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   action = {
     op_fmt.action;
     if fmt_fpu == coerce(card(5), FMT_S) then
-      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) / int_to_float(FLOAT32, ft<31..0>);
+      temp_fp_s = cast(FLOAT32, fs<31..0>) / cast(FLOAT32, ft<31..0>); // TODO : int_to_float
       fd<31..0> = float_to_int(WORD, temp_fp_s);
     elif fmt_fpu == coerce(card(5), FMT_D) then
       temp_fp_d = int_to_float(FLOAT64, fs) / int_to_float(FLOAT64, ft);
@@ -1041,8 +1041,8 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
   image  = format("010001%5s%5s%5s%3s0011%4s",
                   op_fmt.image, ft.image, fs.image, cc, cond_value.image)
   action = {
-    temp_fp_d  = int_to_float(FLOAT64, fs<63..0>);
-    temp_fp_d2 = int_to_float(FLOAT64, ft<63..0>);
+    temp_fp_d  = cast(FLOAT64, fs<63..0>);
+    temp_fp_d2 = cast(FLOAT64, ft<63..0>);
 
     if is_nan(temp_fp_d) || is_nan(temp_fp_d2) ||
        is_signaling_nan(temp_fp_d) || is_signaling_nan(temp_fp_d2)
