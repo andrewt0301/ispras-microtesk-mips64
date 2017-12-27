@@ -1,7 +1,7 @@
 /*
- * MicroTESK MIPS64 Edition
+ * MicroTESK for MIPS64
  *
- * Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
+ * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
  * All Rights Reserved
  *
  * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
@@ -537,21 +537,41 @@ op instruction (operation: Op)
     endif;
   }
 
+//==================================================================================================
+var temp_load_address [DWORD]
+
+label mode LOAD_LABEL(target: DWORD) = target<63..0>
+  init = {
+    temp_load_address = target;
+  }
+  syntax = ""
+  image = format("%s", target<63..0>)
+
+mode LOAD_IMM(imm: DWORD) = imm
+  init = {
+    temp_load_address = imm;
+  }
+  syntax = format("0x%X", imm)
+  image = format("%s", imm)
+
+mode LOAD_ADDR = LOAD_LABEL | LOAD_IMM
+
 @rev(MIPS64_REM_R6)
-pseudo op la(rd : R, addr : DWORD)
+pseudo op la(rd : R, addr : LOAD_ADDR)
   init = {}
-  syntax = format("la %s, %<label>d", rd.syntax, addr)
-  image  = format("%s%s%s%s%s", lui(rd, addr<48..63>).image,
-                                ori(rd, rd, addr<32..47>).image,
+  syntax = format("la %s, %s", rd.syntax, addr.syntax)
+  image  = format("%s%s%s%s%s", lui(rd, temp_load_address<48..63>).image,
+                                ori(rd, rd, temp_load_address<32..47>).image,
                                 dsll32(rd, rd, 0).image,
-                                lui(rd, addr<16..31>).image,
-                                ori(rd, rd, addr<0..15>).image)
+                                lui(rd, temp_load_address<16..31>).image,
+                                ori(rd, rd, temp_load_address<0..15>).image)
   action = {
-    instruction(lui(rd, addr<48..63>)).action;
-    instruction(ori(rd, rd, addr<32..47>)).action;
+    temp_load_address = addr;
+    instruction(lui(rd, temp_load_address<48..63>)).action;
+    instruction(ori(rd, rd, temp_load_address<32..47>)).action;
     instruction(dsll32(rd, rd, 0)).action;
-    instruction(lui(rd, addr<16..31>)).action;
-    instruction(ori(rd, rd, addr<0..15>)).action;
+    instruction(lui(rd, temp_load_address<16..31>)).action;
+    instruction(ori(rd, rd, temp_load_address<0..15>)).action;
   }
 
 //==================================================================================================

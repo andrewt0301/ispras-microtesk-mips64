@@ -1,13 +1,13 @@
 #
-# MicroTESK MIPS64 Edition
+# MicroTESK for MIPS64
 #
-# Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
+# Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
 # All Rights Reserved
 #
 # Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
 # 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
 # http://www.ispras.ru
-# 
+#
 
 require_relative 'mips64_base'
 

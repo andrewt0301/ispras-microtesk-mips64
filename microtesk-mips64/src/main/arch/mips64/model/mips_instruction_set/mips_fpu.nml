@@ -1,7 +1,7 @@
 /*
- * MicroTESK MIPS Edition
+ * MicroTESK for MIPS
  *
- * Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
+ * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
  * All Rights Reserved
  *
  * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
@@ -1099,6 +1099,16 @@ op FPConditionCode (cc: card(3))
     endif;
   }
 
+label mode BRANCH_FPU_LABEL(target: WORD, current: WORD) = target<17..2> - current<17..2>
+  syntax = ""
+  image = format("%s", target<17..2> - current<17..2>)
+
+mode BRANCH_FPU_IMM(imm: SHORT) = imm
+  syntax = format("0x%X", imm)
+  image = format("%s", imm)
+
+mode BRANCH_FPU_OFFSET = BRANCH_FPU_LABEL | BRANCH_FPU_IMM
+
 /*
   BC1F Branch on FP False (MIPS32, removed in Release 6)
 
@@ -1127,13 +1137,13 @@ op FPConditionCode (cc: card(3))
     endif
   */
 @rev(MIPS32_REM_R6)
-op bc1f (cc: card(3), offset: SHORT)
+op bc1f (cc: card(3), offset: BRANCH_FPU_OFFSET)
   init = {
     encoding_nd = 0;
     encoding_tf = 0;
   }
-  syntax = format("bc1f %d, %<label>d", cc, offset)
-  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  syntax = format("bc1f %d, %s", cc, offset.syntax)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     FPConditionCode(cc).action;
@@ -1145,9 +1155,9 @@ op bc1f (cc: card(3), offset: SHORT)
   }
 
 @rev(MIPS32_REM_R6)
-pseudo op bc1f2 (offset: SHORT)
+pseudo op bc1f2 (offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1f %<label>d", offset)
+  syntax = format("bc1f %s", offset.syntax)
   image  = format("%32s", bc1f(0, offset).image)
   action = {
     bc1f(0, offset).action;
@@ -1165,13 +1175,13 @@ pseudo op bc1f2 (offset: SHORT)
           BC1FL cc, offset
   */
 @rev(MIPS32_REM_R6)
-op bc1fl (cc: card(3), offset: SHORT)
+op bc1fl (cc: card(3), offset: BRANCH_FPU_OFFSET)
   init = {
     encoding_nd = 1;
     encoding_tf = 0;
   }
-  syntax = format("bc1fl %d, %<label>d", cc, offset)
-  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  syntax = format("bc1fl %d, %s", cc, offset.syntax)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     FPConditionCode(cc).action;
@@ -1185,9 +1195,9 @@ op bc1fl (cc: card(3), offset: SHORT)
   }
 
 @rev(MIPS32_REM_R6)
-pseudo op bc1fl2 (offset: SHORT)
+pseudo op bc1fl2 (offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1fl %<label>d", offset)
+  syntax = format("bc1fl %s", offset.syntax)
   image  = format("%32s", bc1fl(0, offset).image)
   action = {
     bc1fl(0, offset).action;
@@ -1205,13 +1215,13 @@ pseudo op bc1fl2 (offset: SHORT)
           BC1T cc, offset
   */
 @rev(MIPS32_REM_R6)
-op bc1t (cc: card(3), offset: SHORT)
+op bc1t (cc: card(3), offset: BRANCH_FPU_OFFSET)
   init = {
     encoding_nd = 0;
     encoding_tf = 1;
   }
-  syntax = format("bc1t %d, %<label>d", cc, offset)
-  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  syntax = format("bc1t %d, %s", cc, offset.syntax)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     FPConditionCode(cc).action;
@@ -1223,9 +1233,9 @@ op bc1t (cc: card(3), offset: SHORT)
   }
 
 @rev(MIPS32_REM_R6)
-pseudo op bc1t2 (offset: SHORT)
+pseudo op bc1t2 (offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1t %<label>d", offset)
+  syntax = format("bc1t %s", offset.syntax)
   image  = format("%32s", bc1t(0, offset).image)
   action = {
     bc1t(0, offset).action;
@@ -1243,13 +1253,13 @@ pseudo op bc1t2 (offset: SHORT)
           BC1TL cc, offset
   */
 @rev(MIPS32_REM_R6)
-op bc1tl (cc: card(3), offset: SHORT)
+op bc1tl (cc: card(3), offset: BRANCH_FPU_OFFSET)
   init = {
     encoding_nd = 1;
     encoding_tf = 1;
   }
-  syntax = format("bc1tl %d, %<label>d", cc, offset)
-  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset)
+  syntax = format("bc1tl %d, %s", cc, offset.syntax)
+  image  = format("01000101000%3s%1s%1s%16s", cc, encoding_nd, encoding_tf, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     FPConditionCode(cc).action;
@@ -1263,9 +1273,9 @@ op bc1tl (cc: card(3), offset: SHORT)
   }
 
 @rev(MIPS32_REM_R6)
-pseudo op bc1tl2 (offset: SHORT)
+pseudo op bc1tl2 (offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1tl %<label>d", offset)
+  syntax = format("bc1tl %s", offset.syntax)
   image  = format("%32s", bc1tl(0, offset).image)
   action = {
     bc1tl(0, offset).action;
@@ -1275,10 +1285,10 @@ pseudo op bc1tl2 (offset: SHORT)
   BC1EQZ BC1NEZ IBranch if Coprocessor 1 (FPU) Register Bit 0 Equal/Not Equal to Zero (MIPS32 Release 6)
 */
 @rev(MIPS32_R6)
-op bc1eqz(rt: FR, offset: SHORT)
+op bc1eqz(rt: FR, offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1eqz %s, %<label>d", rt.syntax, offset)
-  image  = format("01000101001%5s%16s", rt.image, offset)
+  syntax = format("bc1eqz %s, %s", rt.syntax, offset.syntax)
+  image  = format("01000101001%5s%16s", rt.image, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     temp64<63..0> = rt<63..0>;
@@ -1289,10 +1299,10 @@ op bc1eqz(rt: FR, offset: SHORT)
   }
 
 @rev(MIPS32_R6)
-op bc1nez(rt: FR, offset: SHORT)
+op bc1nez(rt: FR, offset: BRANCH_FPU_OFFSET)
   init = {}
-  syntax = format("bc1nez %s, %<label>d", rt.syntax, offset)
-  image  = format("01000101101%5s%16s", rt.image, offset)
+  syntax = format("bc1nez %s, %s", rt.syntax, offset.syntax)
+  image  = format("01000101101%5s%16s", rt.image, offset.image)
   action = {
     BRANCH_INSTRUCTION = 1;
     temp64<63..0> = rt<63..0>;
