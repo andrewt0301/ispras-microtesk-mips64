@@ -32,7 +32,6 @@ import ru.ispras.testbase.TestBaseContext;
 import ru.ispras.testbase.TestBaseQuery;
 import ru.ispras.testbase.TestData;
 import ru.ispras.testbase.TestDataProvider;
-import ru.ispras.testbase.generator.Utils;
 import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
 import ru.ispras.microtesk.test.engine.branch.BranchEngine;
 
@@ -131,7 +130,7 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
     InvariantChecks.checkNotNull(query);
     InvariantChecks.checkNotNull(values);
 
-    final Map<String, Node> unknowns = Utils.extractUnknown(query);
+    final Map<String, Node> unknowns = extractUnknown(query);
     final Map<String, Object> bindings = new LinkedHashMap<>();
 
     for (final Map.Entry<String, Node> entry : unknowns.entrySet()) {
