@@ -55,6 +55,8 @@ let FP32RegistersMode = 0b1
 let PC = "CIA"
 reg CIA [DWORD]
 
+reg CIA_BRANCH [DWORD]
+
 // Branch Processing Variables
 mem BRANCH [BIT]
 mem BRANCH_INSTRUCTION [BIT]
@@ -499,7 +501,7 @@ op Op = MIPS64NopOp
 
 var is_delay_slot [BIT]
 var last_branch_instruction [BIT]
-var jump_address  [DWORD]
+var jump_address [DWORD]
 
 op instruction (operation: Op)
   syntax = operation.syntax
@@ -507,13 +509,21 @@ op instruction (operation: Op)
   action = {
     GPR[0] = coerce(DWORD, 0);
 
-    last_branch_instruction = BRANCH_INSTRUCTION;
-    is_delay_slot = BRANCH;
-    jump_address  = NEXTPC;
+    last_branch_instruction = 0;
+    COMPACT_BRANCH = 0;
 
-    BRANCH_INSTRUCTION = 0;
-    BRANCH = 0;
-    NEXTPC = coerce(DWORD, 0);
+    if CIA == CIA_BRANCH then
+      last_branch_instruction = BRANCH_INSTRUCTION;
+      is_delay_slot = BRANCH;
+      jump_address  = NEXTPC;
+
+      BRANCH_INSTRUCTION = 0;
+      BRANCH = 0;
+      NEXTPC = 0;
+    else
+      is_delay_slot = 0;
+      jump_address = 0;
+    endif;
 
     if SKIPOP == 0 then
       operation.action;
@@ -525,13 +535,10 @@ op instruction (operation: Op)
       unpredicted;
     endif;
 
-    /*
-    if (is_delay_slot == 1 && BRANCH == 1) then
-      unpredicted;
-    endif;*/
-
     if (is_delay_slot == 1) then
       CIA = jump_address;
+    elif COMPACT_BRANCH == 1 then
+      CIA = NEXTPC;
     else
       CIA = CIA + 4;
     endif;

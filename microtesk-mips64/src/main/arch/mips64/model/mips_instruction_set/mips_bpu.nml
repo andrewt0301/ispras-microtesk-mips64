@@ -135,6 +135,8 @@ pseudo op b (offset: BRANCH_OFFSET)
     BRANCH_INSTRUCTION = 1;
 
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
+
     NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
   }
 
@@ -170,6 +172,8 @@ op bal (offset: BRANCH_OFFSET)
 
     GPR[31] = CIA + 8;
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
+
     NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
   }
 
@@ -279,6 +283,7 @@ op beq (rs: R, rt: R, offset: BRANCH_OFFSET)
 
     if rs == rt then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -322,6 +327,7 @@ op beql (rs: R, rt: R, offset: BRANCH_OFFSET)
 
     if rs == rt then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -364,6 +370,7 @@ op bgez (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) >= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -411,6 +418,7 @@ op bgezal (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) >= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -653,6 +661,7 @@ op bgezall (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) >= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1107,6 +1116,7 @@ op bgezl (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) >= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1149,6 +1159,7 @@ op bgtz (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) > 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -1192,6 +1203,7 @@ op bgtzl (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) > 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1234,6 +1246,7 @@ op blez (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) <= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -1277,6 +1290,7 @@ op blezl (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) <= 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1319,6 +1333,7 @@ op bltz (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) < 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -1364,6 +1379,7 @@ op bltzal (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) < 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -1412,6 +1428,7 @@ op bltzall (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) < 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1457,6 +1474,7 @@ op bltzl (rs: R, offset: BRANCH_OFFSET)
 
     if cast(LONG, rs) < 0 then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1499,6 +1517,7 @@ op bne (rs: R, rt: R, offset: BRANCH_OFFSET)
 
     if rs != rt then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     endif;
   }
@@ -1542,6 +1561,7 @@ op bnel (rs: R, rt: R, offset: BRANCH_OFFSET)
 
     if rs != rt then
       BRANCH = 1;
+      CIA_BRANCH = CIA + 4;
       NEXTPC = CIA + (sign_extend(DWORD, offset) << 2);
     else
       SKIPOP = 1;
@@ -1706,6 +1726,7 @@ op j (instr_index: JUMP_ADDR)
     temp28 = coerce(card(28), instr_index) << 2;
 
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
     NEXTPC = CIA<63..28>::temp28;
   }
 
@@ -1748,6 +1769,7 @@ op jal (instr_index: JUMP_ADDR)
     GPR[31] = CIA + 8;
 
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
     NEXTPC = CIA<63..28>::temp28;
   }
 
@@ -1805,6 +1827,7 @@ op jalr2 (rd: R, rs: R)
     BRANCH_INSTRUCTION = 1;
 
     rd = CIA + 8;
+    CIA_BRANCH = CIA + 4;
     BRANCH = 1;
     
     if C0_CONFIG3_ISA == coerce(BIT, 0b0) then // TODO if Config3ISA = 1 then
@@ -1960,6 +1983,7 @@ op jialc (rt: R, offset: JUMP_ADDR16)
     BRANCH_INSTRUCTION = 1;
     COMPACT_BRANCH = 1;
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
 
     temp64 = rt + sign_extend(DWORD, offset);
     GPR[31] = CIA + 4;
@@ -2011,6 +2035,7 @@ op jic (rt: R, offset: JUMP_ADDR16)
     BRANCH_INSTRUCTION = 1;
     COMPACT_BRANCH = 1;
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
 
     temp64 = rt + sign_extend(DWORD, offset);
 
@@ -2068,6 +2093,7 @@ op jr (rs: R)
     BRANCH_INSTRUCTION = 1;
 
     BRANCH = 1;
+    CIA_BRANCH = CIA + 4;
 
     if C0_CONFIG1_CA == coerce(BIT, 0b0) then
       NEXTPC = rs;
