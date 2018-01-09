@@ -52,7 +52,7 @@ class BlockTemplate < Mips64BaseTemplate
       }
 
       iterate {
-        And r(_), r(_), r(_)
+        And r(_), t8, t9 #TODO: And r(_), r(_), r(_)
         nop
       }
     }.run
@@ -69,7 +69,7 @@ class BlockTemplate < Mips64BaseTemplate
         prologue { comment 'Atomic starts' }
         epilogue { comment 'Atomic ends' }
 
-        And r(_), r(_), r(_)
+        And r(_), t8, t9 #TODO: And r(_), r(_), r(_)
         nop
       }
     }.run
