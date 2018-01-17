@@ -23,8 +23,6 @@ class LoadStoreTemplate < Mips64BaseTemplate
     # Initialize settings here 
     @generate_data_files = false
     @align_test_case = true
-
-    set_option_value 'branch-exec-limit', 90000
   end
 
   def pre
