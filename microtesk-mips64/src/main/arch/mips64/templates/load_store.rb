@@ -1,13 +1,13 @@
 #
-# MicroTESK for MIPS64
+# MicroTESK MIPS64 Edition
 #
-# Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
+# Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
 # All Rights Reserved
 #
 # Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
 # 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
 # http://www.ispras.ru
-#
+# 
 
 require_relative 'mips64_base'
 
@@ -27,6 +27,20 @@ class LoadStoreTemplate < Mips64BaseTemplate
 
   def pre
     super
+
+    memory_preparator(:size => 64) {
+      prepare t0, value
+
+      ori  t1, zero, 0x9000 # XKPHYS with CCA=2 (Uncacheable).
+      dsll t1, t1, 16
+      ori  t1, t1, address(32, 35)
+      dsll t1, t1, 16
+      ori  t1, t1, address(16, 31)
+      dsll t1, t1, 16
+      ori  t1, t1, address(0,  15)
+
+      sd t0, 0, t1
+    }
 
     prologue {
       if @align_test_case then
