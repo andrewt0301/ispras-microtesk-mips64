@@ -464,8 +464,8 @@ op add_exception(excep: card(8))
   action = {
     // If access to Coprocessor 0 is not enabled, a Coprocessor Unusable Exception is signaled.
     if (excep == CoprocessorUnusable0) then
-      if C0_STATUS_CU0 == 0 && ((C0_DEBUG_DM == 0) && (C0_STATUS_KSU == 0b00
-        || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1)) then
+      if C0_STATUS_CU0 == 0 && !(C0_DEBUG_DM == 0 && (C0_STATUS_KSU == 0b00
+        || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1) || C0_DEBUG_DM == 1) then
         exception("Coprocessor Unusable: CU0");
       endif;
     endif;
