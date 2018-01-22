@@ -403,6 +403,7 @@ label :__start
 label :test
     mfc0 t8, c0_config0
     lui  t9, 0xffff
+    # IE, EXL, ERL = 0
     ori  t9, t9, 0xfff8
     AND  t8, t8, t9
 
