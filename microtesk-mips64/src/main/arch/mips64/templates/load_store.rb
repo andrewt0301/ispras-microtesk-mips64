@@ -23,6 +23,9 @@ class LoadStoreTemplate < Mips64BaseTemplate
     # Initialize settings here 
     @generate_data_files = false
     @align_test_case = true
+
+    # Exception handler is executed many times
+    set_option_value 'branch-exec-limit', 10000
   end
 
   def pre
@@ -69,7 +72,7 @@ class LoadStoreTemplate < Mips64BaseTemplate
     sequence(
         :engines => {
             :memory => {:classifier => 'event-based',
-                        :count => 1000,
+                        :count => 100,
                         :page_mask => 0x0fff}}) {
       label :m
       ld a0, 0x0, s0 do situation('memory', :engine => :memory, :base => 'ld.base') end
