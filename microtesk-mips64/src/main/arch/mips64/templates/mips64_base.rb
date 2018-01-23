@@ -255,14 +255,8 @@ class Mips64BaseTemplate < Template
       comment('Prepare DTLB')
 
       # TODO: Reuse the register preparator.
-      ori  t0, zero, address(48, 63)
-      dsll t0, t0, 16
-      ori  t0, t0, address(32, 47)
-      dsll t0, t0, 16
-      ori  t0, t0, address(16, 31)
-      dsll t0, t0, 16
-      ori  t0, t0, address(0,  15)
-      lb   t0, 0, t0
+      prepare(t0, address)
+      lb t0, 0, t0
     }
 
     buffer_preparator(:target => 'JTLB') {
@@ -403,7 +397,6 @@ label :__start
 label :test
     mfc0 t8, c0_config0
     lui  t9, 0xffff
-    # IE, EXL, ERL = 0
     ori  t9, t9, 0xfff8
     AND  t8, t8, t9
 

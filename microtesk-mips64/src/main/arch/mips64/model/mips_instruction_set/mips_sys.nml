@@ -1130,8 +1130,9 @@ op mfc0 (rt: R, rd: C0_R)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd.r, rd.s)
   action = {
     add_exception(CoprocessorUnusable0).action;
-
     rt = rd;
+//    trace("C0_STATUS_CU0 = 0x%x, C0_DEBUG_DM = 0x%x, C0_STATUS_KSU = 0x%x, C0_STATUS_ERL = 0x%x, C0_STATUS_EXL = 0x%x",
+//           C0_STATUS_CU0, C0_DEBUG_DM, C0_STATUS_KSU, C0_STATUS_ERL, C0_STATUS_EXL);
   }
 
 @rev(MIPS32_R1)
