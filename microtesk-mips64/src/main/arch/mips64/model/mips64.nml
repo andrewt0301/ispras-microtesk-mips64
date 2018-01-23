@@ -393,9 +393,11 @@ var temp65[card(65)]
 var op_encoding [card(6)]
 
 // Internal Operation to Handle Exceptions
-
 internal op exception()
 action = {
+  // Kernel mode
+  C0_STATUS_KSU = 0b00; // Base mode is Kernel Mode
+
   C0_EPC = CIA;
   CIA = BaseVirtualAddress + 0x380;
 }
@@ -465,7 +467,7 @@ op add_exception(excep: card(8))
     // If access to Coprocessor 0 is not enabled, a Coprocessor Unusable Exception is signaled.
     if (excep == CoprocessorUnusable0) then
       if C0_STATUS_CU0 == 0 && !(C0_DEBUG_DM == 0 && (C0_STATUS_KSU == 0b00
-        || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1) || C0_DEBUG_DM == 1) then
+        || C0_STATUS_ERL == 1 || C0_STATUS_EXL == 1)) then
         exception("Coprocessor Unusable: CU0");
       endif;
     endif;

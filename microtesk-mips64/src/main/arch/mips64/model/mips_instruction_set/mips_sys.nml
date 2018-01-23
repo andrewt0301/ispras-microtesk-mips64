@@ -184,6 +184,8 @@ op tlbwr ()
   syntax = format("tlbwr")
   image  = format("01000010000000000000000000000110")
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     temp_jtlb_index     = C0_RANDOM;
     temp_jtlb_entry_hi  = C0_ENTRY_HI;
     temp_jtlb_entry_lo0 = C0_ENTRY_LO0;
@@ -211,6 +213,7 @@ op wait (code: card(19))
   syntax = format("wait 0x%x", code)
   image  = format("0100001%19s100000", code)
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // Do nothing.
   }
 
@@ -758,6 +761,7 @@ op deret ()
   syntax = format("deret")
   image  = format("01000010000000000000000000011111")
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // TODO
     C0_DEBUG_DM   = coerce(BIT, 0x0);
     C0_DEBUG_IEXI = coerce(BIT, 0x0);
@@ -855,6 +859,8 @@ op di (rt: R)
   syntax = format("di %s", rt.syntax)
   image  = format("01000001011%5s0110000000000000", rt.image)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     temp64 = C0_STATUS;
     rt = sign_extend(DWORD, temp64);
     C0_STATUS_IE = coerce(BIT, 0x0);
@@ -898,6 +904,8 @@ op ei (rt: R)
   syntax = format("ei %s", rt.syntax)
   image  = format("01000001011%5s0110000000100000", rt.image)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     temp64 = C0_STATUS;
     rt = sign_extend(DWORD, temp64);
     C0_STATUS_IE = coerce(BIT, 0x1);
@@ -954,6 +962,8 @@ op eret ()
   syntax = format("eret")
   image  = format("01000010000000000000000000011000")
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     if  C0_STATUS_ERL == coerce(BIT, 0x1) then
       temp64 = coerce(DWORD, C0_ERROR_EPC);
       C0_STATUS_ERL = coerce(BIT, 0x0);
@@ -1010,6 +1020,7 @@ op dmfc0 (rt: R, rd: card(5), sel: card(3))
   syntax = format("dmfc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000001%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // TODO:
     CPRGET(coerce(card(8), coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel))).action;
     rt = tempCPR;
@@ -1058,6 +1069,7 @@ op dmtc0 (rt: R, rd: card(5), sel: card(3))
   syntax = format("dmtc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000101%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
+    add_exception(CoprocessorUnusable0).action;
     // TODO:
     tempCPR = rt;
     CPRSET(coerce(card(8), coerce(card(8), 8)*coerce(card(8), rd) + coerce(card(8), sel))).action;
@@ -1117,6 +1129,8 @@ op mfc0 (rt: R, rd: C0_R)
   syntax = format("mfc0 %s, %s", rt.syntax, rd.syntax)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd.r, rd.s)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     rt = rd;
   }
 
@@ -1126,6 +1140,8 @@ pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
   syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     CPRGET(coerce(card(8), coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel))).action; // output: tempCPR
     if (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 2) ||
        (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 3) then
@@ -1206,6 +1222,8 @@ op mtc0 (rt: R, rd: C0_R)
   syntax = format("mtc0 %s, %s", rt.syntax, rd.syntax)
   image  = format("01000000100%5s%5s00000000%3s", rt.image, rd.r, rd.s)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     rd = rt;
   }
 
@@ -1215,6 +1233,8 @@ pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
   syntax = format("mtc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000100%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
+    add_exception(CoprocessorUnusable0).action;
+
     temp64 = rt;
     if (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 2) ||
        (coerce(DWORD, 8)*coerce(DWORD, rd) + coerce(DWORD, sel)) == coerce(DWORD, 8 * 3) then
@@ -1259,6 +1279,7 @@ op tlbp ()
   syntax = format("tlbp")
   image  = format("01000010000000000000000000001000")
   action = {
+    add_exception(CoprocessorUnusable0).action;
     //TODO:
   }
 
@@ -1282,6 +1303,7 @@ op tlbr ()
   syntax = format("tlbr")
   image  = format("01000010000000000000000000000001")
   action = {
+    add_exception(CoprocessorUnusable0).action;
     //TODO:
   }
 
@@ -1327,6 +1349,7 @@ op dmfc2 (rt: R, rd: R, sel: card(11))
   syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
@@ -1352,6 +1375,7 @@ op dmtc2 (rt: R, rd: R, sel: card(11))
   syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000101%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
@@ -1377,6 +1401,7 @@ op mfc2 (rt: R, rd: R, sel: card(11))
   syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000000%5s%5s%11s", rt.image, rd.image, sel)
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
@@ -1402,6 +1427,7 @@ op mtc2 (rt: R, rd: R, sel: card(11))
   syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000100%5s%5s%11s", rt.image, rd.image, sel)
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
@@ -1448,6 +1474,7 @@ op ldc2 (rt: R, offset: card(11), base: R)
   syntax = format("ldc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
   image  = format("01001001110%5s%5s%11s", rt.image, base.image, offset)
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
@@ -1467,6 +1494,7 @@ op lwc2 (rt: R, offset: card(11), base: R)
   syntax = format("lwc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
   image  = format("01001001010%5s%5s%11s", rt.image, base.image, offset)
   action = {
+    add_exception(CoprocessorUnusable2).action;
     // TODO:
   }
 
