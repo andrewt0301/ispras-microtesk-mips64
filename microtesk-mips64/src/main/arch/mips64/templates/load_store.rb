@@ -1,7 +1,7 @@
 #
 # MicroTESK MIPS64 Edition
 #
-# Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
+# Copyright (c) 2017-2018 Institute for System Programming of the Russian Academy of Sciences
 # All Rights Reserved
 #
 # Institute for System Programming of the Russian Academy of Sciences (ISP RAS)

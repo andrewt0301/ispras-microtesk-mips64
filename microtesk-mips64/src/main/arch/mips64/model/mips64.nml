@@ -396,8 +396,11 @@ var op_encoding [card(6)]
 internal op exception()
 action = {
   // Kernel mode
-  C0_STATUS_KSU = 0b00; // Base mode is Kernel Mode
+  /*Exception Level; Set by the processor when any exception other than Reset, Soft Reset, NMI or
+  Cache Error exception are taken.*/
+  C0_STATUS_EXL = 0b1; // Exception level
 
+  C0_ERROR_EPC = CIA; // ErrorEPC (CP0 Register 30, Select 0)
   C0_EPC = CIA;
   CIA = BaseVirtualAddress + 0x380;
 }
