@@ -14,11 +14,6 @@
 
 package ru.ispras.microtesk.mips.test.branch;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import ru.ispras.fortress.data.DataType;
 import ru.ispras.fortress.data.types.bitvector.BitVector;
 import ru.ispras.fortress.expression.ExprUtils;
@@ -31,9 +26,15 @@ import ru.ispras.fortress.util.Pair;
 import ru.ispras.testbase.TestBaseContext;
 import ru.ispras.testbase.TestBaseQuery;
 import ru.ispras.testbase.TestData;
-import ru.ispras.testbase.TestDataProvider;
+import ru.ispras.testbase.knowledge.iterator.Iterator;
+import ru.ispras.testbase.knowledge.iterator.SingleValueIterator;
 import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
 import ru.ispras.microtesk.test.engine.branch.BranchEngine;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * {@link MipsBranchDataGenerator} is a base class for the MIPS branch instructions' generators.
@@ -108,13 +109,16 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
     return null;
   }
 
-  protected static TestDataProvider generate(final TestBaseQuery query, final long rs) {
+  protected static Iterator<TestData> generate(final TestBaseQuery query, final long rs) {
     final String op = getInstructionName(query);
     return generate(query, Collections.singletonMap(op + ".rs", rs));
   }
 
-  protected static TestDataProvider generate(final TestBaseQuery query, final long rs, final long rt) {
-    final String op  = getInstructionName(query);
+  protected static Iterator<TestData> generate(
+      final TestBaseQuery query,
+      final long rs,
+      final long rt) {
+    final String op = getInstructionName(query);
     final Map<String, Long> values = new HashMap<>();
     values.put(op + ".rs", rs);
     values.put(op + ".rt", rt);
@@ -126,7 +130,9 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
     return query.getContext().get(TestBaseContext.INSTRUCTION).toString();
   }
 
-  private static TestDataProvider generate(final TestBaseQuery query, final Map<String, Long> values) {
+  private static Iterator<TestData> generate(
+      final TestBaseQuery query,
+      final Map<String, Long> values) {
     InvariantChecks.checkNotNull(query);
     InvariantChecks.checkNotNull(values);
 
@@ -145,6 +151,6 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
       }
     }
 
-    return TestDataProvider.singleton(new TestData(BranchEngine.ID, bindings));
+    return new SingleValueIterator<>(new TestData(BranchEngine.ID, bindings));
   }
 }
