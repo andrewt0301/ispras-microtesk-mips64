@@ -14,7 +14,6 @@
 
 package ru.ispras.microtesk.mips.test.branch;
 
-import ru.ispras.fortress.data.DataType;
 import ru.ispras.fortress.data.types.bitvector.BitVector;
 import ru.ispras.fortress.expression.ExprUtils;
 import ru.ispras.fortress.expression.Node;
@@ -23,17 +22,14 @@ import ru.ispras.fortress.expression.NodeVariable;
 import ru.ispras.fortress.randomizer.Randomizer;
 import ru.ispras.fortress.util.InvariantChecks;
 import ru.ispras.fortress.util.Pair;
+import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
 import ru.ispras.testbase.TestBaseContext;
 import ru.ispras.testbase.TestBaseQuery;
 import ru.ispras.testbase.TestData;
 import ru.ispras.testbase.knowledge.iterator.Iterator;
-import ru.ispras.testbase.knowledge.iterator.SingleValueIterator;
-import ru.ispras.microtesk.test.engine.branch.BranchDataGenerator;
-import ru.ispras.microtesk.test.engine.branch.BranchEngine;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -128,29 +124,5 @@ public abstract class MipsBranchDataGenerator extends BranchDataGenerator {
 
   private static String getInstructionName(final TestBaseQuery query) {
     return query.getContext().get(TestBaseContext.INSTRUCTION).toString();
-  }
-
-  private static Iterator<TestData> generate(
-      final TestBaseQuery query,
-      final Map<String, Long> values) {
-    InvariantChecks.checkNotNull(query);
-    InvariantChecks.checkNotNull(values);
-
-    final Map<String, Node> unknowns = extractUnknown(query);
-    final Map<String, Object> bindings = new LinkedHashMap<>();
-
-    for (final Map.Entry<String, Node> entry : unknowns.entrySet()) {
-      final String name = entry.getKey();
-
-      if (values.containsKey(name)) {
-        final long value = values.get(name); 
-        final DataType type = entry.getValue().getDataType();
-        final BitVector data = BitVector.valueOf(value, type.getSize());
-
-        bindings.put(name, NodeValue.newBitVector(data));
-      }
-    }
-
-    return new SingleValueIterator<>(new TestData(BranchEngine.ID, bindings));
   }
 }
