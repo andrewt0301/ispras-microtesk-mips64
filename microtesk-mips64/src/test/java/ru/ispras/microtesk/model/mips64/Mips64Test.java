@@ -261,7 +261,7 @@ public class Mips64Test extends TemplateTest {
         asm,
         true,
         program.getAbsolutePath(),
-        "-march=mips64r6",
+        "-march=mips64r5",
         "-o",
         getOutOption(getNameNoExt(program), "o"));
 
@@ -270,7 +270,7 @@ public class Mips64Test extends TemplateTest {
           asm,
           true,
           file.getAbsolutePath(),
-          "-march=mips64r6",
+          "-march=mips64r5",
           "-o",
           getOutOption(getNameNoExt(file), "o"));
     }
