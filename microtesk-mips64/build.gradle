@@ -224,6 +224,7 @@ test {
   environment 'Z3_PATH', z3path
   environment 'CVC4_PATH', cvc4path
   environment 'MICROTESK_HOME', "${project.projectDir}/build/target"
+  environment 'TEST_PATH', "${project.projectDir}/build/test"
   testLogging.showStandardStreams = true
   ignoreFailures = true
   forkEvery = 1
