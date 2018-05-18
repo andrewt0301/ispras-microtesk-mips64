@@ -59,7 +59,6 @@ class InstructionMmuTemplate < Mips64BaseTemplate
     lw t5, 0x0, t1
     trace "t5 = %x", gpr_observer(13)
 
-    addui t1, zero, 0x100
     la t1, 0xffffffffa0002100
 
     sw t4, 0x0, t1
