@@ -22,6 +22,8 @@ class Mips64BaseTemplate < Template
     # Sets the indentation token used in test programs
     set_option_value 'indent-token', "\t"
 
+    set_option_value 'comment-token', "#"
+
     # Sets the token used in separator lines printed into test programs
     set_option_value 'separator-token', "="
   end
