@@ -77,8 +77,9 @@ class InstructionFpuTemplate < Mips64BaseTemplate
     sub_fmt d, f0, f2, f4
     sub_fmt ps, f0, f2, f4
 
-    C_cond f, s, 0, f20, f22
-    C_cond2 un, d, f20, f22
+    # TODO:
+    #C_cond f, s, 0, f20, f22
+    #C_cond2 un, d, f20, f22
 
     addi t0, zero, 2
     trace "(addi): t0 = %x", gpr_observer(8)
