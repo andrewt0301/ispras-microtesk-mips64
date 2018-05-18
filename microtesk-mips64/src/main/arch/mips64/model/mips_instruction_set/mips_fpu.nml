@@ -255,7 +255,7 @@ op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   }
 
 /*
-  DIV.fmt IFloating Point Divide
+  DIV.fmt Floating Point Divide
 
   Encoding: | 31  26 | 25 21 | 20 16 | 15 11 | 10 6 | 5    0 |
             | COP1   | fmt   | ft    | fs    | fd   | DIV    |
@@ -288,10 +288,11 @@ op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
       temp_fp_d = int_to_float(FLOAT64, fs) / int_to_float(FLOAT64, ft);
       fd = float_to_int(DWORD, temp_fp_d);
     elif fmt_fpu == coerce(card(5), FMT_PS) then
-      temp_fp_s = int_to_float(FLOAT32, fs<31..0>) / int_to_float(FLOAT32, ft<31..0>);
+      unpredicted;
+      /*temp_fp_s = int_to_float(FLOAT32, fs<31..0>) / int_to_float(FLOAT32, ft<31..0>);
       fd<31..0> = float_to_int(WORD, temp_fp_s);
       temp_fp_s = int_to_float(FLOAT32, fs<63..32>) / int_to_float(FLOAT32, ft<63..32>);
-      fd<63..32> = float_to_int(WORD, temp_fp_s);
+      fd<63..32> = float_to_int(WORD, temp_fp_s);*/
     else
       unpredicted;
     endif;

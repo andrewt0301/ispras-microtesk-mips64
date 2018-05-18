@@ -38,7 +38,6 @@ class InstructionFpuTemplate < Mips64BaseTemplate
 
     div_fmt s, f1, f2, f3
     div_fmt d, f0, f2, f4
-    div_fmt ps, f0, f2, f4
 
     madd_fmt s_3, f0, f1, f2, f3
     madd_fmt d_3, f0, f2, f4, f6
@@ -85,7 +84,7 @@ class InstructionFpuTemplate < Mips64BaseTemplate
     trace "(addi): t0 = %x", gpr_observer(8)
 
     daddi t0, t0, 1
-    bc1f 1, :btothis
+    #bc1f 1, :btothis
     daddi t0, t0, 1
 
     daddi t0, t0, 1
