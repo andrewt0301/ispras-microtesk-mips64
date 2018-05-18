@@ -70,37 +70,37 @@ reg JTLB [64, JTLB_ENTRY]
 reg GPR [32, DWORD]
 
 mode ZERO () = GPR[0]
-  syntax = format("zero")
+  syntax = format("$0")
 
 mode AT () = GPR[1]
-  syntax = format("at")
+  syntax = format("$at")
 
 mode VREG (i: BIT)
-  syntax = format("v%d", i)
+  syntax = format("$v%d", i)
 
 mode AREG (i: card(2))
-  syntax = format("a%d", i)
+  syntax = format("$a%d", i)
 
 mode TREG (i: card(4))
-  syntax = format("t%d", i)
+  syntax = format("$t%d", i)
 
 mode SREG (i: card(3))
-  syntax = format("s%d", i)
+  syntax = format("$s%d", i)
 
 mode KREG (i: BIT)
-  syntax = format("k%d", i)
+  syntax = format("$k%d", i)
 
 mode GP () = GPR[28]
-  syntax = format("gp")
+  syntax = format("$gp")
 
 mode SP () = GPR[29]
-  syntax = format("sp")
+  syntax = format("$sp")
 
 mode FP () = GPR[30]
-  syntax = format("fp")
+  syntax = format("$fp")
 
 mode RA () = GPR[31]
-  syntax = format("ra")
+  syntax = format("$ra")
 
 mode R (i: card(5)) = GPR[i]
   syntax = format("%s", if i == 0 then ZERO().syntax
