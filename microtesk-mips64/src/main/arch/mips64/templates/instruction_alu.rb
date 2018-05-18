@@ -197,9 +197,9 @@ class InstructionAluTemplate < Mips64BaseTemplate
     trace "(------): t1 = %x", gpr_observer(9)
     trace "(------): t2 = %x", gpr_observer(10)
 
-    la t1, 0xfabcdef123456789
+    la t1, 0xfabcdef1
     trace "(dins): t1 = %x", gpr_observer(9)
-    la t2, 0x0101010101010101
+    la t2, 0x01010101
     trace "(dins): t2 = %x", gpr_observer(10)
     dins t2, t1, 12, 8
     trace "(dins) result: t2 = %x", gpr_observer(10)

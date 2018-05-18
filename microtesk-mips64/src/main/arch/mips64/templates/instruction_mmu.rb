@@ -59,7 +59,8 @@ class InstructionMmuTemplate < Mips64BaseTemplate
     lw t5, 0x0, t1
     trace "t5 = %x", gpr_observer(13)
 
-    la t1, 0xfffffffa0002100
+    addui t1, zero, 0x100
+    la t1, 0xffffffffa0002100
 
     sw t4, 0x0, t1
     sw t5, 0x4, t1
@@ -67,7 +68,7 @@ class InstructionMmuTemplate < Mips64BaseTemplate
     trace "t3 = %x", gpr_observer(11)
 
     #byte
-    la t2, 0xfffffffa0002200
+    la t2, 0xffffffffa0002200
 
     lb t4, 0x0, t1
     sb t4, 0x7, t2

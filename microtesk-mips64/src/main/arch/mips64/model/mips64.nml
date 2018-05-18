@@ -69,36 +69,50 @@ reg JTLB [64, JTLB_ENTRY]
 // General Purpose Registers
 reg GPR [32, DWORD]
 
+// Always has the value 0.
 mode ZERO () = GPR[0]
   syntax = format("$0")
 
+// Reserved for the assembler.
 mode AT () = GPR[1]
   syntax = format("$at")
 
+// Used for expression evaluations and to hold the integer type function results. Also used to pass
+// the static link when calling nested procedures.
 mode VREG (i: BIT)
   syntax = format("$v%d", i)
 
+// Used to pass the first 4 words of integer type actual arguments, their values are not preserved
+// across procedure calls.
 mode AREG (i: card(2))
   syntax = format("$a%d", i)
 
+// Temporary registers used for expression evaluations; their values aren’t preserved across
+// procedure calls.
 mode TREG (i: card(4))
   syntax = format("$t%d", i)
 
+// Saved registers. Their values must be preserved across procedure calls.
 mode SREG (i: card(3))
   syntax = format("$s%d", i)
 
+// Reserved for the operating system kernel
 mode KREG (i: BIT)
   syntax = format("$k%d", i)
 
+// Contains the global pointer.
 mode GP () = GPR[28]
   syntax = format("$gp")
 
+// Contains the stack pointer
 mode SP () = GPR[29]
   syntax = format("$sp")
 
+// Contains the frame pointer (if needed); otherwise a saved register (like s0-s7).
 mode FP () = GPR[30]
   syntax = format("$fp")
 
+// Contains the return address and is used for expression evaluation.
 mode RA () = GPR[31]
   syntax = format("$ra")
 
@@ -125,8 +139,25 @@ reg LO[DWORD]
 // Floating Point (Coprocessor unit 1), general register. MIPS 64
 reg FPR [32, DWORD]
 
+/*
+$f0..f3
+Used to hold floating-point type function results ($f0) and complex type function
+results ($f0 has the real part, $f2 has the imaginary part).
+$f4..f10
+Temporary registers, used for expression evaluation, whose values are not
+preserved across procedure calls.
+$f12..$f14
+Used to pass the first 2 single or double precision actual arguments, whose values
+are not preserved across procedure calls.
+$f16..$f18
+Temporary registers, used for expression evaluations, whose values are not
+preserved across procedure calls.
+$f20..$f30
+Saved registers, whose values must be preserved across procedure calls
+*/
+
 mode FR (i: card(5)) = FPR[i]
-  syntax = format("f%d", i)
+  syntax = format("$f%d", i)
   image  = format("%5s", i)
 
 // Coprocessor 0 Registers

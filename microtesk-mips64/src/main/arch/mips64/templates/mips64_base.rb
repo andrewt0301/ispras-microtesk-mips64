@@ -379,7 +379,7 @@ class Mips64BaseTemplate < Template
 
     text ".nolist"
     text ".set noreorder"
-    text ".set noat"
+    #text ".set noat"
     newline
     text "#include \"regdef_mips64.h\""
     text "#include \"kernel_mips64.h\""

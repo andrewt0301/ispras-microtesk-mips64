@@ -100,7 +100,7 @@ class BranchGeneration2Template < Mips64BaseTemplate
                         :trace_count_limit => 10}}) {
       sequence {
         label :labelA
-        pseudo '// Start Label'
+        pseudo '# Start Label'
       }
 
       block(:compositor => 'random', :permurator => 'random', :rearranger => 'expand') {
@@ -108,17 +108,17 @@ class BranchGeneration2Template < Mips64BaseTemplate
         iterate {
           sequence {
             label :label0
-              pseudo '// Basic Block 0'
+              pseudo '# Basic Block 0'
           }
 
           sequence {
             label :label1
-              pseudo '// Basic Block 1'
+              pseudo '# Basic Block 1'
           }
 
           sequence {
             label :label2
-              pseudo '// Basic Block 2'
+              pseudo '# Basic Block 2'
           }
 
           sequence {}
@@ -165,7 +165,7 @@ class BranchGeneration2Template < Mips64BaseTemplate
 
       sequence {
         label :labelZ
-        pseudo '// End Label'
+        pseudo '# End Label'
       }
     }.run 10 # Try several random compositions
   end
