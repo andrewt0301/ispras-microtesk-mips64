@@ -395,8 +395,27 @@ task copyModels(type: Copy) {
 copyModels.dependsOn jar
 distTar.dependsOn copyModels
 
+task generateMips64Templates(type: JavaExec) {
+  classpath = files("${project.projectDir}/build/target/lib/jars/microtesk.jar")
+  classpath += sourceSets.main.runtimeClasspath
+  environment 'MICROTESK_HOME', "${project.projectDir}/build/target"
+  main = mainClassName
+  args = [
+    '-gt',
+    'mips64',
+    '-btn',
+    'Mips64BaseTemplate',
+    '-btp',
+    'mips64_base',
+  ]
+}
+
+generateMips64Templates.dependsOn copyModels
+distTar.dependsOn generateMips64Templates
+
 test.dependsOn copyModels
 test.dependsOn copyModelCode
+test.dependsOn generateMips64Templates
 
 task sourcesJar(type: Jar, dependsOn: classes) {
   archiveName = projectName + '-src.jar'
