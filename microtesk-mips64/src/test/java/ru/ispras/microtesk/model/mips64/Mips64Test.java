@@ -118,7 +118,7 @@ public class Mips64Test extends TemplateTest {
   public Mips64Test() {
     super(
         "mips64",
-        "src/main/arch/mips64/templates"
+        "build/target/arch/mips64/templates"
         );
     failOnPhase(TestPhase.NONE);
   }
