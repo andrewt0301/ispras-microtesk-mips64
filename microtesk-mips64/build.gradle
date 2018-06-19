@@ -407,6 +407,8 @@ task generateMips64Templates(type: JavaExec) {
     'Mips64BaseTemplate',
     '-btp',
     'mips64_base',
+    '-ii',
+    'cvts_fmt:mfc0:mtc0'
   ]
 }
 

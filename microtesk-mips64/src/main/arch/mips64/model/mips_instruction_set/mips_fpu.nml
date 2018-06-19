@@ -1096,7 +1096,7 @@ op FPConditionCode (cc: card(3))
     if cc == 0 then
       FPConditionCode_value = FCSR_FCC_0;
     else
-      FPConditionCode_value = FCSR_FCC_1_7<cc>;
+      FPConditionCode_value = FCSR_FCC_1_7<cc-1>;
     endif;
   }
 
