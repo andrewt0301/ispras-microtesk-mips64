@@ -193,7 +193,6 @@ public class Mips64Test extends TemplateTest {
    * Compiles generated test programs and runs them on emulator.
    */
   @After
-  @Test
   public void compileAndEmulate() {
 
     if (canFailOnCurrentPhase()) {
