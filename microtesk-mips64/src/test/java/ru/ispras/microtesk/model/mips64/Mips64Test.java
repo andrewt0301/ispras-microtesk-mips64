@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Assert;
 
 import org.junit.Before;
+import org.junit.Test;
 import ru.ispras.microtesk.Logger;
 import ru.ispras.microtesk.Logger.EventType;
 import ru.ispras.microtesk.options.Option;
@@ -49,6 +50,8 @@ public class Mips64Test extends TemplateTest {
   public enum TestPhase {
     PROGRAM_GENERATION,
     COMPILATION,
+    EMULATION,
+    CHECK_TRACES,
     NONE
   }
 
@@ -83,6 +86,11 @@ public class Mips64Test extends TemplateTest {
   private static final String TEST_PATH = System.getenv("TEST_PATH");
 
   /**
+   * Shell interpreter.
+   */
+  private static final File SHELL = new File(System.getenv("SHELL"));
+
+  /**
    * Test programs extension.
    */
   private static final String EXT = "s";
@@ -108,6 +116,56 @@ public class Mips64Test extends TemplateTest {
    * MIPS64 Linux GNU toolchain components common prefix.
    */
   private static final String TCHAIN_PREFIX = "mips-linux-gnu-";
+
+  /* QEMU for MIPS64 parameters. */
+
+  /**
+   * QEMU binary name.
+   */
+  private static final String QEMU_BIN = "qemu-system-mips64";
+
+  /**
+   * QEMU location environment variable name.
+   */
+  private static final String QEMU_VAR = "QEMU4V_PATH";
+
+  /**
+   * QEMU location environment variable.
+   */
+  private static final String QEMU_PATH = System.getenv(QEMU_VAR);
+
+  /**
+   * Timeout for QEMU execution (in milliseconds).
+   */
+  private static final int QEMU_TIMEOUT_MILLIS = 1000;
+
+  /* Trace utils parameters. */
+
+  /**
+   * Trace utils binary name.
+   */
+  private static final String TRACE_BIN = "traceutils";
+
+  /**
+   * Trace utils location environment variable name.
+   */
+  private static final String TRACE_VAR = "TRACE_PATH";
+
+  /**
+   * Trace utils location environment variable.
+   */
+  private static final String TRACE_PATH = System.getenv(TRACE_VAR);
+
+  /**
+   * Trace utils main binary file.
+   */
+  private static final File TRACER = new File(String.format("%s/%s",TRACE_PATH, TRACE_BIN));
+
+  /**
+   * Tracer matching window size (in ticks).
+   */
+  private static final String TRACER_WINDOW_SIZE = "5";
+
 
   /**
    * Revision identifier.
@@ -242,10 +300,92 @@ public class Mips64Test extends TemplateTest {
     for (final File program : tests) {
       skipRestPhases(false);
       final File image = compile(program, auxFiles, asm, linker);
-
-      // TODO: emulate(image);
+      emulate(image);
     }
   }
+
+  private void emulate(final File image) {
+
+    /* If QEMU is installed, run the binary image on it. */
+
+    if (QEMU_PATH == null || QEMU_PATH.isEmpty()) {
+      Logger.warning(
+          String.format(
+              "To run MIPS64 binaries"
+                  + " you should set '%s' environment variable"
+                  + " to dir with '%s' QEMU binary.", QEMU_VAR, QEMU_BIN));
+      return;
+    }
+
+    final File qemu = new File(String.format("%s/%s", QEMU_PATH, QEMU_BIN));
+    checkExecutable(qemu);
+
+    Logger.message("Start simulation on QEMU ...");
+    setPhase(TestPhase.EMULATION);
+    final String qemuLog = insertExt(image.getAbsolutePath(), "-qemu.log");
+
+    final String[] qemuArgs = new String[] {
+        "-M",
+        "mips",
+        "-cpu",
+        "mips64dspr2",
+        "-d",
+        "unimp,nochain,in_asm",
+        "-nographic",
+        "-singlestep",
+        //"-trace-log",
+        "-D",
+        qemuLog,
+        "-bios",
+        image.getAbsolutePath()};
+    runCommand(qemu, QEMU_TIMEOUT_MILLIS, true, qemuArgs);
+
+    final File qemuLogFile = new File(qemuLog);
+    if (!qemuLogFile.exists() || qemuLogFile.isDirectory()) {
+      Assert.fail(
+          String.format("Can't find QEMU trace file: %s", qemuLogFile.getAbsolutePath()));
+    }
+
+    Logger.message("done.");
+
+    /*Logger.message("Check traces ...");
+    setPhase(TestPhase.CHECK_TRACES);
+
+    final File toolLog = new File(insertExt(image.getAbsolutePath(), ".log"));
+
+    if (!toolLog.exists() || toolLog.isDirectory()) {
+      Assert.fail(
+          String.format("Can't find MicroTESK Tracer log file: %s", toolLog.getAbsolutePath()));
+    }
+
+    *//* Use Trace Matcher for logs comparison. *//*
+    checkExecutable(TRACER);
+
+    final String [] args = new String [] {
+        "-c",
+        String.format("%s %s %s %s %s > %s",
+            TRACER.getAbsolutePath(),
+            "--window-size " + TRACER_WINDOW_SIZE,
+            "--first-dif-stop",
+            toolLog.getAbsolutePath(),
+            qemuLogFile.getAbsolutePath(),
+            compareResultFileName(toolLog, qemuLogFile))};
+    final Collection<Integer> diffReturnValues = new LinkedList<>();
+    diffReturnValues.add(0);
+    diffReturnValues.add(1); // to mask "files are not equal" situation
+
+    runCommand(SHELL, false, diffReturnValues, args);
+
+    Logger.message("done.");*/
+  }
+
+  /*private static String compareResultFileName(final File first, final File second) {
+    return String.format(
+        "%s/%s-vs-%s.txt",
+        FileUtils.getFileDir(first.getAbsolutePath()),
+        FileUtils.getShortFileNameNoExt(first.getName()),
+        FileUtils.getShortFileNameNoExt(second.getName()));
+  }*/
 
   private File compile(
       final File program,
@@ -359,6 +499,23 @@ public class Mips64Test extends TemplateTest {
 
   private void runCommand(final File cmd, final boolean redirectErr, final String ... args) {
     runCommand(cmd, 0, redirectErr, Collections.singletonList(0), args);
+  }
+
+  private void runCommand(
+      final File cmd,
+      final long timeout,
+      final boolean redirectErr,
+      final String ... args) {
+    runCommand(cmd, timeout, redirectErr, Collections.singletonList(0), args);
+  }
+
+  private void runCommand(
+      final File cmd,
+      final boolean redirectErr,
+      final Collection<Integer> returnValues,
+      final String ... args) {
+
+    runCommand(cmd, 0, redirectErr, returnValues, args);
   }
 
   private void runCommand(
