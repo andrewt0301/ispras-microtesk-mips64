@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Assert;
 
 import org.junit.Before;
+import org.junit.Test;
 import ru.ispras.microtesk.Logger;
 import ru.ispras.microtesk.Logger.EventType;
 import ru.ispras.microtesk.options.Option;
@@ -192,6 +193,7 @@ public class Mips64Test extends TemplateTest {
    * Compiles generated test programs and runs them on emulator.
    */
   @After
+  @Test
   public void compileAndEmulate() {
 
     if (canFailOnCurrentPhase()) {
