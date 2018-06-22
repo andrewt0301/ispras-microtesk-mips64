@@ -422,6 +422,7 @@ public class Mips64Test extends TemplateTest {
       }
     } catch (final IOException | InterruptedException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
   }
 
@@ -481,6 +482,7 @@ public class Mips64Test extends TemplateTest {
 
     } catch (final IOException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
     return false;
   }
