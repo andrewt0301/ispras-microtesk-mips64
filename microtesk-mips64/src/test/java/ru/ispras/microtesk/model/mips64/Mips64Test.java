@@ -14,10 +14,10 @@
 
 package ru.ispras.microtesk.model.mips64;
 
+import org.junit.After;
 import org.junit.Assert;
 
 import org.junit.Before;
-import org.junit.Test;
 import ru.ispras.microtesk.Logger;
 import ru.ispras.microtesk.Logger.EventType;
 import ru.ispras.microtesk.options.Option;
@@ -55,27 +55,27 @@ public class Mips64Test extends TemplateTest {
   /**
    * The execution phase at which the test is allowed to fail.
    */
-  private static TestPhase failPhase;
+  private TestPhase failPhase;
 
   /**
    * The current phase of test execution.
    */
-  private static TestPhase currentPhase;
+  private TestPhase currentPhase;
 
   /**
    * Shows whether rest of test execution phases should be skipped for the current test program.
    */
-  private static boolean skipRestPhases;
+  private boolean skipRestPhases;
 
   /**
    * The test program name prefix.
    */
-  private static String programPrefix;
+  private String programPrefix;
 
   /**
    * The path to directory containing test program.
    */
-  private static String testDirPath;
+  private String testDirPath;
 
   /**
    * Path to test results.
@@ -149,35 +149,35 @@ public class Mips64Test extends TemplateTest {
   }
 
   private void setProgramPrefix(final String file) {
-    programPrefix = FileUtils.getShortFileNameNoExt(file);
+    this.programPrefix = FileUtils.getShortFileNameNoExt(file);
   }
 
   private void setTestDirPath(final Path testDirPath) {
-    Mips64Test.testDirPath = testDirPath.toString();
+    this.testDirPath = testDirPath.toString();
   }
 
   private String getProgramPrefix() {
-    return programPrefix;
+    return this.programPrefix;
   }
 
   private String getTestDirPath() {
-    return testDirPath;
+    return this.testDirPath;
   }
 
   private void setPhase(final TestPhase phase) {
-    currentPhase = phase;
+    this.currentPhase = phase;
   }
 
   private boolean canFailOnCurrentPhase() {
-    return currentPhase == failPhase;
+    return this.currentPhase == this.failPhase;
   }
 
   private void skipRestPhases(final boolean skipRestPhases) {
-    Mips64Test.skipRestPhases = skipRestPhases;
+    this.skipRestPhases = skipRestPhases;
   }
 
   private boolean skippedPhase() {
-    return skipRestPhases;
+    return this.skipRestPhases;
   }
 
   /**
@@ -191,7 +191,7 @@ public class Mips64Test extends TemplateTest {
   /**
    * Compiles generated test programs and runs them on emulator.
    */
-  @Test
+  @After
   public void compileAndEmulate() {
 
     if (canFailOnCurrentPhase()) {
