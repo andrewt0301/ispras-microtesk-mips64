@@ -14,7 +14,6 @@
 
 package ru.ispras.microtesk.model.mips64;
 
-import org.junit.After;
 import org.junit.Assert;
 
 import org.junit.Before;
@@ -56,27 +55,27 @@ public class Mips64Test extends TemplateTest {
   /**
    * The execution phase at which the test is allowed to fail.
    */
-  private TestPhase failPhase;
+  private static TestPhase failPhase;
 
   /**
    * The current phase of test execution.
    */
-  private TestPhase currentPhase;
+  private static TestPhase currentPhase;
 
   /**
    * Shows whether rest of test execution phases should be skipped for the current test program.
    */
-  private boolean skipRestPhases;
+  private static boolean skipRestPhases;
 
   /**
    * The test program name prefix.
    */
-  private String programPrefix;
+  private static String programPrefix;
 
   /**
    * The path to directory containing test program.
    */
-  private String testDirPath;
+  private static String testDirPath;
 
   /**
    * Path to test results.
@@ -129,7 +128,7 @@ public class Mips64Test extends TemplateTest {
    * @param phase The test execution phase at which it's allowed to fail.
    */
   protected void failOnPhase(final TestPhase phase) {
-    this.failPhase = phase;
+    failPhase = phase;
   }
 
   @Override
@@ -150,35 +149,35 @@ public class Mips64Test extends TemplateTest {
   }
 
   private void setProgramPrefix(final String file) {
-    this.programPrefix = FileUtils.getShortFileNameNoExt(file);
+    programPrefix = FileUtils.getShortFileNameNoExt(file);
   }
 
   private void setTestDirPath(final Path testDirPath) {
-    this.testDirPath = testDirPath.toString();
+    Mips64Test.testDirPath = testDirPath.toString();
   }
 
   private String getProgramPrefix() {
-    return this.programPrefix;
+    return programPrefix;
   }
 
   private String getTestDirPath() {
-    return this.testDirPath;
+    return testDirPath;
   }
 
   private void setPhase(final TestPhase phase) {
-    this.currentPhase = phase;
+    currentPhase = phase;
   }
 
   private boolean canFailOnCurrentPhase() {
-    return this.currentPhase == this.failPhase;
+    return currentPhase == failPhase;
   }
 
   private void skipRestPhases(final boolean skipRestPhases) {
-    this.skipRestPhases = skipRestPhases;
+    Mips64Test.skipRestPhases = skipRestPhases;
   }
 
   private boolean skippedPhase() {
-    return this.skipRestPhases;
+    return skipRestPhases;
   }
 
   /**
@@ -192,7 +191,7 @@ public class Mips64Test extends TemplateTest {
   /**
    * Compiles generated test programs and runs them on emulator.
    */
-  @After
+  @Test
   public void compileAndEmulate() {
 
     if (canFailOnCurrentPhase()) {
@@ -226,7 +225,7 @@ public class Mips64Test extends TemplateTest {
     final Collection<File> auxFiles = new LinkedHashSet<>();
     final Collection<File> tests = new LinkedHashSet<>();
 
-    Assert.assertFalse("No test programs are generated from this template.", files == null);
+    Assert.assertNotNull("No test programs are generated from this template.", files);
 
     for (final File file : files) {
 
