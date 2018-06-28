@@ -24,9 +24,9 @@ class RegisterAllocationTemplate < Mips64BaseTemplate
     # is not used in this sequence.
     sequence {
       # Randomly selects destination registers from free registers
-      add reg1=get_register, t0, t1
-      sub reg2=get_register, t2, t3
-      slt reg3=get_register, t4, t5
+      add reg1=r(_ FREE), t0, t1
+      sub reg2=r(_ FREE), t2, t3
+      slt reg3=r(_ FREE), t4, t5
       newline
 
       # Frees the previously reserved registers
@@ -36,9 +36,9 @@ class RegisterAllocationTemplate < Mips64BaseTemplate
 
       # Randomly selects destination registers from free registers including
       # those that were previosly freed
-      And get_register, s0, s1
-      Or  get_register, s2, s3
-      Xor get_register, s4, s5
+      And r(_ FREE), s0, s1
+      Or  r(_ FREE), s2, s3
+      Xor r(_ FREE), s4, s5
       newline
     }.run 5
   end

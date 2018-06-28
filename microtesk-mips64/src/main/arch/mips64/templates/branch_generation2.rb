@@ -153,11 +153,11 @@ class BranchGeneration2Template < Mips64BaseTemplate
             # Injected Code placed in delay slot
             iterate {
               # The code must not modify registers s0-s7
-              addiu reg1=get_register, reg1, 1
-              ori   reg2=get_register, reg2, 2
-              addiu reg3=get_register, reg3, 3
-              ori   reg4=get_register, reg4, 4
-              addiu reg5=get_register, reg5, 5
+              addiu reg1=r(_ FREE), reg1, 1
+              ori   reg2=r(_ FREE), reg2, 2
+              addiu reg3=r(_ FREE), reg3, 3
+              ori   reg4=r(_ FREE), reg4, 4
+              addiu reg5=r(_ FREE), reg5, 5
             }
           }
         }

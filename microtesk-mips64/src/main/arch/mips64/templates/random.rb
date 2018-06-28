@@ -27,7 +27,7 @@ class RandomTemplate < Mips64BaseTemplate
 
     sequence {
       # DADD instruction with random operands and biased operand values.
-      dadd get_register, get_register, get_register do situation('random_biased',
+      dadd r(_ FREE), r(_ FREE), r(_ FREE) do situation('random_biased',
         :dist => dist(range(:value=> int_dist,                :bias => 80),  # Simple
                       range(:value=> [0xDEADBEEF, 0xBADF00D], :bias => 20))) # Magic
       end
