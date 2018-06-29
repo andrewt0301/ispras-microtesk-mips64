@@ -23,7 +23,7 @@
 
   <allocation>
     <mode name="R">
-      <strategy name="random" free-bias="50" used-bias="50"/>
+      <strategy name="biased" free-bias="50" used-bias="50"/>
       <range min="0" max="31">
         <exclude item="0"/>
         <exclude item="31"/>
