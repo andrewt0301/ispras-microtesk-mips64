@@ -16,9 +16,7 @@ package ru.ispras.microtesk.model.mips64;
 
 import org.junit.After;
 import org.junit.Assert;
-
 import org.junit.Before;
-import org.junit.Test;
 import ru.ispras.microtesk.Logger;
 import ru.ispras.microtesk.Logger.EventType;
 import ru.ispras.microtesk.options.Option;
