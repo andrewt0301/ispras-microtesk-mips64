@@ -14,7 +14,7 @@ require ENV['TEMPLATE']
 class Mips64BaseTemplate < Template
   def initialize
     super
-    # Initialize settings here 
+    # Initialize settings here
     @setup_memory       = false
     @setup_cache        = false
     @kseg0_cache_policy = 0
@@ -55,7 +55,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_text(:pa => 0x0000000000002000, :va => 0xffffffffa0002000) {}
+    section_text(:pa => 0xffffffff80000000 :va => 0xffffffffa0002000) {}
 
     #
     # Defines .data section.
@@ -63,7 +63,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_data(:pa => 0x0000000000082000, :va => 0xffffffffa0082000) {}
+    section_data(:pa => 0xffffffff80080000, :va => 0xffffffffa0082000) {}
 
     def mips64_r5
       if get_option_value('rev-id') == 'MIPS64_R5' then
@@ -93,7 +93,7 @@ class Mips64BaseTemplate < Template
         trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
         mfc0 ra, c0_epc
         addiu ra, ra, 4
-        jr ra 
+        jr ra
         nop
       }
     }
@@ -388,7 +388,7 @@ class Mips64BaseTemplate < Template
     text ".text"
     text ".globl __start"
     newline
-    org 0x2000
+    org 0xffffffff80000000
     newline
 
 label :__start
@@ -554,7 +554,7 @@ label :error
     r(23)
   end
 
-  def t8 
+  def t8
     r(24)
   end
 
@@ -562,11 +562,11 @@ label :error
     r(25)
   end
 
-  def k0 
+  def k0
     r(26)
   end
 
-  def k1 
+  def k1
     r(27)
   end
 
@@ -964,7 +964,7 @@ label :error
     if additional_count > 0
        count = count + 1
     end
-    begin_index = begin_addr / 8 
+    begin_index = begin_addr / 8
 
     trace "\nData starts: 0x%x", begin_addr
     trace "Data ends:   0x%x", end_addr
