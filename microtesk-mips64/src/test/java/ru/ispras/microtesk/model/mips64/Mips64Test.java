@@ -332,7 +332,7 @@ public class Mips64Test extends TemplateTest {
         "unimp,nochain,in_asm",
         "-nographic",
         "-singlestep",
-        //cd "-trace-log",
+        //"-trace-log",
         "-D",
         qemuLog,
         "-bios",
