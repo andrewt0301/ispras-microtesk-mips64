@@ -425,7 +425,7 @@ public class Mips64Test extends TemplateTest {
       linkerArgs.add(linkerScriptPath);
     } else {
       linkerArgs.add("-Ttext");
-      linkerArgs.add("0x1000");
+      linkerArgs.add("0xbfc00000");
     }
 
     linkerArgs.add("-o");
