@@ -386,12 +386,12 @@ class Mips64BaseTemplate < Template
     newline
     text ".list"
     text ".text"
-    text ".globl __start"
+    text ".globl _start"
     newline
     org 0xbfc00000
     newline
 
-label :__start
+label :_start
     j :test
     nop
     newline
