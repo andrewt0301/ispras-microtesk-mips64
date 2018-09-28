@@ -85,6 +85,90 @@ class Mips64BaseTemplate < Template
     # Simple exception handler. Continues execution from the next instruction.
     #
     exception_handler {
+      entry_point(:org => 0xbfc00000, :exception => ['boot, no exception']) {
+        trace 'boot start (EPC = 0x%x)', location('CPR', 14 * 8)
+
+        text ".nolist"
+        text "#include \"regdef_mips64.h\""
+        text "#include \"kernel_mips64.h\""
+        text ".text"
+        text ".set noreorder"
+        text ".list"
+        org 0x0 # RESET
+
+        # cp0 registers modification
+        mfc0 t0, c0_status
+        #prepare t2, 0x00400004 # mask for bit(s) to be cleared: ERL->0
+        lui  t2, 0x0040
+        ori  t2, t2, 0x0004
+        #prepare t1, 0x04000080 # mask for bit(s) to be set: FR=1, KX=1
+        lui  t1, 0x0400
+        ori  t1, t1, 0x0080
+        nor	t2, zero, t2
+        AND t0, t0, t2
+        OR  t0, t0, t1
+        mtc0 t0, c0_status
+
+        mfc0 t0, c0_config0
+        #prepare t2, 0x00200007 # mask for bit(s) to be cleared: L2->On, C
+        lui  t2, 0x0020
+        ori  t2, t2, 0x0007
+        #prepare t1, 0x00000003 # mask for bit(s) to be set:	 C = 3
+        lui  t1, 0x0000
+        ori  t1, t1, 0x0003
+        nor	t2, zero, t2
+        AND t0, t0, t2
+        OR  t0, t0, t1
+        mtc0 t0, c0_config0
+        mtc0 zero,c0_compare
+
+        # copy exception jumpers in ram
+        lui  t0, 0xbfc0
+        ori  t0, t0, 0x0
+        lui  t1, 0xa000
+        ori  t1, t1, 0x0
+
+        ld t2, 0x200, t0
+        sd t2, 0x000, t1
+        sd t2, 0x080, t1
+        sd t2, 0x180, t1
+        ld t2, 0x208, t0
+        sd t2,0x008, t1
+        sd t2,0x088, t1
+        sd t2,0x188, t1
+        ld t2,0x210, t0
+        sd t2,0x010, t1
+        sd t2,0x090, t1
+        sd t2,0x190, t1
+        ld t2,0x218, t0
+        sd t2,0x018, t1
+        sd t2,0x098, t1
+        sd t2,0x198, t1
+
+        # Init program stack
+        # TODO:li sp,PROGRAMM_STACK
+
+        # Jump to test program
+        # START ADDRESS = 0x FFFF FFFF 8000 2000
+        lui t0, 0x8000
+        ori t0, t0, 0x2000
+        jr	t0
+        nop
+      }
+      entry_point(:org => 0x200, :exception => ['TLB Refill']) {
+        trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
+        mfc0 ra, c0_epc
+        addiu ra, ra, 4
+        jr ra
+        nop
+      }
+      entry_point(:org => 0x280, :exception => ['XTLB Refill']) {
+        trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
+        mfc0 ra, c0_epc
+        addiu ra, ra, 4
+        jr ra
+        nop
+      }
       entry_point(:org => 0x380, :exception => ['IntegerOverflow',
                                                 'SystemCall',
                                                 'Breakpoint',
@@ -93,7 +177,7 @@ class Mips64BaseTemplate < Template
         trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
         mfc0 ra, c0_epc
         addiu ra, ra, 4
-        jr ra 
+        jr ra
         nop
       }
     }
