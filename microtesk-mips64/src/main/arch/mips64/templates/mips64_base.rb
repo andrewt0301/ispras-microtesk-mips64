@@ -388,7 +388,7 @@ class Mips64BaseTemplate < Template
     text ".text"
     text ".globl __start"
     newline
-    org 0x4000
+    org 0x1fbfe000
     newline
 
 label :__start
