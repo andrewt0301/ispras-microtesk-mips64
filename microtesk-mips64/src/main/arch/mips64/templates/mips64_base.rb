@@ -55,7 +55,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_text(:pa => 0x0000000000000000, :va => 0xffffffff00000000) {}
+    section_text(:pa => 0x0000000000002000, :va => 0xffffffffa0002000) {}
 
     #
     # Defines .data section.
@@ -63,7 +63,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_data(:pa => 0x0000000000000000, :va => 0xffffffffc0000000) {}
+    section_data(:pa => 0x0000000000082000, :va => 0xffffffffa0082000) {}
 
     def mips64_r5
       if get_option_value('rev-id') == 'MIPS64_R5' then
@@ -386,12 +386,12 @@ class Mips64BaseTemplate < Template
     newline
     text ".list"
     text ".text"
-    text ".globl _start"
+    text ".globl __start"
     newline
-    org 0xbfc00000
+    org 0x2000
     newline
 
-label :_start
+label :__start
     j :test
     nop
     newline

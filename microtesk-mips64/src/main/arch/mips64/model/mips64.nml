@@ -37,7 +37,7 @@ type JTLB_ENTRY = card(128)
 // Registers and Memory
 //==================================================================================================
 
-let BaseVirtualAddress = 0xffffffffa0002000
+let BaseVirtualAddress = 0xffffFFFFa0002000
 
 // Architecture Revision
 let ArchitectureRevision = 0x6
