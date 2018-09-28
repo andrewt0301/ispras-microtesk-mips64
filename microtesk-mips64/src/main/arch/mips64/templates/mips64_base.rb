@@ -55,7 +55,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_text(:pa => 0x0000000000002000, :va => 0xffffffffa0002000) {}
+    section_text(:pa => 0x0000000000000000, :va => 0xffffffff00000000) {}
 
     #
     # Defines .data section.
@@ -388,7 +388,7 @@ class Mips64BaseTemplate < Template
     text ".text"
     text ".globl __start"
     newline
-    org 0x2000
+    org 0xbfc00000
     newline
 
 label :__start
