@@ -14,6 +14,7 @@
 
 
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.testing.Test
 
 import java.text.SimpleDateFormat
 import java.util.regex.Matcher
@@ -101,7 +102,7 @@ release {
 
   versionPatterns = [
     // Increments build number: "0.2.5-alpha-150428" => "0.2.6-alpha-150428"
-    /(^\d+\.\d+\.)(\d+)(-[^-]*)(-[^-]*$)/: 
+    /(^\d+\.\d+\.)(\d+)(-[^-]*)(-[^-]*$)/:
     { Matcher m, Project p -> m.replaceAll("${ m[0][1] }${ (m[0][2] as int) + 1 }${ m[0][3] }" ) }
   ]
 }
@@ -205,7 +206,7 @@ task getZ3(type: Copy) {
     from zipTree( configurations.testRuntime.fileCollection { dep -> dep.name == 'z3' }.singleFile )
   }
   into 'tools/z3'
-  eachFile { 
+  eachFile {
     it.relativePath = RelativePath.parse( true, it.relativePath.segments[1..-1].join('/') )
   }
 }
@@ -242,6 +243,37 @@ test {
 test.doLast {
   delete fileTree(dir: "${project.projectDir}/build/target",
                   include: ['*.s', '*.dat', '*.log'])
+}
+
+task qemu4vTest( type: Test, dependsOn: [getZ3, getCVC4]) {
+  include "**/ArithmeticTestCase.class"
+  include "**/CoverageTestCase.class"
+  include "**/EuclidTestCase.class"
+  include "**/InstructionAluTestCase.class"
+  include "**/InstructionBpuTestCase.class"
+  include "**/InstructionFpuTestCase.class"
+  include "**/InstructionMmuTestCase.class"
+  include "**/IntDivideTestCase.class"
+  include "**/IntSqrt4TestCase.class"
+  include "**/IntSqrtTestCase.class"
+  include "**/LoadStoreSituationTestCase.class"
+  include "**/SelfCheckExampleTestCase.class"
+
+  environment 'Z3_PATH', z3path
+  environment 'CVC4_PATH', cvc4path
+  environment 'MICROTESK_HOME', "${project.projectDir}/build/target"
+  environment 'TEST_PATH', "${project.projectDir}/build/test"
+  environment 'QEMU4V_PATH', "${project.projectDir}/build/tools/qemu/bin"
+  environment 'TRACE_PATH', "${project.projectDir}/build/tools/traceutils"
+  testLogging.showStandardStreams = true
+  ignoreFailures = true
+  forkEvery = 1
+  description = "Runs unit tests that produce QEMU4V traces."
+}
+
+qemu4vTest.doLast {
+  delete fileTree(dir: "${project.projectDir}/build/target",
+          include: ['*.s', '*.dat', '*.log'])
 }
 
 compileJava {
@@ -433,6 +465,11 @@ test.dependsOn copyModels
 test.dependsOn copyModelCode
 test.dependsOn generateMips64Templates
 test.dependsOn copyQemu
+
+qemu4vTest.dependsOn copyModels
+qemu4vTest.dependsOn copyModelCode
+qemu4vTest.dependsOn generateMips64Templates
+qemu4vTest.dependsOn copyQemu
 
 task sourcesJar(type: Jar, dependsOn: classes) {
   archiveName = projectName + '-src.jar'
