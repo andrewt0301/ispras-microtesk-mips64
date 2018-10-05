@@ -2,6 +2,14 @@
 <settings>
   <!-- Standard (architecture-dependent) settings' sections -->
   <memory>
+    <region type="text" name="boot-text" start="1fc0_0000" end="1fff_ffff" mode="--x---">
+      <access segment="KSEG1"/>
+    </region>
+
+    <region type="data" name="boot-data" start="1fc0_0000" end="1fff_ffff" mode="r-----">
+      <access segment="KSEG1"/>
+    </region>
+
     <region type="text" name="code" start="0000_0000" end="001f_ffff" mode="--x---"/>
 
     <region type="data" name="lo" start="0000_0000" end="0fff_ffff" mode="rw----">

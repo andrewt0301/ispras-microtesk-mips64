@@ -15,17 +15,19 @@ class Mips64BaseTemplate < Template
   def initialize
     super
     # Initialize settings here 
-    @setup_memory       = false
-    @setup_cache        = false
+    @setup_memory = false
+    @setup_cache = false
     @kseg0_cache_policy = 0
 
     # Sets the indentation token used in test programs
     set_option_value 'indent-token', "\t"
-
     set_option_value 'comment-token', "#"
 
     # Sets the token used in separator lines printed into test programs
     set_option_value 'separator-token', "="
+  end
+
+  def boot
   end
 
   ##################################################################################################
@@ -33,6 +35,120 @@ class Mips64BaseTemplate < Template
   ##################################################################################################
 
   def pre
+    ################################################################################################
+
+    #
+    # Boot definition (ROM).
+    #
+    section(:name => 'boot', :pa => 0x000000001fc00000, :va => 0xFFFFffffbfc00000, :file => true) {
+      trace 'boot start (EPC = 0x%x)', location('CPR', 14 * 8)
+
+      text ".text"
+      text ".set noreorder"
+      text ".list"
+      newline
+
+      # CP0 registers modification
+      mfc0 t0, c0_status
+      # prepare t2, 0x00400004 # Mask for bit(s) to be cleared: ERL->0
+      lui t2, 0x0040
+      ori t2, t2, 0x0004
+      # prepare t1, 0x04000080 # Mask for bit(s) to be set: FR=1, KX=1
+      lui t1, 0x0400
+      ori t1, t1, 0x0080
+      nor t2, zero, t2
+      AND t0, t0, t2
+      OR t0, t0, t1
+      mtc0 t0, c0_status
+      newline
+
+      mfc0 t0, c0_config0
+      # prepare t2, 0x00200007 # Mask for bit(s) to be cleared: L2->On, C
+      lui t2, 0x0020
+      ori t2, t2, 0x0007
+      # prepare t1, 0x00000003 # Mask for bit(s) to be set: C=3
+      lui t1, 0x0000
+      ori t1, t1, 0x0003
+      nor t2, zero, t2
+      AND t0, t0, t2
+      OR t0, t0, t1
+      mtc0 t0, c0_config0
+      mtc0 zero, c0_compare
+      newline
+
+      # Copy exception jumpers into RAM
+      lui t0, 0xbfc0
+      ori t0, t0, 0x0
+      lui t1, 0xa000
+      ori t1, t1, 0x0
+      newline
+
+      ld t2, 0x200, t0
+      sd t2, 0x000, t1
+      sd t2, 0x080, t1
+      sd t2, 0x180, t1
+      ld t2, 0x208, t0
+      sd t2, 0x008, t1
+      sd t2, 0x088, t1
+      sd t2, 0x188, t1
+      ld t2, 0x210, t0
+      sd t2, 0x010, t1
+      sd t2, 0x090, t1
+      sd t2, 0x190, t1
+      ld t2, 0x218, t0
+      sd t2, 0x018, t1
+      sd t2, 0x098, t1
+      sd t2, 0x198, t1
+      newline
+
+      # Jump to the test program 0xFFFFffffa0002000
+      lui t0, 0xa000
+      ori t0, t0, 0x2000
+      jr t0
+      nop
+      newline
+
+      # Next parts of the code will be copied to a0000000, a0000080, a0000180
+      # WARNING: all handlers must be just the same
+      org 0x200 # TLB Refill
+      mthi t0
+      mfc0 t0, c0_epc
+      addiu t0, t0, 4
+      mtc0 t0, c0_epc
+      mfhi t0
+      ssnop
+      ssnop
+      eret
+      newline
+
+      org 0x280 # XTLB Refill
+      mthi t0
+      mfc0 t0, c0_epc
+      addiu t0, t0, 4
+      mtc0 t0, c0_epc
+      mfhi t0
+      ssnop
+      ssnop
+      eret
+      newline
+
+      org 0x380 # Others
+      mthi t0
+      mfc0 t0, c0_epc
+      addiu t0, t0, 4
+      mtc0 t0, c0_epc
+      mfhi t0
+      ssnop
+      ssnop
+      eret
+      newline
+
+      nop
+      nop
+      nop
+      nop
+    }
+
     ################################################################################################
 
     #
@@ -55,7 +171,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_text(:pa => 0x0000000000002000, :va => 0xffffffffa0002000) {}
+    section_text(:pa => 0x0000000000002000, :va => 0xFFFFffffa0002000) {}
 
     #
     # Defines .data section.
@@ -63,7 +179,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_data(:pa => 0x0000000000082000, :va => 0xffffffffa0082000) {}
+    section_data(:pa => 0x0000000000082000, :va => 0xFFFFffffa0082000) {}
 
     def mips64_r5
       if get_option_value('rev-id') == 'MIPS64_R5' then
@@ -85,76 +201,6 @@ class Mips64BaseTemplate < Template
     # Simple exception handler. Continues execution from the next instruction.
     #
     exception_handler {
-      entry_point(:org => 0xbfc00000, :exception => ['boot, no exception']) {
-        trace 'boot start (EPC = 0x%x)', location('CPR', 14 * 8)
-
-        text ".nolist"
-        text "#include \"regdef_mips64.h\""
-        text "#include \"kernel_mips64.h\""
-        text ".text"
-        text ".set noreorder"
-        text ".list"
-        org 0x0 # RESET
-
-        # cp0 registers modification
-        mfc0 t0, c0_status
-        #prepare t2, 0x00400004 # mask for bit(s) to be cleared: ERL->0
-        lui  t2, 0x0040
-        ori  t2, t2, 0x0004
-        #prepare t1, 0x04000080 # mask for bit(s) to be set: FR=1, KX=1
-        lui  t1, 0x0400
-        ori  t1, t1, 0x0080
-        nor	t2, zero, t2
-        AND t0, t0, t2
-        OR  t0, t0, t1
-        mtc0 t0, c0_status
-
-        mfc0 t0, c0_config0
-        #prepare t2, 0x00200007 # mask for bit(s) to be cleared: L2->On, C
-        lui  t2, 0x0020
-        ori  t2, t2, 0x0007
-        #prepare t1, 0x00000003 # mask for bit(s) to be set:	 C = 3
-        lui  t1, 0x0000
-        ori  t1, t1, 0x0003
-        nor	t2, zero, t2
-        AND t0, t0, t2
-        OR  t0, t0, t1
-        mtc0 t0, c0_config0
-        mtc0 zero,c0_compare
-
-        # copy exception jumpers in ram
-        lui  t0, 0xbfc0
-        ori  t0, t0, 0x0
-        lui  t1, 0xa000
-        ori  t1, t1, 0x0
-
-        ld t2, 0x200, t0
-        sd t2, 0x000, t1
-        sd t2, 0x080, t1
-        sd t2, 0x180, t1
-        ld t2, 0x208, t0
-        sd t2,0x008, t1
-        sd t2,0x088, t1
-        sd t2,0x188, t1
-        ld t2,0x210, t0
-        sd t2,0x010, t1
-        sd t2,0x090, t1
-        sd t2,0x190, t1
-        ld t2,0x218, t0
-        sd t2,0x018, t1
-        sd t2,0x098, t1
-        sd t2,0x198, t1
-
-        # Init program stack
-        # TODO:li sp,PROGRAMM_STACK
-
-        # Jump to test program
-        # START ADDRESS = 0x FFFF FFFF 8000 2000
-        lui t0, 0x8000
-        ori t0, t0, 0x2000
-        jr	t0
-        nop
-      }
       entry_point(:org => 0x200, :exception => ['TLB Refill']) {
         trace 'Exception handler (EPC = 0x%x)', location('CPR', 14 * 8)
         mfc0 ra, c0_epc
@@ -463,7 +509,6 @@ class Mips64BaseTemplate < Template
 
     text ".nolist"
     text ".set noreorder"
-    #text ".set noat"
     newline
     text "#include \"regdef_mips64.h\""
     text "#include \"kernel_mips64.h\""
