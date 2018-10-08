@@ -101,9 +101,8 @@ class Mips64BaseTemplate < Template
       sd t2, 0x198, t1
       newline
 
-      # Jump to the test program 0xFFFFffffa0002000
-      lui t0, 0xa000
-      ori t0, t0, 0x2000
+      # Jump to test program 0xFFFFffffa0002000
+      la t0, :__start
       jr t0
       nop
       newline

@@ -17,10 +17,13 @@
  2016/11/25 MicroTESK MIPS64 0.0.2
  - Specifications: Updates exceptions in MIPS64 instructions
  - Test Templates: Updates in GPR preparators
- - Test Templates: New templates load_store.rb
+ - Test Templates: New template(s): load_store.rb
 
  2016/11/11 MicroTESK MIPS64 0.0.1
  - Specifications: Instruction set of MIPS64
- - Test Templates: New templates bubble_sort.rb, bubble_sort_word.rb, euclid.rb,
-                   load_store_situation.rb
+ - Test Templates: New template(s):
+                     bubble_sort.rb
+                     bubble_sort_word.rb
+                     euclid.rb
+                     load_store_situation.rb
                    Simple arithmetic and load/store templates
