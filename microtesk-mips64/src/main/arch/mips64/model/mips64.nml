@@ -164,10 +164,12 @@ mode FR (i: card(5)) = FPR[i]
 reg CPR [32 * 8, DWORD]
 
 var tempCPR[DWORD]
+
 mode CPRGET (i: card(8))
   action = {
     tempCPR = CPR[i];
   }
+
 mode CPRSET (i: card(8))
   action = {
     CPR[i] = tempCPR;
@@ -175,6 +177,7 @@ mode CPRSET (i: card(8))
 
 mode C0_R (r: card(5), s: card(3)) = CPR[8 * coerce(card(8), r) + coerce(card(8), s)]
   syntax = format("$%d, %d", r, s)
+  image  = format("%5s00000000%3s", r, s)
   action = {}
 
 reg C0_INDEX[DWORD]               alias = CPR[8 * 0  + 0]

@@ -1127,7 +1127,7 @@ pseudo op dmtc0_2 (rt: R, rd: card(5))
 op mfc0 (rt: R, rd: C0_R)
   init = {}
   syntax = format("mfc0 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01000000000%5s%5s00000000%3s", rt.image, rd.r, rd.s)
+  image  = format("01000000000%5s%16s", rt.image, rd.image)
   action = {
     add_exception(CoprocessorUnusable0).action;
     rt = rd;
@@ -1221,7 +1221,7 @@ pseudo op mfc0_3 (rt: R, rd: card(5))
 op mtc0 (rt: R, rd: C0_R)
   init = {}
   syntax = format("mtc0 %s, %s", rt.syntax, rd.syntax)
-  image  = format("01000000100%5s%5s00000000%3s", rt.image, rd.r, rd.s)
+  image  = format("01000000100%5s%16s", rt.image, rd.image)
   action = {
     add_exception(CoprocessorUnusable0).action;
 
