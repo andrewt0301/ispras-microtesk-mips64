@@ -1,12 +1,17 @@
 /*
- * MicroTESK MIPS Edition
+ * Copyright 2016-2018 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2017 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 #ifndef MIPS_ALU_INCLUDED
@@ -117,7 +122,6 @@ internal op mul_unsigned_words(temp_a: WORD, temp_b: WORD)
  */
 @rev(MIPS32_R1)
 op add (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("add %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100000", rs.image, rt.image, rd.image)
   action = {
@@ -161,7 +165,6 @@ op add (rd: R, rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op addi (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("addi %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("001000%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
@@ -201,7 +204,6 @@ op addi (rt: R, rs: R, immediate: SHORT)
  */
 @rev(MIPS32_R1)
 op addiu (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("addiu %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("001001%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
@@ -236,7 +238,6 @@ op addiu (rt: R, rs: R, immediate: SHORT)
  */
 @rev(MIPS32_R1)
 op addu (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("addu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100001", rs.image, rt.image, rd.image)
   action = {
@@ -270,7 +271,6 @@ op addu (rd: R, rs: R, rt: R)
  */
 @rev(MIPS32_R6)
 op addiupc(rs: R, immediate: card(19))
-  init = {}
   syntax = format("addiupc %s, %x", rs.syntax, immediate)
   image  = format("111011%5s00%19s", rs.image, immediate)
   action = {
@@ -293,7 +293,6 @@ op addiupc(rs: R, immediate: card(19))
 */
 @rev(MIPS32_R6)
 op aui (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("aui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001111%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -377,7 +376,6 @@ internal op clo_count_leading_ones(rs_value: WORD)
 
 @rev(MIPS32_R1)
 op clo (rd: R, rs: R)
-  init = {}
   syntax = format("clo %s, %s", rd.syntax, rs.syntax)
   @rev(MIPS32_R6) image = format("000000%5s00000%5s00001010001", rs.image, rd.image)
   @rev(MIPS32_REM_R6) image = format("011100%5s%5s%5s00000100001", rs.image, rd.image, rd.image)
@@ -427,7 +425,6 @@ op clo (rd: R, rs: R)
 */
 @rev(MIPS32_R1)
 op clz (rd: R, rs: R)
-  init = {}
   syntax = format("clz %s, %s", rd.syntax, rs.syntax)
   @rev(MIPS32_R6) image  = format("000000%5s00000%5s00001010000", rs.image, rd.image)
   #ifndef MIPS32_R6
@@ -502,7 +499,6 @@ op clz (rd: R, rs: R)
   */
 @rev(MIPS32_R6)
 op div_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("div %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011010", rs.image, rt.image, rd.image)
   action = {
@@ -517,7 +513,6 @@ op div_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op mod_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("mod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011010", rs.image, rt.image, rd.image)
   action = {
@@ -532,7 +527,6 @@ op mod_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op divu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("divu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011011", rs.image, rt.image, rd.image)
   action = {
@@ -547,7 +541,6 @@ op divu_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op modu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("modu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011011", rs.image, rt.image, rd.image)
   action = {
@@ -593,7 +586,6 @@ op modu_reg (rd: R, rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op div (rs: R, rt: R)
-  init = {}
   syntax = format("div %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011010", rs.image, rt.image)
   action = {
@@ -642,7 +634,6 @@ op div (rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op divu (rs: R, rt: R)
-  init = {}
   syntax = format("divu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011011", rs.image, rt.image)
   action = {
@@ -693,7 +684,6 @@ op divu (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op madd (rs: R, rt: R)
-  init = {}
   syntax = format("madd %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000000", rs.image, rt.image)
   action = {
@@ -748,7 +738,6 @@ op madd (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op maddu (rs: R, rt: R)
-  init = {}
   syntax = format("maddu %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000001", rs.image, rt.image)
   action = {
@@ -786,7 +775,6 @@ op maddu (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op msub (rs: R, rt: R)
-  init = {}
   syntax = format("msub %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000100", rs.image, rt.image)
   action = {
@@ -824,7 +812,6 @@ op msub (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op msubu (rs: R, rt: R)
-  init = {}
   syntax = format("msubu %s, %s", rs.syntax, rt.syntax)
   image  = format("011100%5s%5s0000000000000101", rs.image, rt.image)
   action = {
@@ -863,7 +850,6 @@ op msubu (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op mul (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00000000010", rs.image, rt.image, rd.image)
   action = {
@@ -922,7 +908,6 @@ op mul (rd: R, rs: R, rt: R)
   */
 @rev(MIPS32_R6)
 op mul_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("mul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011000", rs.image, rt.image, rd.image)
   action = {
@@ -935,7 +920,6 @@ op mul_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op muh_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("muh %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011000", rs.image, rt.image, rd.image)
   action = {
@@ -948,7 +932,6 @@ op muh_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op mulu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("mulu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011001", rs.image, rt.image, rd.image)
   action = {
@@ -961,7 +944,6 @@ op mulu_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS32_R6)
 op muhu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("muhu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011001", rs.image, rt.image, rd.image)
   action = {
@@ -995,7 +977,6 @@ op muhu_reg (rd: R, rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op mult (rs: R, rt: R)
-  init = {}
   syntax = format("mult %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011000", rs.image, rt.image)
   action = {
@@ -1031,7 +1012,6 @@ op mult (rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op multu (rs: R, rt: R)
-  init = {}
   syntax = format("multu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011001", rs.image, rt.image)
   action = {
@@ -1072,7 +1052,6 @@ op multu (rs: R, rt: R)
  */
 @rev(MIPS32_R1)
 op sub (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("sub %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100010", rs.image, rt.image, rd.image)
   action = {
@@ -1111,7 +1090,6 @@ op sub (rd: R, rs: R, rt: R)
  */
 @rev(MIPS32_R1)
 op subu (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("subu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100011", rs.image, rt.image, rd.image)
   action = {
@@ -1200,7 +1178,6 @@ op Mips32ArithmeticOp = @rev(MIPS32_R1) Mips32ArithmeticRRR
  */
 @rev(MIPS32_R1)
 op slt (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("slt %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101010", rs.image, rt.image, rd.image)
   action = {
@@ -1237,7 +1214,6 @@ op slt (rd: R, rs: R, rt: R)
   */
 @rev(MIPS32_R1)
 op slti (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("slti %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001010%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -1276,7 +1252,6 @@ op slti (rt: R, rs: R, immediate: SHORT)
   */
 @rev(MIPS32_R1)
 op sltiu (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("sltiu %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001011%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -1312,7 +1287,6 @@ op sltiu (rt: R, rs: R, immediate: SHORT)
   */
 @rev(MIPS32_R1)
 op sltu (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("sltu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101011", rs.image, rt.image, rd.image)
   action = {
@@ -1343,7 +1317,6 @@ op sltu (rd: R, rs: R, rt: R)
 #ifndef MIPS32_R6
 @rev(MIPS32_REM_R6)
 op movn (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("movn %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000001011", rs.image, rt.image, rd.image)
   action = {
@@ -1372,7 +1345,6 @@ op movn (rd: R, rs: R, rt: R)
     endif  */
 @rev(MIPS32_REM_R6)
 op movz (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("movz %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000001010", rs.image, rt.image, rd.image)
   action = {
@@ -1429,7 +1401,6 @@ op Mips32ConditionTestingOp = @rev(MIPS32_R1) Mips32ConditionTestingRRR
  */
 @rev(MIPS32_R1)
 op and (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("and %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100100", rs.image, rt.image, rd.image)
   action = {
@@ -1453,7 +1424,6 @@ op and (rd: R, rs: R, rt: R)
  */
 @rev(MIPS32_R1)
 op andi (rt: R, rs: R, immediate: HWORD)
-  init = {}
   syntax = format("andi %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001100%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -1477,7 +1447,6 @@ op andi (rt: R, rs: R, immediate: HWORD)
 */
 @rev(MIPS32_R1)
 op nor (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("nor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100111", rs.image, rt.image, rd.image)
   action = {
@@ -1500,7 +1469,6 @@ op nor (rd: R, rs: R, rt: R)
 */
 @rev(MIPS32_R1)
 op or (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("or %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100101", rs.image, rt.image, rd.image)
   action = {
@@ -1524,7 +1492,6 @@ op or (rd: R, rs: R, rt: R)
   */
 @rev(MIPS32_R1)
 op ori (rt: R, rs: R, immediate: HWORD)
-  init = {}
   syntax = format("ori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001101%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -1547,7 +1514,6 @@ op ori (rt: R, rs: R, immediate: HWORD)
  */
 @rev(MIPS32_R1)
 op xor (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("xor %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000100110", rs.image, rt.image, rd.image)
   action = {
@@ -1571,7 +1537,6 @@ op xor (rd: R, rs: R, rt: R)
  */
 @rev(MIPS32_R1)
 op xori (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("xori %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("001110%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -1660,7 +1625,6 @@ internal op reverse_bits_in_byte(input_byte_value: BYTE)
 */
 @rev(MIPS32_R6)
 op bitswap (rd: R, rt: R)
-  init = {}
   syntax = format("bitswap %s, %s", rd.syntax, rt.syntax)
   image  = format("01111100000%5s%5s00000100000", rt.image, rd.image)
   action = {
@@ -1704,7 +1668,6 @@ op bitswap (rd: R, rt: R)
  */
 @rev(MIPS32_R2)
 op rotr (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("rotr %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000001%5s%5s%5s000010", rt.image, rd.image, sa)
   action = {
@@ -1749,7 +1712,6 @@ op rotr (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS32_R2)
 op rotrv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("rotrv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00001000110", rs.image, rt.image, rd.image)
   action = {
@@ -1793,7 +1755,6 @@ op rotrv (rd: R, rt: R, rs: R)
 */
 @rev(MIPS32_R1)
 op sll (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("sll %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s000000", rt.image, rd.image, sa)
   action = {
@@ -1824,7 +1785,6 @@ op sll (rd: R, rt: R, sa: card(5))
 */
 @rev(MIPS32_R1)
 op sllv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("sllv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000000100", rs.image, rt.image, rd.image)
   action = {
@@ -1864,7 +1824,6 @@ op sllv (rd: R, rt: R, rs: R)
   */
 @rev(MIPS32_R1)
 op sra (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("sra %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s000011", rt.image, rd.image, sa)
   action = {
@@ -1904,7 +1863,6 @@ op sra (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS32_R1)
 op srav (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("srav %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000000111", rs.image, rt.image, rd.image)
   action = {
@@ -1945,7 +1903,6 @@ op srav (rd: R, rt: R, rs: R)
  */
 @rev(MIPS32_R1)
 op srl (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("srl %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s000010", rt.image, rd.image, sa)
   action = {
@@ -1985,7 +1942,6 @@ op srl (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS32_R1)
 op srlv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("srlv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000000110", rs.image, rt.image, rd.image)
   action = {
@@ -2075,7 +2031,6 @@ internal op mul_unsigned_dwords(temp_a: DWORD, temp_b: DWORD)
 */
 @rev(MIPS64_R6)
 pseudo op daui (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("daui %s, %s, 0x%x", rt.syntax, rs.syntax, immediate)
   image  = format("011101%5s%5s%16s", rs.image, rt.image, immediate)
   action = {
@@ -2103,7 +2058,6 @@ pseudo op daui (rt: R, rs: R, immediate: SHORT)
 */
 @rev(MIPS64_R6)
 op dahi (rs: R, immediate: SHORT)
-  init = {}
   syntax = format("dahi %s, %s, 0x%x", rs.syntax, rs.syntax, immediate)
   image  = format("000001%5s00110%16s", rs.image, immediate)
   action = {
@@ -2127,7 +2081,6 @@ op dahi (rs: R, immediate: SHORT)
 */
 @rev(MIPS64_R6)
 op dati (rs: R, immediate: SHORT)
-  init = {}
   syntax = format("dati %s, %s, 0x%x", rs.syntax, rs.syntax, immediate)
   image  = format("000001%5s11110%16s", rs.image, immediate)
   action = {
@@ -2158,7 +2111,6 @@ op dati (rs: R, immediate: SHORT)
   */
 @rev(MIPS64_R1)
 op dadd (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dadd %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101100", rs.image, rt.image, rd.image)
   action = {
@@ -2194,7 +2146,6 @@ op dadd (rd: R, rs: R, rt: R)
 #ifndef MIPS64_R6
 @rev(MIPS64_REM_R6)
 op daddi (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("daddi %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("011000%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
@@ -2225,7 +2176,6 @@ op daddi (rt: R, rs: R, immediate: SHORT)
   */
 @rev(MIPS64_R1)
 op daddiu (rt: R, rs: R, immediate: SHORT)
-  init = {}
   syntax = format("daddiu %s, %s, %d", rt.syntax, rs.syntax, immediate)
   image  = format("011001%5s%5s%16s", rt.image, rs.image, immediate)
   action = {
@@ -2251,7 +2201,6 @@ op daddiu (rt: R, rs: R, immediate: SHORT)
   */
 @rev(MIPS64_R1)
 op daddu (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("daddu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101101", rs.image, rt.image, rd.image)
   action = {
@@ -2279,7 +2228,6 @@ op daddu (rd: R, rs: R, rt: R)
   */
 @rev(MIPS64_REM_R6)
 op ddiv (rs: R, rt: R)
-  init = {}
   syntax = format("ddiv %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011110", rs.image, rt.image)
   action = {
@@ -2310,7 +2258,6 @@ op ddiv (rs: R, rt: R)
   */
 @rev(MIPS64_REM_R6)
 op ddivu (rs: R, rt: R)
-  init = {}
   syntax = format("ddivu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011111", rs.image, rt.image)
   action = {
@@ -2375,7 +2322,6 @@ op ddivu (rs: R, rt: R)
  */
 @rev(MIPS64_R6)
 op ddiv_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("ddiv %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011110", rs.image, rt.image, rd.image)
   action = {
@@ -2394,7 +2340,6 @@ op ddiv_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op dmod_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmod %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011110", rs.image, rt.image, rd.image)
   action = {
@@ -2413,7 +2358,6 @@ op dmod_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op ddivu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("ddivu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00010011111", rs.image, rt.image, rd.image)
   action = {
@@ -2432,7 +2376,6 @@ op ddivu_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op dmodu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmodu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00011011111", rs.image, rt.image, rd.image)
   action = {
@@ -2489,7 +2432,6 @@ op dmodu_reg (rd: R, rs: R, rt: R)
   */
 @rev(MIPS64_R6)
 op dmul_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmul %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011100", rs.image, rt.image, rd.image)
   action = {
@@ -2500,7 +2442,6 @@ op dmul_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op dmuh_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmuh %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011100", rs.image, rt.image, rd.image)
   action = {
@@ -2511,7 +2452,6 @@ op dmuh_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op dmulu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmulu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00010011101", rs.image, rt.image, rd.image)
   action = {
@@ -2522,7 +2462,6 @@ op dmulu_reg (rd: R, rs: R, rt: R)
 
 @rev(MIPS64_R6)
 op dmuhu_reg (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dmuhu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("011100%5s%5s%5s00011011101", rs.image, rt.image, rd.image)
   action = {
@@ -2555,7 +2494,6 @@ op dmuhu_reg (rd: R, rs: R, rt: R)
 #ifndef MIPS64_R6
 @rev(MIPS64_REM_R6)
 op dmult (rs: R, rt: R)
-  init = {}
   syntax = format("dmult %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011100", rs.image, rt.image)
   action = {
@@ -2590,7 +2528,6 @@ op dmult (rs: R, rt: R)
 #ifndef MIPS64_R6
 @rev(MIPS64_REM_R6)
 op dmultu (rs: R, rt: R)
-  init = {}
   syntax = format("dmultu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000011101", rs.image, rt.image)
   action = {
@@ -2627,7 +2564,6 @@ op dmultu (rs: R, rt: R)
   */
 @rev(MIPS64_R1)
 op dsub (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dsub %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101110", rs.image, rt.image, rd.image)
   action = {
@@ -2659,7 +2595,6 @@ op dsub (rd: R, rs: R, rt: R)
  */
 @rev(MIPS64_R1)
 op dsubu (rd: R, rs: R, rt: R)
-  init = {}
   syntax = format("dsubu %s, %s, %s", rd.syntax, rs.syntax, rt.syntax)
   image  = format("000000%5s%5s%5s00000101111", rs.image, rt.image, rd.image)
   action = {
@@ -2753,7 +2688,6 @@ op Mips64ArithmeticOp = @rev(MIPS64_R1) Mips64ArithmeticRRR |
 */
 @rev(MIPS64_R6)
 op dbitswap (rd: R, rt: R)
-  init = {}
   syntax = format("dbitswap %s, %s", rd.syntax, rt.syntax)
   image  = format("01111100000%5s%5s00000100100", rt.image, rd.image)
   action = {
@@ -2797,7 +2731,6 @@ op dbitswap (rd: R, rt: R)
   */
 @rev(MIPS64_R2)
 op drotr (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("drotr %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000001%5s%5s%5s111010", rt.image, rd.image, sa)
   action = {
@@ -2824,7 +2757,6 @@ op drotr (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS64_R2)
 op drotr32 (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("drotr32 %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000001%5s%5s%5s111110", rt.image, rd.image, sa)
   action = {
@@ -2851,7 +2783,6 @@ op drotr32 (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS64_R2)
 op drotrv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("drotrv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00001010110", rs.image, rt.image, rd.image)
   action = {
@@ -2877,7 +2808,6 @@ op drotrv (rd: R, rt: R, rs: R)
 */
 @rev(MIPS64_R1)
 op dsll (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsll %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111000", rt.image, rd.image, sa)
   action = {
@@ -2904,7 +2834,6 @@ op dsll (rd: R, rt: R, sa: card(5))
 */
 @rev(MIPS64_R1)
 op dsll32 (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsll32 %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111100", rt.image, rd.image, sa)
   action = {
@@ -2932,7 +2861,6 @@ op dsll32 (rd: R, rt: R, sa: card(5))
 */
 @rev(MIPS64_R1)
 op dsllv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("dsllv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000010100", rs.image, rt.image, rd.image)
   action = {
@@ -2961,7 +2889,6 @@ op dsllv (rd: R, rt: R, rs: R)
   */
 @rev(MIPS64_R1)
 op dsra (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsra %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111011", rt.image, rd.image, sa)
   action = {
@@ -2989,7 +2916,6 @@ op dsra (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS64_R1)
 op dsra32 (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsra32 %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111111", rt.image, rd.image, sa)
   action = {
@@ -3017,7 +2943,6 @@ op dsra32 (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS64_R1)
 op dsrav (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("dsrav %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000010111", rs.image, rt.image, rd.image)
   action = {
@@ -3044,7 +2969,6 @@ op dsrav (rd: R, rt: R, rs: R)
  */
 @rev(MIPS64_R1)
 op dsrl (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsrl %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111010", rt.image, rd.image, sa)
   action = {
@@ -3071,7 +2995,6 @@ op dsrl (rd: R, rt: R, sa: card(5))
  */
 @rev(MIPS64_R1)
 op dsrl32 (rd: R, rt: R, sa: card(5))
-  init = {}
   syntax = format("dsrl32 %s, %s, %d", rd.syntax, rt.syntax, sa)
   image  = format("00000000000%5s%5s%5s111110", rt.image, rd.image, sa)
   action = {
@@ -3099,7 +3022,6 @@ op dsrl32 (rd: R, rt: R, sa: card(5))
   */
 @rev(MIPS64_R1)
 op dsrlv (rd: R, rt: R, rs: R)
-  init = {}
   syntax = format("dsrlv %s, %s, %s", rd.syntax, rt.syntax, rs.syntax)
   image  = format("000000%5s%5s%5s00000010110", rs.image, rt.image, rd.image)
   action = {
@@ -3173,7 +3095,6 @@ op Mips64ShiftOp = @rev(MIPS64_R1) Mips64ShiftRRI
   */
 @rev(MIPS32_R2)
 op ext (rt: R, rs: R, pos: card(5), size: card(5))
-  init = {}
   syntax = format("ext %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000000", rs.image, rt.image, size-1, pos)
   action = {
@@ -3226,7 +3147,6 @@ op ext (rt: R, rs: R, pos: card(5), size: card(5))
   */
 @rev(MIPS32_R2)
 op ins (rt: R, rs: R, pos: card(5), size: card(5))
-  init = {}
   syntax = format("ins %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000100", rs.image, rt.image, pos+size-1, pos)
   action = {
@@ -3280,7 +3200,6 @@ op ins (rt: R, rs: R, pos: card(5), size: card(5))
   */
 @rev(MIPS64_R2)
 op dins (rt: R, rs: R, pos: card(5), size: card(5))
-  init = {}
   syntax = format("dins %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000111", rs.image, rt.image, pos+size-1, pos)
   action = {
@@ -3334,7 +3253,6 @@ op dins (rt: R, rs: R, pos: card(5), size: card(5))
   */
 @rev(MIPS64_R2)
 op dinsm (rt: R, rs: R, pos: card(5), size: card(6))
-  init = {}
   syntax = format("dinsm %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000101", rs.image, rt.image,
                                               coerce(card(5),coerce(card(6), pos) + size - 33), pos)
@@ -3388,7 +3306,6 @@ op dinsm (rt: R, rs: R, pos: card(5), size: card(6))
   */
 @rev(MIPS64_R2)
 op dinsu (rt: R, rs: R, pos: card(6), size: card(5))
-  init = {}
   syntax = format("dinsu %s, %s, %d, %d", rt.syntax, rs.syntax, pos, size)
   image  = format("011111%5s%5s%5s%5s000110", rs.image, rt.image,
                                               coerce(card(5), pos+coerce(card(6), size)-33),
@@ -3432,7 +3349,6 @@ op dinsu (rt: R, rs: R, pos: card(6), size: card(5))
   */
 @rev(MIPS32_R2)
 op wsbh (rd: R, rt: R)
-  init = {}
   syntax = format("wsbh %s, %s", rd.syntax, rt.syntax)
   image  = format("01111100000%5s%5s00010000000", rt.image, rd.image)
   action = {
@@ -3475,7 +3391,6 @@ op Mips64InsertsOp = @rev(MIPS32_R2) ext
 // In Release 6, LUI is an assembly idiom for AUI with rs=0.
 @rev(MIPS32_REM_R6)
 pseudo op lui (rt: R, immediate: HWORD)
-  init = {}
   syntax = format("lui %s, 0x%x", rt.syntax, immediate)
   image  = format("00111100000%5s%16s", rt.image, immediate)
   action = {

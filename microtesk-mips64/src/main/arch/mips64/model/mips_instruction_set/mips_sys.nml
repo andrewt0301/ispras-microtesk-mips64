@@ -1,12 +1,17 @@
 /*
- * MicroTESK for MIPS
+ * Copyright 2016-2018 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 #ifndef MIPS_SYS_INCLUDED
@@ -26,7 +31,6 @@ CACHE: Perform Cache Operation (MIPS32)
 */
 @rev(MIPS32_REM_R6)
 op cache (operation: card(5), offset: SHORT, base: R)
-  init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
   image  = format("101111%5s%5s%16s", base.image, operation, offset)
   action = {
@@ -36,7 +40,6 @@ op cache (operation: card(5), offset: SHORT, base: R)
 
 @rev(MIPS32_R6)
 op cache (operation: card(5), offset: card(9), base: R)
-  init = {}
   syntax = format("cache %d, %d(%s)", operation, offset, base.syntax)
   image  = format("%6s%5s%5s%9s0100101", coerce(card(6), SPECIAL3), base.image, operation, offset)
   action = {
@@ -61,7 +64,6 @@ op cache (operation: card(5), offset: card(9), base: R)
 */
 @rev(MIPS32_REM_R6)
 op mfhi (rd: R)
-  init = {}
   syntax = format("mfhi %s", rd.syntax)
   image  = format("0000000000000000%5s00000010000", rd.image)
   action = {
@@ -83,7 +85,6 @@ op mfhi (rd: R)
 */
 @rev(MIPS32_REM_R6)
 op mflo (rd: R)
-  init = {}
   syntax = format("mflo %s", rd.syntax)
   image  = format("0000000000000000%5s00000010010", rd.image)
   action = {
@@ -106,7 +107,6 @@ op mflo (rd: R)
   */
 @rev(MIPS32_REM_R6)
 op mthi (rs: R)
-  init = {}
   syntax = format("mthi %s", rs.syntax)
   image  = format("000000%5s000000000000000010001", rs.image)
   action = {
@@ -129,7 +129,6 @@ op mthi (rs: R)
   */
 @rev(MIPS32_REM_R6)
 op mtlo (rs: R)
-  init = {}
   syntax = format("mtlo %s", rs.syntax)
   image  = format("000000%5s000000000000000010011", rs.image)
   action = {
@@ -152,7 +151,6 @@ TLBWR: Write Random TLB Entry
 */
 @rev(MIPS32_R1)
 op tlbwi ()
-  init = {}
   syntax = format("tlbwi")
   image  = format("01000010000000000000000000000010")
   action = {
@@ -180,7 +178,6 @@ TLBWR: Write Random TLB Entry
 */
 @rev(MIPS32_R1)
 op tlbwr ()
-  init = {}
   syntax = format("tlbwr")
   image  = format("01000010000000000000000000000110")
   action = {
@@ -209,7 +206,6 @@ op tlbwr ()
   */
 @rev(MIPS32_R1)
 op wait (code: card(19))
-  init = {}
   syntax = format("wait 0x%x", code)
   image  = format("0100001%19s100000", code)
   action = {
@@ -235,7 +231,6 @@ op wait (code: card(19))
  */
 @rev(MIPS32_R1)
 op ehb ()
-  init = {}
   syntax = format("ehb")
   image  = format("00000000000000000000000011000000")
   action = {
@@ -284,7 +279,6 @@ op ehb ()
   */
 @rev(MIPS32_R1)
 op break_ins ()
-  init = {}
   syntax = format("break")
   image  = format("00000000000000000000000000001101")
   action = {
@@ -312,7 +306,6 @@ op break_ins ()
   */
 @rev(MIPS32_R1)
 op syscall ()
-  init = {}
   syntax = format("syscall")
   image  = format("00000000000000000000000000001100")
   action = {
@@ -346,7 +339,6 @@ op syscall ()
   */
 @rev(MIPS32_R1)
 op teq (rs: R, rt: R)
-  init = {}
   syntax = format("teq %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110100", rs.image, rt.image)
   action = {
@@ -376,7 +368,6 @@ op teq (rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op teqi (rs: R, immediate: card(16))
-  init = {}
   syntax = format("teqi %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01100%16s", rs.image, immediate)
   action = {
@@ -410,7 +401,6 @@ op teqi (rs: R, immediate: card(16))
 // TODO: The contents of the code field are ignored by hardware and may be used to encode information for system software.
 @rev(MIPS32_R1)
 op tge (rs: R, rt: R)
-  init = {}
   syntax = format("tge %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110000", rs.image, rt.image)
   action = {
@@ -440,7 +430,6 @@ op tge (rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op tgei (rs: R, immediate: card(16))
-  init = {}
   syntax = format("tgei %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01000%16s", rs.image, immediate)
   action = {
@@ -473,7 +462,6 @@ op tgei (rs: R, immediate: card(16))
   */
 @rev(MIPS32_REM_R6)
 op tgeiu (rs: R, immediate: card(16))
-  init = {}
   syntax = format("tgeiu %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01001%16s", rs.image, immediate)
   action = {
@@ -506,7 +494,6 @@ op tgeiu (rs: R, immediate: card(16))
 */
 @rev(MIPS32_R1)
 op tgeu (rs: R, rt: R)
-  init = {}
   syntax = format("tgeu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110001", rs.image, rt.image)
   action = {
@@ -538,7 +525,6 @@ op tgeu (rs: R, rt: R)
   */
 @rev(MIPS32_R1)
 op tlt (rs: R, rt: R)
-  init = {}
   syntax = format("tlt %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110010", rs.image, rt.image)
   action = {
@@ -568,7 +554,6 @@ op tlt (rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op tlti (rs: R, immediate: card(16))
-  init = {}
   syntax = format("tlti %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01010%16s", rs.image, immediate)
   action = {
@@ -601,7 +586,6 @@ op tlti (rs: R, immediate: card(16))
   */
 @rev(MIPS32_REM_R6)
 op tltiu (rs: R, immediate: card(16))
-  init = {}
   syntax = format("tltiu %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01011%16s", rs.image, immediate)
   action = {
@@ -634,7 +618,6 @@ op tltiu (rs: R, immediate: card(16))
 */
 @rev(MIPS32_R1)
 op tltu (rs: R, rt: R)
-  init = {}
   syntax = format("tltu %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110011", rs.image, rt.image)
   action = {
@@ -666,7 +649,6 @@ op tltu (rs: R, rt: R)
 */
 @rev(MIPS32_R1)
 op tne (rs: R, rt: R)
-  init = {}
   syntax = format("tne %s, %s", rs.syntax, rt.syntax)
   image  = format("000000%5s%5s0000000000110110", rs.image, rt.image)
   action = {
@@ -696,7 +678,6 @@ op tne (rs: R, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op tnei (rs: R, immediate: card(16))
-  init = {}
   syntax = format("tnei %s, %d", rs.syntax, immediate)
   image  = format("000001%5s01110%16s", rs.image, immediate)
   action = {
@@ -757,7 +738,6 @@ op MipsSysTrapOp = @rev(MIPS32_R1) break_ins
     ClearHazards()
   */
 op deret ()
-  init = {}
   syntax = format("deret")
   image  = format("01000010000000000000000000011111")
   action = {
@@ -796,7 +776,6 @@ op deret ()
     SignalDebugBreakpointException() // normal
   */
 op sdbbp (code_sdbbp: card(20))
-  init = {}
   syntax = format("sdbbp %d", code_sdbbp)
   image  = format("000000%20s001110", code_sdbbp)
   action = {
@@ -855,7 +834,6 @@ op MipsSysDebugOp = deret
   */
 @rev(MIPS32_R2)
 op di (rt: R)
-  init = {}
   syntax = format("di %s", rt.syntax)
   image  = format("01000001011%5s0110000000000000", rt.image)
   action = {
@@ -868,7 +846,6 @@ op di (rt: R)
 
 @rev(MIPS32_R2)
 pseudo op di2 (bug: R) // TODO: fixed bug
-  init = {}
   syntax = format("di")
   image  = format("01000001011000000110000000000000")
   action = {
@@ -900,7 +877,6 @@ pseudo op di2 (bug: R) // TODO: fixed bug
   */
 @rev(MIPS32_R2)
 op ei (rt: R)
-  init = {}
   syntax = format("ei %s", rt.syntax)
   image  = format("01000001011%5s0110000000100000", rt.image)
   action = {
@@ -913,7 +889,6 @@ op ei (rt: R)
 
 @rev(MIPS32_R2)
 pseudo op ei2 (bug: R) // TODO: fixed bug
-  init = {}
   syntax = format("ei")
   image  = format("01000001011000000110000000100000")
   action = {
@@ -958,7 +933,6 @@ pseudo op ei2 (bug: R) // TODO: fixed bug
   */
 @rev(MIPS32_R1)
 op eret ()
-  init = {}
   syntax = format("eret")
   image  = format("01000010000000000000000000011000")
   action = {
@@ -1016,7 +990,6 @@ op eret ()
   */
 @rev(MIPS64_R1)
 op dmfc0 (rt: R, rd: card(5), sel: card(3))
-  init = {}
   syntax = format("dmfc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000001%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
@@ -1028,7 +1001,6 @@ op dmfc0 (rt: R, rd: card(5), sel: card(3))
 
 @rev(MIPS64_R1)
 pseudo op dmfc0_2 (rt: R, rd: card(5))
-  init = {}
   syntax = format("dmfc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000001%5s%5s00000000000", rt.image, rd)
   action = {
@@ -1065,7 +1037,6 @@ pseudo op dmfc0_2 (rt: R, rd: card(5))
   */
 @rev(MIPS64_R1)
 op dmtc0 (rt: R, rd: card(5), sel: card(3))
-  init = {}
   syntax = format("dmtc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000101%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
@@ -1077,7 +1048,6 @@ op dmtc0 (rt: R, rd: card(5), sel: card(3))
 
 @rev(MIPS64_R1)
 pseudo op dmtc0_2 (rt: R, rd: card(5))
-  init = {}
   syntax = format("dmtc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000101%5s%5s00000000000", rt.image, rd)
   action = {
@@ -1125,7 +1095,6 @@ pseudo op dmtc0_2 (rt: R, rd: card(5))
   */
 @rev(MIPS32_R1)
 op mfc0 (rt: R, rd: C0_R)
-  init = {}
   syntax = format("mfc0 %s, %s", rt.syntax, rd.syntax)
   image  = format("01000000000%5s%16s", rt.image, rd.image)
   action = {
@@ -1137,7 +1106,6 @@ op mfc0 (rt: R, rd: C0_R)
 
 @rev(MIPS32_R1)
 pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
-  init = {}
   syntax = format("mfc0 %s, $%s, %d", rt.syntax, rd, sel)
   image  = format("01000000000%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
@@ -1158,7 +1126,6 @@ pseudo op mfc0_2 (rt: R, rd: card(5), sel: card(3))
 
 @rev(MIPS32_R1)
 pseudo op mfc0_3 (rt: R, rd: card(5))
-  init = {}
   syntax = format("mfc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000000%5s%5s00000000000", rt.image, rd)
   action = {
@@ -1219,7 +1186,6 @@ pseudo op mfc0_3 (rt: R, rd: card(5))
   */
 @rev(MIPS32_R1)
 op mtc0 (rt: R, rd: C0_R)
-  init = {}
   syntax = format("mtc0 %s, %s", rt.syntax, rd.syntax)
   image  = format("01000000100%5s%16s", rt.image, rd.image)
   action = {
@@ -1230,7 +1196,6 @@ op mtc0 (rt: R, rd: C0_R)
 
 @rev(MIPS32_R1)
 pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
-  init = {}
   syntax = format("mtc0 %s, $%d, %d", rt.syntax, rd, sel)
   image  = format("01000000100%5s%5s00000000%3s", rt.image, rd, sel)
   action = {
@@ -1253,7 +1218,6 @@ pseudo op mtc0_2 (rt: R, rd: card(5), sel: card(3))
 
 @rev(MIPS32_R1)
 pseudo op mtc0_3 (rt: R, rd: card(5))
-  init = {}
   syntax = format("mtc0 %s, $%d", rt.syntax, rd)
   image  = format("01000000100%5s%5s00000000000", rt.image, rd)
   action = {
@@ -1276,7 +1240,6 @@ pseudo op mtc0_3 (rt: R, rd: card(5))
   */
 @rev(MIPS32_R1)
 op tlbp ()
-  init = {}
   syntax = format("tlbp")
   image  = format("01000010000000000000000000001000")
   action = {
@@ -1300,7 +1263,6 @@ op tlbp ()
   */
 @rev(MIPS32_R1)
 op tlbr ()
-  init = {}
   syntax = format("tlbr")
   image  = format("01000010000000000000000000000001")
   action = {
@@ -1346,7 +1308,6 @@ op MipsSysC0Op = @rev(MIPS32_R2) di
 // TODO: op dmfc2 (rt: R, rd: R, sel: card(16))
 @rev(MIPS64_R1)
 op dmfc2 (rt: R, rd: R, sel: card(11))
-  init = {}
   syntax = format("dmfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000001%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
@@ -1356,7 +1317,6 @@ op dmfc2 (rt: R, rd: R, sel: card(11))
 
 @rev(MIPS64_R1)
 pseudo op dmfc22 (rt: R, rd: R)
-  init = {}
   syntax = format("dmfc2 %s, %s", rt.syntax, rd.syntax)
   image  = format("01001000001%5s%5s00000000000", rt.image, rd.image)
   action = {
@@ -1372,7 +1332,6 @@ pseudo op dmfc22 (rt: R, rd: R)
 // TODO op dmtc2 (rt: R, rd: R, sel: card(16))
 @rev(MIPS64_R1)
 op dmtc2 (rt: R, rd: R, sel: card(11))
-  init = {}
   syntax = format("dmtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000101%5s%5s%11s", rt.image, rd.image, sel) // TODO: rd.image
   action = {
@@ -1382,7 +1341,6 @@ op dmtc2 (rt: R, rd: R, sel: card(11))
 
 @rev(MIPS64_R1)
 pseudo op dmtc22 (rt: R, rd: R)
-  init = {}
   syntax = format("dmtc2 %s, %s", rt.syntax, rd.syntax)
   image  = format("01001000101%5s%5s00000000000", rt.image, rd.image)
   action = {
@@ -1398,7 +1356,6 @@ pseudo op dmtc22 (rt: R, rd: R)
 // TODO op mfc2 (rt: R, rd: R, sel: card(16))
 @rev(MIPS64_R1)
 op mfc2 (rt: R, rd: R, sel: card(11))
-  init = {}
   syntax = format("mfc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000000%5s%5s%11s", rt.image, rd.image, sel)
   action = {
@@ -1408,7 +1365,6 @@ op mfc2 (rt: R, rd: R, sel: card(11))
 
 @rev(MIPS64_R1)
 pseudo op mfc22 (rt: R, rd: R)
-  init = {}
   syntax = format("mfc2 %s, %s", rt.syntax, rd.syntax)
   image  = format("01001000000%5s%5s00000000000", rt.image, rd.image)
   action = {
@@ -1424,7 +1380,6 @@ pseudo op mfc22 (rt: R, rd: R)
 //TODO op mtc2 (rt: R, rd: R, sel: card(16))
 @rev(MIPS64_R1)
 op mtc2 (rt: R, rd: R, sel: card(11))
-  init = {}
   syntax = format("mtc2 %s, %s, %d", rt.syntax, rd.syntax, sel)
   image  = format("01001000100%5s%5s%11s", rt.image, rd.image, sel)
   action = {
@@ -1434,7 +1389,6 @@ op mtc2 (rt: R, rd: R, sel: card(11))
 
 @rev(MIPS64_R1)
 pseudo op mtc22 (rt: R, rd: R)
-  init = {}
   syntax = format("mtc2 %s, %s", rt.syntax, rd.syntax)
   image  = format("01001000100%5s%5s00000000000", rt.image, rd.image)
   action = {
@@ -1471,7 +1425,6 @@ op MipsSysC2Op = @rev(MIPS64_R1) dmfc2
 */
 @rev(MIPS32_R1)
 op ldc2 (rt: R, offset: card(11), base: R)
-  init = {}
   syntax = format("ldc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
   image  = format("01001001110%5s%5s%11s", rt.image, base.image, offset)
   action = {
@@ -1491,7 +1444,6 @@ op ldc2 (rt: R, offset: card(11), base: R)
 */
 @rev(MIPS32_R1)
 op lwc2 (rt: R, offset: card(11), base: R)
-  init = {}
   syntax = format("lwc2 %s, %d(%s)", rt.syntax, offset, base.syntax)
   image  = format("01001001010%5s%5s%11s", rt.image, base.image, offset)
   action = {

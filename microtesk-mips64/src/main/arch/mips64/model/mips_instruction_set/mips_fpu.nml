@@ -1,12 +1,17 @@
 /*
- * MicroTESK for MIPS
+ * Copyright 2016-2018 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 #ifndef MIPS_FPU_INCLUDED
@@ -188,7 +193,6 @@ op StoreFPR(fpu_reg_number: card(5), fmt_value: card(5), value: card (64))
 */
 @rev(MIPS32_R1)
 op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("add.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%5s000000", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
@@ -234,7 +238,6 @@ op add_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R1)
 op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("abs.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s000101", op_fmt.image, fs.image, fd.image)
   action = {
@@ -276,7 +279,6 @@ op abs_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("div.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%5s000011", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
@@ -330,7 +332,6 @@ op div_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
   */
 @rev(MIPS32_R2_REM_R6)
 op madd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("madd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s100%3s", fr.image, ft.image, fs.image, fd.image,
@@ -393,7 +394,6 @@ op madd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   */
 @rev(MIPS32_R2_REM_R6)
 op msub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("msub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s101%3s", fr.image, ft.image, fs.image, fd.image,
@@ -448,7 +448,6 @@ op msub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R1)
 op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("mul.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%5s000010", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
@@ -500,7 +499,6 @@ op mul_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R1)
 op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("neg.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s000111", op_fmt.image, fs.image, fd.image)
   action = {
@@ -553,7 +551,6 @@ op neg_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   */
 @rev(MIPS32_R2_REM_R6)
 op nmadd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("nmadd.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s110%3s", fr.image, ft.image, fs.image, fd.image,
@@ -620,7 +617,6 @@ op nmadd_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
   */
 @rev(MIPS32_R2_REM_R6)
 op nmsub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("nmsub.%s %s, %s, %s, %s", op_fmt.syntax, fd.syntax, fr.syntax, fs.syntax,
                                             ft.syntax)
   image  = format("010011%5s%5s%5s%5s111%3s", fr.image, ft.image, fs.image, fd.image,
@@ -681,7 +677,6 @@ op nmsub_fmt (op_fmt: FMT3_FORMAT, fd: FR, fr: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2)
 op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("recip.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s010101", op_fmt.image, fs.image, fd.image)
   action = {
@@ -725,7 +720,6 @@ op recip_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2)
 op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("rsqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s010110", op_fmt.image, fs.image, fd.image)
   action = {
@@ -766,7 +760,6 @@ op rsqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("sqrt.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s000100", op_fmt.image, fs.image, fd.image)
   action = {
@@ -806,7 +799,6 @@ op sqrt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op sub_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("sub.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%5s000001", op_fmt.image, fs.image, ft.image, fd.image)
   action = {
@@ -1036,7 +1028,6 @@ var c_cond_unordered [BIT]
 
 @rev(MIPS32_REM_R6)
 op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, ft: FR)
-  init = {}
   syntax = format("c.%s.%s %d, %s, %s",
                   cond_value.syntax, op_fmt.syntax, cc, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%3s0011%4s",
@@ -1066,7 +1057,6 @@ op C_cond (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, cc: card(3), fs: FR, f
 let CC_COND2 = 0 // cc = 0
 @rev(MIPS32_REM_R6)
 pseudo op C_cond2 (cond_value: FPU_COND_TYPE, op_fmt: FMT_FORMAT, fs: FR, ft: FR)
-  init = {}
   syntax = format("c.%s.%s %s, %s",
                   cond_value.syntax, op_fmt.syntax, fs.syntax, ft.syntax)
   image  = format("010001%5s%5s%5s%3s0011%4s",
@@ -1157,7 +1147,6 @@ op bc1f (cc: card(3), offset: BRANCH_FPU_OFFSET)
 
 @rev(MIPS32_REM_R6)
 pseudo op bc1f2 (offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1f %s", offset.syntax)
   image  = format("%32s", bc1f(0, offset).image)
   action = {
@@ -1197,7 +1186,6 @@ op bc1fl (cc: card(3), offset: BRANCH_FPU_OFFSET)
 
 @rev(MIPS32_REM_R6)
 pseudo op bc1fl2 (offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1fl %s", offset.syntax)
   image  = format("%32s", bc1fl(0, offset).image)
   action = {
@@ -1235,7 +1223,6 @@ op bc1t (cc: card(3), offset: BRANCH_FPU_OFFSET)
 
 @rev(MIPS32_REM_R6)
 pseudo op bc1t2 (offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1t %s", offset.syntax)
   image  = format("%32s", bc1t(0, offset).image)
   action = {
@@ -1275,7 +1262,6 @@ op bc1tl (cc: card(3), offset: BRANCH_FPU_OFFSET)
 
 @rev(MIPS32_REM_R6)
 pseudo op bc1tl2 (offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1tl %s", offset.syntax)
   image  = format("%32s", bc1tl(0, offset).image)
   action = {
@@ -1287,7 +1273,6 @@ pseudo op bc1tl2 (offset: BRANCH_FPU_OFFSET)
 */
 @rev(MIPS32_R6)
 op bc1eqz(rt: FR, offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1eqz %s, %s", rt.syntax, offset.syntax)
   image  = format("01000101001%5s%16s", rt.image, offset.image)
   action = {
@@ -1301,7 +1286,6 @@ op bc1eqz(rt: FR, offset: BRANCH_FPU_OFFSET)
 
 @rev(MIPS32_R6)
 op bc1nez(rt: FR, offset: BRANCH_FPU_OFFSET)
-  init = {}
   syntax = format("bc1nez %s, %s", rt.syntax, offset.syntax)
   image  = format("01000101101%5s%16s", rt.image, offset.image)
   action = {
@@ -1428,7 +1412,6 @@ op mips64_load_fpu_short (load_op: card(4), rt: FR, load_offset: SHORT, load_bas
 */
 @rev(MIPS32_R1)
 op ldc1 (ft: FR, offset: SHORT, base: R)
-  init = {}
   syntax = format("ld %s, %d(%s)", ft.syntax, offset, base.syntax)
   image  = format("110101%5s%5s%16s", base.image, ft.image, offset)
   action = {
@@ -1436,7 +1419,6 @@ op ldc1 (ft: FR, offset: SHORT, base: R)
   }
 
 op ldxc1 (fd: FR, index: R, base: R)
-  init = {}
   syntax = format("ld %s, %s(%s)", fd.syntax, index.syntax, base.syntax)
   image  = format("110101%5s%5s00000%5s000001", base.image, index.image, fd.image)
   action = {
@@ -1486,7 +1468,6 @@ MOVZ.fmt
 */
 @rev(MIPS32_R1)
 op cfc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("cfc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100010%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1509,7 +1490,6 @@ op cfc1 (rt: R, fs: FR)
   */
 @rev(MIPS32_R1)
 op ctc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("ctc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100110%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1532,7 +1512,6 @@ op ctc1 (rt: R, fs: FR)
   */
 @rev(MIPS64_R1)
 op dmfc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("dmfc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100001%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1553,7 +1532,6 @@ op dmfc1 (rt: R, fs: FR)
   */
 @rev(MIPS64_R1)
 op dmtc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("dmtc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100101%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1575,7 +1553,6 @@ op dmtc1 (rt: R, fs: FR)
   */
 @rev(MIPS32_R1)
 op mfc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("mfc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100000%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1598,7 +1575,6 @@ op mfc1 (rt: R, fs: FR)
   */
 @rev(MIPS32_R1)
 op mtc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("mtc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100100%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1622,7 +1598,6 @@ op mtc1 (rt: R, fs: FR)
   */
 @rev(MIPS32_R2)
 op mfhc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("mfhc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100011%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1646,7 +1621,6 @@ op mfhc1 (rt: R, fs: FR)
   */
 @rev(MIPS32_R2)
 op mthc1 (rt: R, fs: FR)
-  init = {}
   syntax = format("mthc1 %s, %s", rt.syntax, fs.syntax)
   image  = format("01000100111%5s%5s00000000000", rt.image, fs.image)
   action = {
@@ -1674,7 +1648,6 @@ op mthc1 (rt: R, fs: FR)
 */
 @rev(MIPS32_R1)
 op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("mov.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s000110", op_fmt.image, fs.image, fd.image)
   action = {
@@ -1709,7 +1682,6 @@ op mov_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
   */
 @rev(MIPS32_REM_R6)
 op movf (rd: R, rs: R, cc: card(3))
-  init = {}
   syntax = format("movf %s, %s, %d", rd.syntax, rs.syntax, cc)
   image  = format("000000%5s%3s00%5s00000000001", rs.image, cc, rd.image)
   action = {
@@ -1749,7 +1721,6 @@ op movf (rd: R, rs: R, cc: card(3))
   */
 @rev(MIPS32_REM_R6)
 op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
-  init = {}
   syntax = format("movf.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
   image  = format("010001%5s%3s00%5s%5s010001", op_fmt.image, cc, fs.image, fd.image)
   action = {
@@ -1801,7 +1772,6 @@ op movf_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
 */
 @rev(MIPS32_REM_R6)
 op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
-  init = {}
   syntax = format("movn.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
   image  = format("010001%5s%5s%5s%5s010011", op_fmt.image, rt.image, fs.image, fd.image)
   action = {
@@ -1837,7 +1807,6 @@ op movn_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
   */
 @rev(MIPS32_REM_R6)
 op movt (rd: R, rs: R, cc: card(3))
-  init = {}
   syntax = format("movt %s, %s, %d", rd.syntax, rs.syntax, cc)
   image  = format("000000%5s%3s01%5s00000000001", rs.image, cc, rd.image)
   action = {
@@ -1877,7 +1846,6 @@ op movt (rd: R, rs: R, cc: card(3))
   */
 @rev(MIPS32_REM_R6)
 op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
-  init = {}
   syntax = format("movt.%s %s, %s, %d", op_fmt.syntax, fd.syntax, fs.syntax, cc)
   image  = format("010001%5s%3s01%5s%5s010001", op_fmt.image, cc, fs.image, fd.image)
   action = {
@@ -1929,7 +1897,6 @@ op movt_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, cc: card(3))
 */
 @rev(MIPS32_REM_R6)
 op movz_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR, rt: R)
-  init = {}
   syntax = format("movz.%s %s, %s, %s", op_fmt.syntax, fd.syntax, fs.syntax, rt.syntax)
   image  = format("010001%5s%5s%5s%5s010010", op_fmt.image, rt.image, fs.image, fd.image)
   action = {
@@ -2014,7 +1981,6 @@ TRUNC.W.fmt
 */
 @rev(MIPS32_R1)
 op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.d.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100001", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2064,7 +2030,6 @@ op cvtd_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100101", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2098,7 +2063,6 @@ op cvtl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op cvtps_s (fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("cvt.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
   image  = format("01000110000%5s%5s%5s100110", ft.image, fs.image, fd.image)
   action = {
@@ -2127,7 +2091,6 @@ op cvtps_s (fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op cvts_pl (fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.s.pl %s, %s", fd.syntax, fs.syntax)
   image  = format("0100011011000000%5s%5s101000", fs.image, fd.image)
   action = {
@@ -2152,7 +2115,6 @@ op cvts_pl (fd: FR, fs: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op cvts_pu (fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.s.pu %s, %s", fd.syntax, fs.syntax)
   image  = format("0100011011000000%5s%5s100000", fs.image, fd.image)
   action = {
@@ -2181,7 +2143,6 @@ op cvts_pu (fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100000", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2231,7 +2192,6 @@ op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("cvt.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100100", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2269,7 +2229,6 @@ op cvtw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2)
 op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("ceil.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001010", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2298,7 +2257,6 @@ op ceill_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("ceil.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001110", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2334,7 +2292,6 @@ op ceilw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
-  init = {}
   syntax = format("alnv.ps %s, %s, %s, %s", fd.syntax, fs.syntax, ft.syntax, rs.syntax)
   image  = format("010011%5s%5s%5s%5s011110", rs.image, ft.image, fs.image, fd.image)
   action = {
@@ -2370,7 +2327,6 @@ op alnvps_fmt (fd: FR, fs: FR, ft: FR, rs: R)
 */
 @rev(MIPS32_R2)
 op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("floor.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001011", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2399,7 +2355,6 @@ op floorl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("floor.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001111", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2428,7 +2383,6 @@ op floorw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op pllps_s (fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("pll.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
   image  = format("01000110110%5s%5s%5s101100", ft.image, fs.image, fd.image)
   action = {
@@ -2456,7 +2410,6 @@ op pllps_s (fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op plups_s (fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("plu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
   image  = format("01000110110%5s%5s%5s101101", ft.image, fs.image, fd.image)
   action = {
@@ -2480,7 +2433,6 @@ op plups_s (fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op pulps_s (fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("pul.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
   image  = format("01000110110%5s%5s%5s101110", ft.image, fs.image, fd.image)
   action = {
@@ -2504,7 +2456,6 @@ op pulps_s (fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2_REM_R6)
 op puups_s (fd: FR, fs: FR, ft: FR)
-  init = {}
   syntax = format("puu.ps.s %s, %s, %s", fd.syntax, fs.syntax, ft.syntax)
   image  = format("01000110110%5s%5s%5s101111", ft.image, fs.image, fd.image)
   action = {
@@ -2534,7 +2485,6 @@ op puups_s (fd: FR, fs: FR, ft: FR)
 */
 @rev(MIPS32_R2)
 op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("round.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001000", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2565,7 +2515,6 @@ op roundl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("round.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001100", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2595,7 +2544,6 @@ op roundw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R2)
 op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("trunc.l.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001001", op_fmt.image, fs.image, fd.image)
   action = {
@@ -2625,7 +2573,6 @@ op truncl_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
 */
 @rev(MIPS32_R1)
 op truncw_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
-  init = {}
   syntax = format("trunc.w.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s001101", op_fmt.image, fs.image, fd.image)
   action = {

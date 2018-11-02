@@ -1,12 +1,17 @@
 /*
- * MicroTESK for MIPS64
+ * Copyright 2016-2018 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 //==================================================================================================
@@ -493,7 +498,6 @@ action = {
   The NullifyCurrentInstruction function nullifies the current instruction.
 */
 op NullifyCurrentInstruction()
-  init = {}
   action = {
     SKIPOP = 1;
   }
@@ -544,7 +548,6 @@ let MachineCheck         = 0x03
 let ReservedInstruction  = 0x04
 
 op add_exception(excep: card(8))
-  init = {}
   action = {
     // If access to Coprocessor 0 is not enabled, a Coprocessor Unusable Exception is signaled.
     if (excep == CoprocessorUnusable0) then
@@ -649,7 +652,6 @@ mode LOAD_ADDR = LOAD_LABEL | LOAD_IMM
 
 @rev(MIPS64_REM_R6)
 pseudo op la(rd : R, addr : LOAD_ADDR)
-  init = {}
   syntax = format("la %s, %s", rd.syntax, addr.syntax)
   image  = format("%s%s%s%s%s", lui(rd, temp_load_address<48..63>).image,
                                 ori(rd, rd, temp_load_address<32..47>).image,
