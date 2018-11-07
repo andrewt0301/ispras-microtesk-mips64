@@ -166,6 +166,7 @@ dependencies {
   solvers cvc4
 
   qemu("qemu4v:qemu4v:${qemuVersion}:@tar.gz") { changing = true }
+  traceutils("traceutils:traceutils:${traceutilsVersion}:@tar.gz") { changing = true }
 
   compile("microtesk:microtesk:${coreVersion}:@tar.gz") { changing = true }
   testCompile fileTree(include: ['*.jar'], dir: "${project.projectDir}/build/target/lib/jars")
@@ -410,6 +411,12 @@ task copyQemu(type: Copy) {
   into "${project.projectDir}/build/tools/qemu"
 }
 
+task copyTraceUtils(type: Copy) {
+  from tarTree(configurations.traceutils.fileCollection { dep -> dep.name == 'traceutils' }
+          .singleFile)
+  into "${project.projectDir}/build/tools/"
+}
+
 jar {
   archiveName = 'models.jar'
   from('build/classes/models')
@@ -465,11 +472,13 @@ test.dependsOn copyModels
 test.dependsOn copyModelCode
 test.dependsOn generateMips64Templates
 test.dependsOn copyQemu
+test.dependsOn copyTraceUtils
 
 qemu4vTest.dependsOn copyModels
 qemu4vTest.dependsOn copyModelCode
 qemu4vTest.dependsOn generateMips64Templates
 qemu4vTest.dependsOn copyQemu
+qemu4vTest.dependsOn copyTraceUtils
 
 task sourcesJar(type: Jar, dependsOn: classes) {
   archiveName = projectName + '-src.jar'
