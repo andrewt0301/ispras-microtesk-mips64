@@ -55,6 +55,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
+    #section_text(:pa => 0x0000000000000000, :va => 0xFFFFffffa0000000) {}
     section_text(:pa => 0x00000000bfc10000, :va => 0xffffffffbfc10000) {}
 
     #
@@ -63,6 +64,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
+    #section_data(:pa => 0x0000000000080000, :va => 0xFFFFffffa0080000) {}
     section_data(:pa => 0x00000000bfc20000, :va => 0xffffffffbfc20000) {}
 
     def mips64_r5
