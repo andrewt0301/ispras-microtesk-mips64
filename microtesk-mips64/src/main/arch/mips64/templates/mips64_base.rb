@@ -521,7 +521,8 @@ class Mips64BaseTemplate < Template
     text ".text"
     text ".globl __start"
     newline
-    #org 0x2000
+    # TODO: this address seems wrong for QEMU4V emulation
+    org 0x2000
     newline
 
 label :__start
