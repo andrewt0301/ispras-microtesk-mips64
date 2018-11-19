@@ -172,6 +172,8 @@ class Mips64BaseTemplate < Template
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
     section_text(:pa => 0x0000000000000000, :va => 0xFFFFffffa0000000) {}
+    # TODO: fix address mapping; the commented one is closer to QEMU4V
+    #section_text(:pa => 0x00000000bfc10000, :va => 0xffffffffbfc10000) {}
 
     #
     # Defines .data section.
@@ -180,6 +182,8 @@ class Mips64BaseTemplate < Template
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
     section_data(:pa => 0x0000000000080000, :va => 0xFFFFffffa0080000) {}
+    # TODO: fix address mapping; the commented one is closer to QEMU4V
+    #section_data(:pa => 0x00000000bfc20000, :va => 0xffffffffbfc20000) {}
 
     def mips64_r5
       if get_option_value('rev-id') == 'MIPS64_R5' then
@@ -517,6 +521,7 @@ class Mips64BaseTemplate < Template
     text ".text"
     text ".globl __start"
     newline
+    # TODO: this address seems wrong for QEMU4V emulation
     org 0x2000
     newline
 

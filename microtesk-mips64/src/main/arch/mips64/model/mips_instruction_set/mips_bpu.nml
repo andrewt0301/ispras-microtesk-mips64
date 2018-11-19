@@ -1,12 +1,17 @@
 /*
- * MicroTESK for MIPS
+ * Copyright 2016-2018 ISP RAS (http://www.ispras.ru)
  *
- * Copyright (c) 2016-2018 Institute for System Programming of the Russian Academy of Sciences
- * All Rights Reserved
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
- * 25 Alexander Solzhenitsyn st., Moscow, 109004, Russia
- * http://www.ispras.ru
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 #ifndef MIPS_BPU_INCLUDED
@@ -128,7 +133,6 @@ mode BRANCH_OFFSET26 = BRANCH_LABEL26 | BRANCH_IMM26
     I+1: PC <- PC + target_offset
   */
 pseudo op b (offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("b %s", offset.syntax)
   image  = format("0001000000000000%16s", offset.image)
   action = {
@@ -164,7 +168,6 @@ pseudo op b (offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R6)
 op bal (offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bal %s", offset.syntax)
   image  = format("0000010000010001%16s", offset.image)
   action = {
@@ -204,7 +207,6 @@ op bal (offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R6)
 op balc (offset: BRANCH_OFFSET26)
-  init = {}
   syntax = format("balc %s", offset.syntax)
   image  = format("111010%26s", offset.image)
   action = {
@@ -238,7 +240,6 @@ op balc (offset: BRANCH_OFFSET26)
   */
 @rev(MIPS32_R6)
 op bc (offset: BRANCH_OFFSET26)
-  init = {}
   syntax = format("bc %s", offset.syntax)
   image  = format("110010%26s", offset.image)
   action = {
@@ -275,7 +276,6 @@ op bc (offset: BRANCH_OFFSET26)
   */
 @rev(MIPS32_R1)
 op beq (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("beq %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000100%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -319,7 +319,6 @@ op beq (rs: R, rt: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op beql (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("beql %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010100%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -362,7 +361,6 @@ op beql (rs: R, rt: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R1)
 op bgez (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgez %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s00001%16s", rs.image, offset.image)
   action = {
@@ -408,7 +406,6 @@ op bgez (rs: R, offset: BRANCH_OFFSET)
 // (unconditional Branch and Link) which was an alias for BGEZAL with rs=0.
 @rev(MIPS32_R1)
 op bgezal (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgezal %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s10001%16s", rs.image, offset.image)
   action = {
@@ -491,7 +488,6 @@ op bgezal (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R6)
 op blezalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("blezalc %s, %s", rt.syntax, offset.syntax)
   image  = format("00011000000%5s%16s", rt.image, offset.image)
   action = {
@@ -511,7 +507,6 @@ op blezalc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgezalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgezalc %s, %s", rt.syntax, offset.syntax)
   image  = format("000110%5s%5s%16s", rt.image, rt.image, offset.image)
   action = {
@@ -531,7 +526,6 @@ op bgezalc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgtzalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtzalc %s, %s", rt.syntax, offset.syntax)
   image  = format("00011100000%5s%16s", rt.image, offset.image)
   action = {
@@ -551,7 +545,6 @@ op bgtzalc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bltzalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltzalc %s, %s", rt.syntax, offset.syntax)
   image  = format("000111%5s%5s%16s", rt.image, rt.image, offset.image)
   action = {
@@ -571,7 +564,6 @@ op bltzalc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 pseudo op beqzalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("beqzalc %s, %s", rt.syntax, offset.syntax)
   image  = format("00100000000%5s%16s", rt.image, offset.image)
   action = {
@@ -591,7 +583,6 @@ pseudo op beqzalc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 pseudo op bnezalc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bnezalc %s, %s", rt.syntax, offset.syntax)
   image  = format("01100000000%5s%16s", rt.image, offset.image)
   action = {
@@ -651,7 +642,6 @@ op bXzalc = @rev(MIPS32_R6) blezalc
   */
 @rev(MIPS32_REM_R6)
 op bgezall (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgezall %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s10011%16s", rs.image, offset.image)
   action = {
@@ -806,7 +796,6 @@ op bgezall (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R6)
 op blezc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("blezc %s, %s", rt.syntax, offset.syntax)
   image  = format("01011000000%5s%16s", rt.image, offset.image)
   action = {
@@ -824,7 +813,6 @@ op blezc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgezc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgezc %s, %s", rt.syntax, offset.syntax)
   image  = format("010110%5s%5s%16s", rt.image, rt.image, offset.image)
   action = {
@@ -842,7 +830,6 @@ op bgezc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgtzc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtzc %s, %s", rt.syntax, offset.syntax)
   image  = format("01011100000%5s%16s", rt.image, offset.image)
   action = {
@@ -860,7 +847,6 @@ op bgtzc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bltzc (rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltzc %s, %s", rt.syntax, offset.syntax)
   image  = format("010111%5s%5s%16s", rt.image, rt.image, offset.image)
   action = {
@@ -878,7 +864,6 @@ op bltzc (rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgec (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgec %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010110%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -897,7 +882,6 @@ op bgec (rs: R, rt: R, offset: BRANCH_OFFSET)
 // Alias for BGEC
 @rev(MIPS32_R6)
 pseudo op blec (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("blec %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010110%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -906,7 +890,6 @@ pseudo op blec (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bltc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010111%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -925,7 +908,6 @@ op bltc (rs: R, rt: R, offset: BRANCH_OFFSET)
 // Alias for BLTC
 @rev(MIPS32_R6)
 pseudo op bgtc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010111%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -934,7 +916,6 @@ pseudo op bgtc (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bgeuc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgeuc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000110%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -953,7 +934,6 @@ op bgeuc (rs: R, rt: R, offset: BRANCH_OFFSET)
 // Alias for BGEUC
 @rev(MIPS32_R6)
 pseudo op bleuc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bleuc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000110%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -962,7 +942,6 @@ pseudo op bleuc (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bltuc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltuc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000111%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -981,7 +960,6 @@ op bltuc (rs: R, rt: R, offset: BRANCH_OFFSET)
 // Alias for BLTUC
 @rev(MIPS32_R6)
 pseudo op bgtuc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtuc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000111%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -990,7 +968,6 @@ pseudo op bgtuc (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op beqc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("beqc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("001000%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1008,7 +985,6 @@ op beqc (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bnec (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bnec %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("011000%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1025,7 +1001,6 @@ op bnec (rs: R, rt: R, offset: BRANCH_OFFSET)
   }
 
 op beqzc (rs: R, offset: BRANCH_OFFSET21)
-  init = {}
   syntax = format("beqzc %s, %s", rs.syntax, offset.syntax)
   image  = format("110110%5s%21s", rs.image, offset.image)
   action = {
@@ -1042,7 +1017,6 @@ op beqzc (rs: R, offset: BRANCH_OFFSET21)
   }
 
 op bnezc (rs: R, offset: BRANCH_OFFSET21)
-  init = {}
   syntax = format("bnezc %s, %s", rs.syntax, offset.syntax)
   image  = format("111110%5s%21s", rs.image, offset.image)
   action = {
@@ -1108,7 +1082,6 @@ op Mips32BpuOpBXCRRI = @rev(MIPS32_R6) bgec
   */
 @rev(MIPS32_REM_R6)
 op bgezl (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgezl %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s00011%16s", rs.image, offset.image)
   action = {
@@ -1151,7 +1124,6 @@ op bgezl (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R1)
 op bgtz (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtz %s, %s", rs.syntax, offset.syntax)
   image  = format("000111%5s00000%16s", rs.image, offset.image)
   action = {
@@ -1195,7 +1167,6 @@ op bgtz (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op bgtzl (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bgtzl %s, %s", rs.syntax, offset.syntax)
   image  = format("010111%5s00000%16s", rs.image, offset.image)
   action = {
@@ -1238,7 +1209,6 @@ op bgtzl (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R1)
 op blez (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("blez %s, %s", rs.syntax, offset.syntax)
   image  = format("000110%5s00000%16s", rs.image, offset.image)
   action = {
@@ -1282,7 +1252,6 @@ op blez (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op blezl (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("blezl %s, %s", rs.syntax, offset.syntax)
   image  = format("010110%5s00000%16s", rs.image, offset.image)
   action = {
@@ -1325,7 +1294,6 @@ op blezl (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R1)
 op bltz (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltz %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s00000%16s", rs.image, offset.image)
   action = {
@@ -1369,7 +1337,6 @@ op bltz (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op bltzal (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltzal %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s10000%16s", rs.image, offset.image)
   action = {
@@ -1418,7 +1385,6 @@ op bltzal (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op bltzall (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltzall %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s10010%16s", rs.image, offset.image)
   action = {
@@ -1466,7 +1432,6 @@ op bltzall (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op bltzl (rs: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bltzl %s, %s", rs.syntax, offset.syntax)
   image  = format("000001%5s00010%16s", rs.image, offset.image)
   action = {
@@ -1509,7 +1474,6 @@ op bltzl (rs: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_R1)
 op bne (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bne %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("000101%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1553,7 +1517,6 @@ op bne (rs: R, rt: R, offset: BRANCH_OFFSET)
   */
 @rev(MIPS32_REM_R6)
 op bnel (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bnel %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("010101%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1573,7 +1536,6 @@ op bnel (rs: R, rt: R, offset: BRANCH_OFFSET)
   output: temp_bit
 */
 internal op sum_input_overflow(temp_a: DWORD, temp_b: DWORD)
-  init = {}
   action = {
     temp_bit = 0;
     if sign_extend(WORD, temp_a<31>) != temp_a<63..32> ||
@@ -1636,7 +1598,6 @@ internal op sum_input_overflow(temp_a: DWORD, temp_b: DWORD)
   */
 @rev(MIPS32_R6)
 op bovc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bovc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("001000%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1652,7 +1613,6 @@ op bovc (rs: R, rt: R, offset: BRANCH_OFFSET)
 
 @rev(MIPS32_R6)
 op bnvc (rs: R, rt: R, offset: BRANCH_OFFSET)
-  init = {}
   syntax = format("bnvc %s, %s, %s", rs.syntax, rt.syntax, offset.syntax)
   image  = format("011000%5s%5s%16s", rs.image, rt.image, offset.image)
   action = {
@@ -1717,7 +1677,6 @@ mode JUMP_ADDR16 = JUMP_LABEL16 | JUMP_IMM16
   */
 @rev(MIPS32_R1)
 op j (instr_index: JUMP_ADDR)
-  init = {}
   syntax = format("j %s", instr_index.syntax)
   image  = format("000010%26s", instr_index.image)
   action = {
@@ -1758,7 +1717,6 @@ op j (instr_index: JUMP_ADDR)
   */
 @rev(MIPS32_R1)
 op jal (instr_index: JUMP_ADDR)
-  init = {}
   syntax = format("jal %s", instr_index.syntax)
   image  = format("000011%26s", instr_index.image)
   action = {
@@ -1935,7 +1893,6 @@ op jalr_hb (rs: R)
   */
 @rev(MIPS32_REM_R6)
 op jalx (instr_index: JUMP_ADDR)
-  init = {}
   syntax = format("jalx %s", instr_index.syntax)
   image  = format("011101%26s", instr_index.image)
   action = {
@@ -1976,7 +1933,6 @@ op jalx (instr_index: JUMP_ADDR)
 // JIALC and BNEZC occupy the same encoding as pre-Release 6 instruction encoding SDC2, which is recoded in Release 6.
 @rev(MIPS32_R6)
 op jialc (rt: R, offset: JUMP_ADDR16)
-  init = {}
   syntax = format("jialc %s, %s", rt.syntax, offset.syntax)
   image  = format("11111000000%5s%16s", rt.image, offset.image)
   action = {
@@ -2028,7 +1984,6 @@ op jialc (rt: R, offset: JUMP_ADDR16)
 // Release 6 instruction LDC2, which is recoded in Release 6.
 @rev(MIPS32_R6)
 op jic (rt: R, offset: JUMP_ADDR16)
-  init = {}
   syntax = format("jic %s, %s", rt.syntax, offset.syntax)
   image  = format("11011000000%5s%16s", rt.image, offset.image)
   action = {

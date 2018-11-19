@@ -137,7 +137,7 @@ public class Mips64Test extends TemplateTest {
   /**
    * Timeout for QEMU execution (in milliseconds).
    */
-  private static final int QEMU_TIMEOUT_MILLIS = 1000;
+  private static final int QEMU_TIMEOUT_MILLIS = 5000;
 
   /* Trace utils parameters. */
 
@@ -332,7 +332,7 @@ public class Mips64Test extends TemplateTest {
         "unimp,nochain,in_asm",
         "-nographic",
         "-singlestep",
-        //"-trace-log",
+        "-trace-log",
         "-D",
         qemuLog,
         "-bios",
@@ -347,7 +347,7 @@ public class Mips64Test extends TemplateTest {
 
     Logger.message("done.");
 
-    /*Logger.message("Check traces ...");
+    Logger.message("Check traces ...");
     setPhase(TestPhase.CHECK_TRACES);
 
     final File toolLog = new File(insertExt(image.getAbsolutePath(), ".log"));
@@ -357,7 +357,7 @@ public class Mips64Test extends TemplateTest {
           String.format("Can't find MicroTESK Tracer log file: %s", toolLog.getAbsolutePath()));
     }
 
-    *//* Use Trace Matcher for logs comparison. *//*
+    /* Use Trace Matcher for logs comparison. */
     checkExecutable(TRACER);
 
     final String [] args = new String [] {
@@ -375,16 +375,16 @@ public class Mips64Test extends TemplateTest {
 
     runCommand(SHELL, false, diffReturnValues, args);
 
-    Logger.message("done.");*/
+    Logger.message("done.");
   }
 
-  /*private static String compareResultFileName(final File first, final File second) {
+  private static String compareResultFileName(final File first, final File second) {
     return String.format(
         "%s/%s-vs-%s.txt",
         FileUtils.getFileDir(first.getAbsolutePath()),
         FileUtils.getShortFileNameNoExt(first.getName()),
         FileUtils.getShortFileNameNoExt(second.getName()));
-  }*/
+  }
 
   private File compile(
       final File program,
