@@ -1,7 +1,7 @@
 /*
  * MicroTESK for MIPS
  *
- * Copyright (c) 2016-2017 Institute for System Programming of the Russian Academy of Sciences
+ * Copyright (c) 2016-2018 Institute for System Programming of the Russian Academy of Sciences
  * All Rights Reserved
  *
  * Institute for System Programming of the Russian Academy of Sciences (ISP RAS)
@@ -61,6 +61,10 @@ mode FMT_FORMAT = FMT_FORMAT_S
 mode FMT_FORMAT_ALL = FMT_FORMAT
                     | FMT_FORMAT_W
                     | FMT_FORMAT_L
+
+mode FMT_FORMAT_D_W_L = FMT_FORMAT_D
+                      | FMT_FORMAT_W
+                      | FMT_FORMAT_L
 
 // TODO: <2..0>
 let FMT3_S  = 0 // Floating point: single
@@ -2180,7 +2184,7 @@ op cvts_pu (fd: FR, fs: FR)
     StoreFPR(fd, S, ConvertFmt(ValueFPR(fs, fmt), fmt, S))
 */
 @rev(MIPS32_R1)
-op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
+op cvts_fmt (op_fmt: FMT_FORMAT_D_W_L, fd: FR, fs: FR)
   init = {}
   syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100000", op_fmt.image, fs.image, fd.image)

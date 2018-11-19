@@ -22,8 +22,14 @@ class InstructionAluTemplate < Mips64BaseTemplate
   def run
     trace "Run ALU instruction:"
 
+    random_reg = r(_)
+    random_reg2 = r(_)
+    addi random_reg, zero, -5
+    add random_reg2, random_reg, random_reg
+
     trace "\nMIPS 32 Arithmetic:\n"
 
+    trace "(addi): t0 = %x", gpr_observer(8)
     addi t0, zero, -5
     trace "(addi): t0 = %x", gpr_observer(8)
     addiu t2, zero, 111
