@@ -2146,12 +2146,7 @@ op cvts_pu (fd: FR, fs: FR)
     StoreFPR(fd, S, ConvertFmt(ValueFPR(fs, fmt), fmt, S))
 */
 @rev(MIPS32_R1)
-<<<<<<< HEAD
 op cvts_fmt (op_fmt: FMT_FORMAT_D_W_L, fd: FR, fs: FR)
-  init = {}
-=======
-op cvts_fmt (op_fmt: FMT_FORMAT, fd: FR, fs: FR)
->>>>>>> 3bad103c63b722225611a125b4917245fcd3ae0c
   syntax = format("cvt.s.%s %s, %s", op_fmt.syntax, fd.syntax, fs.syntax)
   image  = format("010001%5s00000%5s%5s100000", op_fmt.image, fs.image, fd.image)
   action = {
