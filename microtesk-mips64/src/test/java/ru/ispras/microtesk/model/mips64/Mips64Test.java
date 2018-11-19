@@ -172,7 +172,9 @@ public class Mips64Test extends TemplateTest {
    */
   private static final String REV = "MIPS64_R5";
 
-
+  /**
+   * Default constructor.
+   */
   public Mips64Test() {
     super(
         "mips64",
@@ -653,7 +655,7 @@ public class Mips64Test extends TemplateTest {
   }
 
   protected boolean isExpectedError(final String message) {
-    return message.contains("Exception handler for TLBMiss is not found") ||
-           message.contains("Exception handler for TLBInvalid is not found");
+    return message.contains("Exception handler for TLBMiss is not found")
+        || message.contains("Exception handler for TLBInvalid is not found");
   }
 }
