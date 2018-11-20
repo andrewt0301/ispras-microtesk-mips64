@@ -37,6 +37,13 @@ class Mips64BaseTemplate < Template
   def pre
     ################################################################################################
 
+    def section_text_va
+      0xFFFFffff80000000
+    end
+    def st_va_start # Special for boot definition
+      0x8000
+    end
+
     #
     # Boot definition (ROM).
     #
@@ -79,7 +86,7 @@ class Mips64BaseTemplate < Template
       # Copy exception jumpers into RAM
       lui t0, 0xbfc0
       ori t0, t0, 0x0
-      lui t1, 0xa000
+      lui t1, st_va_start # pa => 0x00080000
       ori t1, t1, 0x0
       newline
 
@@ -102,7 +109,7 @@ class Mips64BaseTemplate < Template
       newline
 
       # Jump to test program 0xFFFFffffa0002000
-      lui t0, 0xa000
+      lui t0, st_va_start # pa => 0x00080000
       ori t0, t0, 0x2000
       jr t0
       nop
@@ -171,9 +178,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_text(:pa => 0x0000000000000000, :va => 0xFFFFffffa0000000) {}
-    # TODO: fix address mapping; the commented one is closer to QEMU4V
-    #section_text(:pa => 0x00000000bfc10000, :va => 0xffffffffbfc10000) {}
+    section_text(:pa => 0x0000000000000000, :va => section_text_va) {}
 
     #
     # Defines .data section.
@@ -181,9 +186,7 @@ class Mips64BaseTemplate < Template
     # pa: base physical address (used for memory allocation).
     # va: base virtual address (used for encoding instructions that refer to labels).
     #
-    section_data(:pa => 0x0000000000080000, :va => 0xFFFFffffa0080000) {}
-    # TODO: fix address mapping; the commented one is closer to QEMU4V
-    #section_data(:pa => 0x00000000bfc20000, :va => 0xffffffffbfc20000) {}
+    section_data(:pa => 0x0000000000080000, :va => 0xFFFFffff80080000) {}
 
     def mips64_r5
       if get_option_value('rev-id') == 'MIPS64_R5' then
@@ -533,7 +536,7 @@ label :__start
 label :test
     mfc0 t8, c0_config0
     lui  t9, 0xffff
-    ori  t9, t9, 0xfff8
+    ori  t9, t9, 0xfffa # TODO a -> 8
     AND  t8, t8, t9
 
     if @kseg0_cache_policy != 0
@@ -1117,8 +1120,8 @@ label :error
   end
 
   def trace_data(begin_label, end_label)
-    begin_addr = 0x0000000000082000 + get_address_of(begin_label) - 0xffffffffa0082000
-    end_addr = 0x0000000000082000 + get_address_of(end_label) - 0xffffffffa0082000
+    begin_addr = get_address_of(begin_label) - section_text_va
+    end_addr = get_address_of(end_label) - section_text_va
 
     trace_data_addr(begin_addr, end_addr)
   end

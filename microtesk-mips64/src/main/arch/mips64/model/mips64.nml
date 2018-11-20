@@ -486,7 +486,7 @@ action = {
 
   C0_ERROR_EPC = CIA; // ErrorEPC (CP0 Register 30, Select 0)
   C0_EPC = CIA;
-  CIA = BaseVirtualAddress + 0x380;
+  CIA = 0xFFFFFFFF80000000 + 0x380; // TODO:
 }
 
 //==================================================================================================
