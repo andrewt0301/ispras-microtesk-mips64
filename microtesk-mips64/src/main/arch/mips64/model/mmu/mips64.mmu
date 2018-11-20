@@ -289,7 +289,7 @@ mmu pmem (va: VA) = (data: 64)
     wordIndex = pa.value<4..3>;
 
     if isCached == 1 then
-      trace("isCached = 0x%x", isCached)
+      trace("isCached = 0x%x", isCached);
       if L1(pa).hit then
         l1Entry = L1(pa);
         line = l1Entry.DATA;
@@ -330,7 +330,7 @@ mmu pmem (va: VA) = (data: 64)
     wordIndex = pa.value<4..3>;
 
     if isCached == 1 then
-      trace("isCached = 0x%x", isCached)
+      trace("isCached = 0x%x", isCached);
       if L1(pa).hit then
         l1Entry = L1(pa);
         l1Entry.DATA = putWordIntoLine(wordIndex, l1Entry.DATA, data);
