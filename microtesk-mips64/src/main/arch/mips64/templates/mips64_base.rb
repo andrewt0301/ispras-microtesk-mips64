@@ -502,7 +502,7 @@ class Mips64BaseTemplate < Template
     # for instructions which require arguments to be 32-bit sign-extended values.
 
     # Generator of 32-bit random values which will be sign-extended to fit the target register.
-    random_word = situation('random', :size => 32, :sign_extend => true)
+    random_word = situation('random', :size => 64, :width => 32, :sign_extend => true)
 
     # Input arguments of all instructions listed below are random words.
     set_default_situation 'add'   do random_word end
